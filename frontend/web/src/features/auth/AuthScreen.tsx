@@ -25,7 +25,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 
 export function AuthScreen() {
   const theme = useTheme();
-  const logoSrc = theme.palette.mode === 'dark' ? '/icons/icon-dark.svg' : '/icons/icon.svg';
+  const logoSrc = '/icons/logo_green_transparent.png';
   const { enqueueSnackbar } = useSnackbar();
   const {
     userProfile,

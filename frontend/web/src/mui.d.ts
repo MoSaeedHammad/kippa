@@ -41,6 +41,7 @@ declare module '@mui/material/Paper' {
     assistantCooldown: true;
     assistantAction: true;
     assistantChart: true;
+    saveFeedbackOverlay: true;
   }
 }
 

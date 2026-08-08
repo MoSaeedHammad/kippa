@@ -12,8 +12,7 @@ import {
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { NotesIcon } from '@/components/AppIcon';
-import { CalendarTodayIcon } from '@/components/AppIcon';
+import { CalendarTodayIcon, CheckCircleIcon, NotesIcon } from '@/components/AppIcon';
 import { isToday, format } from 'date-fns';
 import {
   useAccounts,
@@ -201,6 +200,7 @@ export function FastEntry() {
   };
   const currentCurrencySymbol = selectedAccount?.currency ?? baseCurrency;
   const isSaving = createTxMutation.isPending;
+  const saveLabel = mode === 'expense' ? 'Save Expense' : mode === 'income' ? 'Save Income' : 'Save Transaction';
 
   if (accountsLoading || categoriesLoading) {
     return (
@@ -325,6 +325,17 @@ export function FastEntry() {
             />
           </LocalizationProvider>
         </Stack>
+
+        <Button
+          fullWidth
+          variant="primaryAction"
+          loading={isSaving}
+          startIcon={<CheckCircleIcon />}
+          onClick={handleSave}
+          sx={{ display: { xs: 'none', lg: 'flex' } }}
+        >
+          {saveLabel}
+        </Button>
             </Stack>
           </Box>
 

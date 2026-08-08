@@ -18,6 +18,7 @@ export const cardOverrides = ({ mode, tokens: t }: OverrideContext): Components<
       { props: { variant: 'assistantCooldown' }, style: { borderRadius: 16, border: 0, padding: 16, backgroundColor: t.surfaceOffWhite, color: t.textPrimary, boxShadow: 'none' } },
       { props: { variant: 'assistantAction' }, style: { borderRadius: 16, border: `1px solid ${t.borderGray}`, padding: 16, backgroundColor: t.surfacePure, color: t.textPrimary, boxShadow: 'none' } },
       { props: { variant: 'assistantChart' }, style: { borderRadius: 16, border: `1px solid ${t.borderGray}`, padding: 16, backgroundColor: t.surfacePure, color: t.textPrimary, boxShadow: 'none' } },
+      { props: { variant: 'saveFeedbackOverlay' }, style: { borderRadius: 0, border: 0, backgroundColor: alpha(t.surfacePure, mode === 'dark' ? .68 : .74), backgroundImage: 'none', color: t.textPrimary, boxShadow: 'none', backdropFilter: 'blur(22px) saturate(1.12)', WebkitBackdropFilter: 'blur(22px) saturate(1.12)' } },
     ] },
     MuiCard: { defaultProps: { elevation: 0 }, styleOverrides: { root: { background: t.surfacePure, border: `1px solid ${t.borderGray}`, borderRadius: 20, boxShadow: `${highlight},${shadow}`, transition: 'box-shadow .2s ease,border-color .2s ease' } }, variants: [
       { props: { variant: 'selectable' }, style: { borderRadius: 16, border: `1px solid ${t.borderGray}`, background: t.surfacePure, color: t.textSecondary, boxShadow: 'none' } },

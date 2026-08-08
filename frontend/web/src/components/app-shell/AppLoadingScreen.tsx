@@ -6,7 +6,9 @@ interface AppLoadingScreenProps {
 }
 
 export function AppLoadingScreen({ theme }: AppLoadingScreenProps) {
-  const logoSrc = theme.palette.mode === 'dark' ? '/icons/icon-dark.svg' : '/icons/icon.svg';
+  const logoSrc = theme.palette.mode === 'dark'
+    ? '/icons/logo_white_transparent.png'
+    : '/icons/logo_green_transparent.png';
 
   return (
     <ThemeProvider theme={theme}>

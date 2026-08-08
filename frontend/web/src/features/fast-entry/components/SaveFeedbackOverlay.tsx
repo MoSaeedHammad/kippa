@@ -1,4 +1,4 @@
-import { alpha, Box, Portal, Stack, Typography } from '@mui/material';
+import { alpha, Box, Paper, Portal, Stack, Typography } from '@mui/material';
 import { CheckCircleIcon, ReceiptLongIcon } from '@/components/AppIcon';
 
 export type SaveFeedbackContent = { account: string; amount: string; category: string; title: string };
@@ -8,7 +8,8 @@ export function SaveFeedbackOverlay({ content, onClose, open }: { content: SaveF
 
   return (
     <Portal>
-      <Box
+      <Paper
+        variant="saveFeedbackOverlay"
         role="status"
         aria-live="polite"
         aria-label="Entry saved"
@@ -19,11 +20,6 @@ export function SaveFeedbackOverlay({ content, onClose, open }: { content: SaveF
           position: 'fixed',
           inset: 0,
           zIndex: (theme) => theme.zIndex.modal + 2,
-          background: (theme) => `
-            radial-gradient(circle at 50% 28%, ${alpha(theme.palette.common.white, 0.12)} 0%, transparent 38%),
-            linear-gradient(155deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)
-          `,
-          color: 'common.white',
           cursor: 'pointer',
           overflow: 'hidden',
           animation: 'fastEntrySendCover 1600ms cubic-bezier(0.22, 1, 0.36, 1) both',
@@ -157,7 +153,7 @@ export function SaveFeedbackOverlay({ content, onClose, open }: { content: SaveF
             />
           </Box>
         </Stack>
-      </Box>
+      </Paper>
     </Portal>
   );
 }
