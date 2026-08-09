@@ -139,6 +139,24 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
     };
   }
 
+  // Some recurring HSBC debits (including loan installments) omit the
+  // "Phone Banking" prefix. The trailing minus is the authoritative debit
+  // signal; ingestion can then safely match it to a known commitment.
+  const bankTransferDebit = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+Transfer from\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)-/i,
+  );
+  if (bankTransferDebit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider, date: compactDate(bankTransferDebit[1]),
+        description: 'Bank transfer debit',
+        accountHintLast4: last4(bankTransferDebit[2]), accountKind: 'bank',
+        currency: bankTransferDebit[3].toUpperCase(), amount: amount(bankTransferDebit[4]),
+      },
+    };
+  }
+
   const creditPurchase = text.match(
     /(?:Your|HSBC) Credit Card ending (?:with\s*)?\*{3}\s*(\d{4}).*?used for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}\/\d{2}\/\d{4})\s+at\s+(.+?)(?:\.\s*Your available limit|$)/i,
   );
@@ -165,6 +183,21 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
         currency: ipnInward[2].toUpperCase(), amount: amount(ipnInward[3]),
         date: numericDate(ipnInward[4]), description: `Transfer from ${cleanParty(ipnInward[5])}`,
         counterparty: cleanParty(ipnInward[5]),
+      },
+    };
+  }
+
+  const ipnPurchase = text.match(
+    /(?:Your\s+)?HSBC Account\s*\*+(\d{4})\s+was debited with IPN purchase for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference/i,
+  );
+  if (ipnPurchase) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider, accountKind: 'bank', accountHintLast4: ipnPurchase[1],
+        currency: ipnPurchase[2].toUpperCase(), amount: amount(ipnPurchase[3]),
+        date: numericDate(ipnPurchase[4]), description: `Purchase from ${cleanParty(ipnPurchase[5])}`,
+        counterparty: cleanParty(ipnPurchase[5]),
       },
     };
   }

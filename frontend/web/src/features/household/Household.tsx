@@ -22,6 +22,7 @@ import { GroupAddIcon } from '@/components/AppIcon';
 import { CheckCircleIcon } from '@/components/AppIcon';
 import { CheckIcon } from '@/components/AppIcon';
 import { HourglassEmptyIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 
 import type { Household, CurrencyCode } from '@kippa/domain';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -177,28 +178,20 @@ export function Household() {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Stack spacing={2.5}>
-                <Box display="flex" alignItems="center" justifyContent="space-between" gap={2}>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <Box sx={{ width: 44, height: 44, borderRadius: 3, bgcolor: 'action.hover', color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <HomeIcon />
-                    </Box>
-                    <Box>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: '16px' }}>
-                        {activeHh.name}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px' }}>
-                        {activeHh.baseCurrency} (Base Currency) • {userProfile!.role === 'owner' ? 'Owner' : 'Member'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Chip
-                    label="Active"
-                    color="primary"
-                    size="small"
-                    icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
-                    sx={{ fontWeight: 700 }}
-                  />
-                </Box>
+                <CardHeading
+                  icon={<HomeIcon variant="Bulk" />}
+                  title={activeHh.name}
+                  subtitle={`${activeHh.baseCurrency} (Base Currency) • ${userProfile!.role === 'owner' ? 'Owner' : 'Member'}`}
+                  trailing={
+                    <Chip
+                      label="Active"
+                      color="primary"
+                      size="small"
+                      icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
+                      sx={{ fontWeight: 700 }}
+                    />
+                  }
+                />
 
                 {/* Base Currency Setting */}
                 <Box sx={{ mt: 1 }}>
@@ -275,8 +268,7 @@ export function Household() {
           <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardContent>
-                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: 'text.primary' }}>Manage households</Typography>
-                  <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary' }}>Create a new space or join someone else's.</Typography>
+                  <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Manage households" subtitle="Create a new space or join someone else's." />
                 </CardContent>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)} variant="fullWidth">

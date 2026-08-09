@@ -22,7 +22,8 @@ import { FinanceTransaction } from '@kippa/domain';
 import { useAppContext } from '@/hooks/useAppContext';
 import { TransactionsListItem } from './TransactionsListItem';
 import { EditTransactionDialog } from '@/features/transactions/components/EditTransactionDialog';
-import { ArrowBackIcon } from '@/components/AppIcon';
+import { ArrowBackIcon, ReceiptLongIcon } from '@/components/AppIcon';
+import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function TransactionsCard() {
   const navigate = useNavigate();
@@ -63,18 +64,12 @@ export function TransactionsCard() {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-              <Box>
-                <Typography sx={{ fontSize: 16, lineHeight: '22px', fontWeight: 800, color: 'text.primary' }}>Recent Transactions</Typography>
-                <Typography sx={{ mt: 0.5, fontSize: 12, lineHeight: '16px', fontWeight: 600, color: 'text.secondary' }}>Latest household activity</Typography>
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center">
+            <DashboardCardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="Recent Transactions" subtitle="Latest household activity" trailing={<Stack direction="row" spacing={1} alignItems="center">
                 <Chip size="small" label={`${Math.min(transactions.length, 8)} recent`} sx={{ bgcolor: 'action.hover', color: 'primary.main' }} />
                 <IconButton aria-label="View all transactions" onClick={() => navigate('/transactions')} size="small" sx={{ width: 36, height: 36, minWidth: 36 }}>
                   <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(180deg)' }} />
                 </IconButton>
-              </Stack>
-            </Stack>
+              </Stack>} />
 
             {transactions.length === 0 ? (
               <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>No recent activity recorded.</Typography>

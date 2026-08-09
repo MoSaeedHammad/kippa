@@ -1,5 +1,7 @@
 import { Avatar, Box, Button, Card, CardContent, Chip, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import type { HouseholdMember, JoinRequest } from '@kippa/domain';
+import { GroupAddIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 
 type Props = {
   busy: boolean;
@@ -14,10 +16,7 @@ export function HouseholdMembersCard({ busy, loading, members, onDecide, request
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Stack spacing={2}>
-          <Box>
-            <Typography variant="h3">Members</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{members.length} people connected to this household</Typography>
-          </Box>
+          <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Members" subtitle={`${members.length} people connected to this household`} />
           {members.length === 0 ? (
             <Typography variant="body2" color="text.secondary">{loading ? 'Loading members…' : 'No other members yet. Invite someone or approve a join request to share this household.'}</Typography>
           ) : (

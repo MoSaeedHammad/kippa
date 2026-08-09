@@ -5,8 +5,8 @@ import type { OverrideContext } from './types';
 export const buttonOverrides = ({ mode, tokens: t }: OverrideContext): Components<Theme> => ({
   MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: {
     root: { minHeight: 48, fontWeight: 500, boxShadow: 'none', transition: 'transform .2s ease, background-color .2s ease', '&:active': { transform: 'scale(.98)' } },
-    containedPrimary: { background: designTokens.color.primaryContainer, color: designTokens.color.onPrimary, borderRadius: 48, padding: '12px 24px', '&:hover': { background: designTokens.color.primary }, '&:active': { background: designTokens.color.primary } },
-    outlined: { borderColor: t.borderGray, color: t.textPrimary, borderRadius: 8, backgroundColor: alpha(t.textPrimary, mode === 'dark' ? .04 : .03), padding: '12px 16px', '&:hover': { backgroundColor: t.surfaceOffWhite, borderColor: t.outline } },
+    containedPrimary: { background: designTokens.color.primaryContainer, color: designTokens.color.onPrimary, borderRadius: designTokens.radius.moderate, padding: '12px 24px', '&:hover': { background: designTokens.color.primary }, '&:active': { background: designTokens.color.primary } },
+    outlined: { borderColor: t.borderGray, color: t.textPrimary, borderRadius: designTokens.radius.moderate, backgroundColor: alpha(t.textPrimary, mode === 'dark' ? .04 : .03), padding: '12px 16px', '&:hover': { backgroundColor: t.surfaceOffWhite, borderColor: t.borderGray } },
   }, variants: [
     { props: { variant: 'segmented' }, style: { minHeight: 40, height: 40, borderRadius: 16, padding: '0 8px', border: `1px solid ${t.borderGray}`, backgroundColor: t.surfacePure, color: t.textPrimary, fontSize: 11, fontWeight: 600, '&:hover': { backgroundColor: t.surfaceOffWhite, borderColor: t.borderGray } } },
     { props: { variant: 'segmentedSelected' }, style: { minHeight: 40, height: 40, borderRadius: 16, padding: '0 8px', border: '1px solid transparent', backgroundColor: designTokens.color.secondary, color: designTokens.color.onSecondary, fontSize: 11, fontWeight: 700, '&:hover': { backgroundColor: designTokens.color.secondary } } },

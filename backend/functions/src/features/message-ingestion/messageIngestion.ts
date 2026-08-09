@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { projectID } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
-import type { Account, Card, Category, PendingFinancialMessage, UserProfile } from '@kippa/domain';
+import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, UserProfile } from '@kippa/domain';
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
@@ -119,6 +119,48 @@ async function resolveSuggestions(
   }
 
   return { accountId, destinationAccountId };
+}
+
+function installmentDate(loan: Loan, installmentNumber: number): string {
+  const first = new Date(`${loan.firstPaymentDate}T12:00:00Z`);
+  const target = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + installmentNumber - 1, 1, 12));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0, 12)).getUTCDate();
+  target.setUTCDate(Math.min(loan.dueDay, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
+function daysBetween(left: string, right: string): number {
+  return Math.round(Math.abs(new Date(`${left}T12:00:00Z`).getTime() - new Date(`${right}T12:00:00Z`).getTime()) / 86_400_000);
+}
+
+async function resolveLoanSuggestion(
+  householdId: string,
+  parsed: ParsedFinancialMessage,
+  accountId?: string,
+): Promise<{ loanId: string; loanName: string; installmentNumber: number } | null> {
+  if (parsed.kind !== 'expense' || !accountId) return null;
+  const db = getFirestore();
+  const [loansSnapshot, transactionsSnapshot] = await Promise.all([
+    db.collection(`households/${householdId}/loans`).where('status', '==', 'active').get(),
+    db.collection(`households/${householdId}/transactions`).get(),
+  ]);
+  const transactions = transactionsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction);
+  const matches = loansSnapshot.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as Loan)
+    .flatMap((loan) => {
+      const linkedPayments = transactions.filter((transaction) => transaction.status === 'posted' && transaction.loanId === loan.id);
+      const installmentNumber = (loan.openingPaidInstallments ?? 0) + linkedPayments.length + 1;
+      if (loan.paymentAccountId !== accountId
+        || loan.currency !== parsed.currency
+        || Math.abs(loan.installmentAmount - parsed.amount) > 0.01
+        || installmentNumber > loan.totalInstallments) return [];
+      const dueDate = installmentDate(loan, installmentNumber);
+      const allowedDays = Math.max(3, (loan.graceDay ?? loan.dueDay) - loan.dueDay + 2);
+      return daysBetween(parsed.date, dueDate) <= allowedDays
+        ? [{ loanId: loan.id, loanName: loan.name, installmentNumber }]
+        : [];
+    });
+  return matches.length === 1 ? matches[0] : null;
 }
 
 export const createMessageIngestionCredential = onCall(async (request) => {
@@ -292,6 +334,7 @@ export const ingestFinancialMessage = onRequest(
     }
 
     const suggestions = await resolveSuggestions(credential.householdId, parsedResult.parsed);
+    const loanSuggestion = await resolveLoanSuggestion(credential.householdId, parsedResult.parsed, suggestions.accountId);
     const parsed = parsedResult.parsed;
 
     // ── Cross-currency transfer merge ──────────────────────────────────
@@ -388,13 +431,16 @@ export const ingestFinancialMessage = onRequest(
       amount: parsed.amount,
       currency: parsed.currency,
       date: parsed.date,
-      description: parsed.description,
+      description: loanSuggestion ? `${loanSuggestion.loanName} — installment ${loanSuggestion.installmentNumber}` : parsed.description,
       counterparty: parsed.counterparty ?? null,
       messagePreview: buildMessagePreview(body.message),
       accountHintLast4: parsed.accountHintLast4 ?? null,
       destinationHintLast4: parsed.destinationHintLast4 ?? null,
       suggestedAccountId: suggestions.accountId ?? null,
       suggestedDestinationAccountId: suggestions.destinationAccountId ?? null,
+      suggestedLoanId: loanSuggestion?.loanId ?? null,
+      suggestedLoanName: loanSuggestion?.loanName ?? null,
+      suggestedLoanInstallmentNumber: loanSuggestion?.installmentNumber ?? null,
       destinationAmount: null,
       destinationCurrency: null,
       transferLeg: parsed.transferLeg ?? null,
@@ -460,17 +506,55 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     .where('status', '==', 'open').limit(1).get();
   const activeCycleId = cycleSnapshot.empty ? null : cycleSnapshot.docs[0].id;
 
+  const pendingBeforeApproval = await pendingRef.get();
+  if (!pendingBeforeApproval.exists) throw new HttpsError('not-found', 'Pending item not found.');
+  const pendingForLoanCheck = pendingBeforeApproval.data() as PendingFinancialMessage;
+  const suggestedLoanId = pendingForLoanCheck.suggestedLoanId ?? '';
+  const suggestedInstallment = pendingForLoanCheck.suggestedLoanInstallmentNumber ?? null;
+  let existingLoanPayments: FinanceTransaction[] = [];
+  if (suggestedLoanId && suggestedInstallment) {
+    const loanTransactionsSnapshot = await db.collection(`households/${householdId}/transactions`)
+      .where('loanId', '==', suggestedLoanId).get();
+    existingLoanPayments = loanTransactionsSnapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction)
+      .filter((existing) => existing.status === 'posted');
+    if (existingLoanPayments.some((existing) => existing.loanInstallmentNumber === suggestedInstallment)) {
+      throw new HttpsError('already-exists', 'This loan installment is already recorded.');
+    }
+  }
+
   await db.runTransaction(async (transaction) => {
-    const [pendingSnapshot, accountSnapshot, existingTransaction] = await Promise.all([
+    const loanRef = suggestedLoanId ? db.doc(`households/${householdId}/loans/${suggestedLoanId}`) : null;
+    const paymentLockRef = suggestedLoanId && suggestedInstallment
+      ? db.doc(`households/${householdId}/loanPaymentLocks/${suggestedLoanId}_${suggestedInstallment}`)
+      : null;
+    const [pendingSnapshot, accountSnapshot, existingTransaction, loanSnapshot, paymentLockSnapshot] = await Promise.all([
       transaction.get(pendingRef),
       transaction.get(db.doc(`households/${householdId}/accounts/${accountId}`)),
       transaction.get(transactionRef),
+      loanRef ? transaction.get(loanRef) : Promise.resolve(null),
+      paymentLockRef ? transaction.get(paymentLockRef) : Promise.resolve(null),
     ]);
     if (existingTransaction.exists) return;
     if (!pendingSnapshot.exists) throw new HttpsError('not-found', 'Pending item not found.');
     const pending = pendingSnapshot.data() as PendingFinancialMessage;
     const account = accountSnapshot.data() as Account | undefined;
-    if (pending.kind !== 'transfer') {
+    const loan = loanSnapshot?.data() as Loan | undefined;
+    const isLoanPayment = !!suggestedLoanId && !!suggestedInstallment;
+    if (isLoanPayment) {
+      const expectedInstallment = (loan?.openingPaidInstallments ?? 0) + existingLoanPayments.length + 1;
+      if (pending.suggestedLoanId !== suggestedLoanId
+        || pending.suggestedLoanInstallmentNumber !== suggestedInstallment
+        || !loan || loan.status !== 'active'
+        || loan.paymentAccountId !== accountId
+        || loan.currency !== pending.currency
+        || Math.abs(loan.installmentAmount - pending.amount) > 0.01
+        || expectedInstallment !== suggestedInstallment
+        || daysBetween(pending.date, installmentDate(loan, suggestedInstallment)) > Math.max(3, (loan.graceDay ?? loan.dueDay) - loan.dueDay + 2)) {
+        throw new HttpsError('failed-precondition', 'The suggested loan no longer matches this payment.');
+      }
+      if (paymentLockSnapshot?.exists) throw new HttpsError('already-exists', 'This loan installment is already recorded.');
+    } else if (pending.kind !== 'transfer') {
       if (!categoryId) throw new HttpsError('invalid-argument', 'Category is required.');
       const categorySnapshot = await transaction.get(db.doc(`households/${householdId}/categories/${categoryId}`));
       const category = categorySnapshot.data() as Category | undefined;
@@ -513,6 +597,8 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       createdAt: now,
       updatedAt: now,
       status: 'posted',
+      loanId: isLoanPayment ? suggestedLoanId : null,
+      loanInstallmentNumber: isLoanPayment ? suggestedInstallment : null,
       importedFrom: { kind: 'financial-message', pendingId, provider: pending.provider, source: pending.source },
     });
     transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
@@ -538,14 +624,20 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
         });
       }
     }
+    if (isLoanPayment && paymentLockRef && loan) {
+      transaction.create(paymentLockRef, { loanId: suggestedLoanId, installmentNumber: suggestedInstallment, transactionId, createdAt: now });
+      if (suggestedInstallment >= loan.totalInstallments) transaction.set(loanRef!, { status: 'paid', updatedAt: now }, { merge: true });
+    }
     transaction.create(db.doc(`households/${householdId}/auditLog/${transactionId}`), {
       id: transactionId,
       householdId,
       userId: uid,
       userDisplayName: profile.displayName || 'User',
       userPhotoURL: profile.photoURL ?? null,
-      action: 'transaction_created',
-      summary: isCrossCurrency
+      action: isLoanPayment ? 'loan_payment_recorded' : 'transaction_created',
+      summary: isLoanPayment
+        ? `${profile.displayName || 'User'} approved imported loan installment ${suggestedInstallment}/${loan?.totalInstallments}: ${pending.amount} ${pending.currency}`
+        : isCrossCurrency
         ? `${profile.displayName || 'User'} approved imported transfer: ${pending.amount} ${pending.currency} → ${destAmount} ${destCurrency} - ${pending.description}`
         : `${profile.displayName || 'User'} approved imported ${pending.kind}: ${pending.amount} ${pending.currency} - ${pending.description}`,
       details: { transactionId, type: pending.kind, amount: pending.amount, currency: pending.currency, imported: true },

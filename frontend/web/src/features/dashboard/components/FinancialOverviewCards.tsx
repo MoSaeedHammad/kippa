@@ -2,6 +2,8 @@ import { Box, Card, CardContent, Skeleton, Stack, Typography, alpha, useTheme } 
 import type { ReactNode } from 'react';
 import { Money } from '@/components/Money';
 import { PaymentsIcon, WorkIcon } from '@/components/AppIcon';
+import { ReceiptLongIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 import {
   useAccounts,
   useBudgetAllocations,
@@ -12,6 +14,7 @@ import {
   useHouseholdBaseCurrency,
   useLedgerLines,
   useTransactions,
+  useLoans,
 } from '@/hooks/useFinance';
 import { useAppContext } from '@/hooks/useAppContext';
 import { computeDashboard } from '@/libs/selectors';
@@ -31,13 +34,14 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
   const { data: displayRates = {} } = useDisplayRates(baseCurrency, foreignCodes);
   const { data: allocations = [], isLoading: allocationsLoading } = useBudgetAllocations(householdId, activeCycle?.id);
   const { data: expectedIncomes = [], isLoading: incomesLoading } = useExpectedIncomes(householdId, activeCycle?.id);
+  const { data: loans = [] } = useLoans(householdId);
 
   const loading = accountsLoading || transactionsLoading || ledgerLoading || allocationsLoading || incomesLoading;
   if (loading) {
     return <Skeleton variant="rounded" height={300} />;
   }
 
-  const data = computeDashboard(accounts, transactions, ledgerLines, categories, activeCycle, allocations, expectedIncomes, displayRates, baseCurrency);
+  const data = computeDashboard(accounts, transactions, ledgerLines, categories, activeCycle, allocations, expectedIncomes, displayRates, baseCurrency, loans);
   const spendingRatio = data.spending.plannedBudget > 0 ? data.spending.actual / data.spending.plannedBudget : 0;
   const meterPercent = Math.max(0, Math.min(100, Math.round(spendingRatio * 100)));
   const receivedIncomeCount = transactions.filter(transaction => transaction.status === 'posted' && transaction.type === 'income' && transaction.budgetCycleId === activeCycle?.id).length;
@@ -48,7 +52,7 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
         <CardContent sx={{ height: '100%' }}>
           <Stack sx={{ height: '100%' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 750 }}>My income</Typography>
+              <CardHeading icon={<WorkIcon variant="Bulk" />} title="My income" />
               <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? 'Current cycle'}</Typography>
             </Stack>
 
@@ -82,7 +86,7 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
         <CardContent sx={{ height: '100%' }}>
           <Stack sx={{ height: '100%' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 750 }}>My expenses</Typography>
+              <CardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="My expenses" />
               <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? 'Current cycle'}</Typography>
             </Stack>
 

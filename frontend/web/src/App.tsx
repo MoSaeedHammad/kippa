@@ -22,6 +22,7 @@ const TransactionHistory = lazy(() => import('@/features/transactions/Transactio
 const AuditLog = lazy(() => import('@/features/activity/AuditLog').then(m => ({ default: m.AuditLog })));
 const PendingTransactions = lazy(() => import('@/features/pending-transactions/PendingTransactions').then(m => ({ default: m.PendingTransactions })));
 const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ default: m.AiAssistant })));
+const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
 
 
 export default function App() {
@@ -71,6 +72,7 @@ export default function App() {
               <Route path="categories" element={<Categories />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="ai" element={<AiAssistant />} />
+              <Route path="loans" element={<Loans />} />
             </Route>
           </Routes>
         </Suspense>

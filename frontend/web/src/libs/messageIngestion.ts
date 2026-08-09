@@ -21,7 +21,7 @@ export const messageIngestionLib = {
   async approve(data: {
     householdId: string;
     pendingId: string;
-    categoryId: string;
+    categoryId?: string;
     accountId: string;
     destinationAccountId?: string;
   }): Promise<string> {

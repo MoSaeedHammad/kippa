@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Skeleton, Stack, Typography, useTheme, alpha } from '@mui/material';
+import { Box, Card, CardContent, Chip, Skeleton, Stack, Typography, useTheme, alpha } from '@mui/material';
 import {
   useAccounts,
   useTransactions,
@@ -8,11 +8,14 @@ import {
   useDisplayRates,
   useHouseholdBaseCurrency,
   useBudgetAllocations,
-  useExpectedIncomes
+  useExpectedIncomes,
+  useLoans
 } from '@/hooks/useFinance';
 import { computeDashboard, DashboardData } from '@/libs/selectors';
 import { Money } from '@/components/Money';
 import { useAppContext } from '@/hooks/useAppContext';
+import { BarChartIcon } from '@/components/AppIcon';
+import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function BudgetPulseCard() {
   const { householdId } = useAppContext();
@@ -31,6 +34,7 @@ export function BudgetPulseCard() {
 
   const { data: allocations = [], isLoading: allocationsLoading } = useBudgetAllocations(householdId, activeCycleId);
   const { data: expectedIncomes = [] } = useExpectedIncomes(householdId, activeCycleId);
+  const { data: loans = [] } = useLoans(householdId);
 
   const isLoading = allocationsLoading || !accounts || !transactions || !ledgerLines;
 
@@ -76,7 +80,8 @@ export function BudgetPulseCard() {
     allocations,
     expectedIncomes,
     displayRates,
-    baseCurrency
+    baseCurrency,
+    loans,
   );
   const remainingPercent = data.spending.plannedBudget > 0
     ? Math.max(0, Math.round((1 - data.spending.actual / data.spending.plannedBudget) * 100))
@@ -89,10 +94,7 @@ export function BudgetPulseCard() {
   return (
     <Card sx={{ height: 375 }}>
       <CardContent sx={{ height: '100%' }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-          <Typography sx={{ fontSize: 15, fontWeight: 750, color: 'text.primary' }}>Remaining monthly</Typography>
-          <Typography noWrap sx={{ fontSize: 9.5, fontWeight: 700, color: getStatusColor(data.saving.status) }}>{getStatusLabel(data.saving.status)}</Typography>
-        </Stack>
+        <DashboardCardHeading icon={<BarChartIcon variant="Bulk" />} title="Remaining monthly" trailing={<Chip label={getStatusLabel(data.saving.status)} color={data.saving.status === 'on-track' ? 'success' : data.saving.status === 'warning' ? 'warning' : 'error'} />} />
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
           <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>{remainingPercent}<Box component="span" sx={{ color: 'text.secondary', fontSize: '0.62em', ml: 0.75 }}>%</Box></Typography>

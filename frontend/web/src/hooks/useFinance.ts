@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ledgerLib } from '@/libs/ledger';
 import { cyclesLib } from '@/libs/cycles';
 import { transactionsLib } from '@/libs/transactions';
+import { loansLib, type LoanInput } from '@/libs/loans';
 import { cardsLib, type CardInput } from '@/libs/cards';
 import { auditLogLib } from '@/libs/auditLog';
 import { messageIngestionLib } from '@/libs/messageIngestion';
@@ -31,6 +32,7 @@ import {
   AuditLogEntry,
   Card,
   CardStatement,
+  Loan,
   PendingFinancialMessage,
   ResolvedPendingFinancialMessage,
 } from '@kippa/domain';
@@ -135,6 +137,7 @@ export function useApprovePendingFinancialMessageMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) });
       queryClient.invalidateQueries({ queryKey: keys.ledgerLines(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.loans(variables.householdId) });
       queryClient.invalidateQueries({ queryKey: keys.resolvedMessages(variables.householdId) });
     },
     onSettled: (_data, _error, variables) => {
@@ -267,6 +270,10 @@ export function useCardStatements(householdId: string, cardId?: string) {
     queryFn: () => cardsLib.getStatements(householdId, cardId),
     enabled: !!householdId,
   });
+}
+
+export function useLoans(householdId: string) {
+  return useQuery<Loan[]>({ queryKey: keys.loans(householdId), queryFn: () => loansLib.getLoans(householdId), enabled: !!householdId });
 }
 
 /**
@@ -442,6 +449,21 @@ export function useUnreadActivityCount(householdId: string, userId: string | und
 }
 
 // --- Mutations ---
+
+export function useCreateLoanMutation() {
+  const queryClient = useQueryClient(); const auditUser = useAuditUser(); const notifyOfflineSuccess = useOfflineSuccessNotifier();
+  return useMutation({ mutationFn: ({ householdId, loan }: { householdId: string; loan: LoanInput }) => loansLib.createLoan(householdId, loan, auditUser), onSuccess: (_, variables) => { notifyOfflineSuccess(); queryClient.invalidateQueries({ queryKey: keys.loans(variables.householdId) }); } });
+}
+
+export function useUpdateLoanMutation() {
+  const queryClient = useQueryClient(); const auditUser = useAuditUser(); const notifyOfflineSuccess = useOfflineSuccessNotifier();
+  return useMutation({ mutationFn: ({ householdId, loanId, loan }: { householdId: string; loanId: string; loan: LoanInput }) => loansLib.updateLoan(householdId, loanId, loan, auditUser), onSuccess: (_, variables) => { notifyOfflineSuccess(); queryClient.invalidateQueries({ queryKey: keys.loans(variables.householdId) }); } });
+}
+
+export function useRecordLoanPaymentMutation() {
+  const queryClient = useQueryClient(); const auditUser = useAuditUser(); const notifyOfflineSuccess = useOfflineSuccessNotifier();
+  return useMutation({ mutationFn: ({ householdId, loanId, amount, date, budgetCycleId, userId }: { householdId: string; loanId: string; amount: number; date: string; budgetCycleId?: string | null; userId: string }) => loansLib.recordPayment(householdId, loanId, { amount, date, budgetCycleId }, userId, auditUser), onSuccess: (_, variables) => { notifyOfflineSuccess(); queryClient.invalidateQueries({ queryKey: keys.loans(variables.householdId) }); queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) }); queryClient.invalidateQueries({ queryKey: keys.ledgerLines(variables.householdId) }); } });
+}
 
 export function useCreateTransactionMutation() {
   const queryClient = useQueryClient();

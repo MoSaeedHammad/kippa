@@ -8,6 +8,7 @@ export const financeQueryKeys = {
   cycles: (householdId: string) => ['budgetCycles', householdId] as const,
   expectedIncome: (householdId: string, cycleId?: string) => ['expectedIncome', householdId, cycleId] as const,
   ledgerLines: (householdId: string, cycleId?: string) => ['ledgerLines', householdId, cycleId] as const,
+  loans: (householdId: string) => ['loans', householdId] as const,
   pendingMessages: (householdId: string) => ['pendingFinancialMessages', householdId] as const,
   reconciliations: (householdId: string) => ['reconciliations', householdId] as const,
   resolvedMessages: (householdId: string) => ['resolvedPendingFinancialMessages', householdId] as const,

@@ -25,10 +25,12 @@ import {
   useDisplayRates,
   useHouseholdBaseCurrency,
   useAllBudgetAllocations,
-  useAllExpectedIncomes
+  useAllExpectedIncomes,
+  useLoans
 } from '@/hooks/useFinance';
 import { useAppContext } from '@/hooks/useAppContext';
 import { buildCashFlowSeries, calculateCategoryTrends, calculateCycleData } from '@/libs/budgetAnalytics';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 import { AnalyticsPlaceholder } from './components/AnalyticsPlaceholder';
 
 export function CycleAnalytics() {
@@ -46,6 +48,7 @@ export function CycleAnalytics() {
   const { data: displayRates = {} } = useDisplayRates(baseCurrency, foreignCodes);
   const { data: allAllocations = [], isLoading: allocsLoading } = useAllBudgetAllocations(householdId);
   const { data: allExpectedIncomes = [], isLoading: incomesLoading } = useAllExpectedIncomes(householdId);
+  const { data: loans = [], isLoading: loansLoading } = useLoans(householdId);
 
   // Tab State
   const [activeTab, setActiveTab] = useState(0);
@@ -53,7 +56,7 @@ export function CycleAnalytics() {
   // Selected Category for Line Trend Chart
   const [selectedCategoryId, setSelectedCategoryId] = useState('masrof-bet');
 
-  const isLoading = cyclesLoading || txsLoading || linesLoading || categoriesLoading || allocsLoading || incomesLoading;
+  const isLoading = cyclesLoading || txsLoading || linesLoading || categoriesLoading || allocsLoading || incomesLoading || loansLoading;
 
   // Chronologically sorted active or closed cycles
   const sortedCycles = useMemo(() => {
@@ -65,8 +68,8 @@ export function CycleAnalytics() {
   // Compute stats per cycle
   const cycleData = useMemo(() => {
     if (isLoading || sortedCycles.length === 0) return [];
-    return calculateCycleData(sortedCycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, baseCurrency, displayRates);
-  }, [isLoading, sortedCycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, displayRates, baseCurrency]);
+    return calculateCycleData(sortedCycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, baseCurrency, displayRates, loans);
+  }, [isLoading, sortedCycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, displayRates, baseCurrency, loans]);
 
   // Compute category trends over cycles
   const categoryTrends = useMemo(() => {
@@ -93,50 +96,30 @@ export function CycleAnalytics() {
     <Card sx={{ height: '100%', overflow: 'hidden' }}>
       <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header & Tabs */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          justifyContent="space-between" 
-          alignItems={{ xs: 'stretch', sm: 'center' }} 
-          spacing={2} 
-          sx={{ mb: 1 }}
-        >
-          <Typography variant="h3" sx={{ fontSize: '18px', fontWeight: 750, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BarChartIcon sx={{ color: 'primary.main' }} />
-            Cycle Analytics & Trends
-          </Typography>
-          
-          <Tabs 
-            value={activeTab} 
-            onChange={(_, val) => setActiveTab(val)}
-            sx={{ 
-              minHeight: 36,
-              '& .MuiTabs-indicator': {
-                display: 'none'
-              },
-              '& .MuiTab-root': {
-                minHeight: 32,
-                py: 0.5,
-                px: 2,
-                borderRadius: '16px',
-                fontSize: '13px',
-                fontWeight: 'bold',
-                textTransform: 'none',
-                color: 'text.secondary',
-                transition: 'all 0.2s ease',
-                '&.Mui-selected': {
-                  color: 'secondary.contrastText',
-                  bgcolor: 'secondary.main'
-                },
-                '&:hover:not(.Mui-selected)': {
-                  bgcolor: 'action.hover'
-                }
-              }
-            }}
-          >
-            <Tab label="Cash Flow" id="analytics-tab-0" />
-            <Tab label="Category Trends" id="analytics-tab-1" />
-          </Tabs>
-        </Stack>
+        <Box sx={{ mb: 1 }}>
+          <CardHeading
+            icon={<BarChartIcon variant="Bulk" />}
+            title="Cycle Analytics & Trends"
+            trailing={
+              <Tabs
+                value={activeTab}
+                onChange={(_, val) => setActiveTab(val)}
+                sx={{
+                  minHeight: 36,
+                  '& .MuiTabs-indicator': { display: 'none' },
+                  '& .MuiTab-root': {
+                    minHeight: 32, py: 0.5, px: 2, borderRadius: '16px', fontSize: '13px', fontWeight: 'bold', textTransform: 'none', color: 'text.secondary', transition: 'all 0.2s ease',
+                    '&.Mui-selected': { color: 'secondary.contrastText', bgcolor: 'secondary.main' },
+                    '&:hover:not(.Mui-selected)': { bgcolor: 'action.hover' },
+                  },
+                }}
+              >
+                <Tab label="Cash Flow" id="analytics-tab-0" />
+                <Tab label="Category Trends" id="analytics-tab-1" />
+              </Tabs>
+            }
+          />
+        </Box>
 
         {/* Tab Panel 0: Cash Flow Bar Chart */}
         {activeTab === 0 && (

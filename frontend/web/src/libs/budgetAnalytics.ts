@@ -1,5 +1,6 @@
-import type { BudgetAllocation, BudgetCycle, CurrencyCode, ExpectedIncome, FinanceTransaction, LedgerLine } from '@kippa/domain';
+import type { BudgetAllocation, BudgetCycle, CurrencyCode, ExpectedIncome, FinanceTransaction, LedgerLine, Loan } from '@kippa/domain';
 import { convertToBaseCurrency, getPostedLedgerLines, getPostedTransactions } from './financeCalculations';
+import { loanHasPaymentDueInCycle } from './loanCalculations';
 
 type DisplayRates = Partial<Record<CurrencyCode, number>>;
 
@@ -21,6 +22,7 @@ export function calculateCycleData(
   expectedIncomes: ExpectedIncome[],
   baseCurrency: CurrencyCode,
   rates: DisplayRates,
+  loans: Loan[] = [],
 ): CycleAnalyticsDatum[] {
   const postedTransactions = getPostedTransactions(transactions);
   const postedLines = getPostedLedgerLines(transactions, ledgerLines);
@@ -40,9 +42,11 @@ export function calculateCycleData(
       });
     });
 
-    const plannedBudget = allocations
+    const categoryPlan = allocations
       .filter((allocation) => allocation.budgetCycleId === cycle.id)
       .reduce((total, allocation) => total + allocation.plannedAmount, 0);
+    const loanPlan = loans.filter(loan => loanHasPaymentDueInCycle(loan, cycle.startDate, cycle.endDate)).reduce((total, loan) => total + convertToBaseCurrency(loan.installmentAmount, loan.currency, baseCurrency, rates), 0);
+    const plannedBudget = categoryPlan + loanPlan;
     const expectedIncome = expectedIncomes
       .filter((income) => income.budgetCycleId === cycle.id)
       .reduce((total, income) => total + income.amount * (income.currency === baseCurrency ? 1 : income.expectedRateToBaseCurrency || rates[income.currency] || 1), 0);

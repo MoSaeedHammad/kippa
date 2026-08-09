@@ -1,4 +1,4 @@
-import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
 import type { Account, Category, PendingFinancialMessage } from '@kippa/domain';
 import { CheckCircleIcon, DeleteIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
@@ -11,7 +11,8 @@ export function PendingReviewDialog(props: Props) {
   const transfer = item.kind === 'transfer';
   const crossCurrency = !!item.destinationCurrency && item.destinationCurrency !== item.currency;
   const halfPending = !!item.transferLeg;
-  const canApprove = transfer ? !halfPending && !!accountId && !!destinationAccountId : !!categoryId && !!accountId;
+  const loanPayment = !!item.suggestedLoanId;
+  const canApprove = transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
@@ -26,11 +27,12 @@ export function PendingReviewDialog(props: Props) {
               {transfer && crossCurrency && <> → <Money amount={item.destinationAmount ?? 0} code={item.destinationCurrency ?? item.currency} maxDigits={2} /></>}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.description}</Typography>
+            {loanPayment && <Chip color="success" label={`${item.suggestedLoanName ?? 'Loan'} · installment ${item.suggestedLoanInstallmentNumber}`} sx={{ mt: 1 }} />}
             {halfPending && <Typography variant="fieldHint" color="warning">Waiting for the other leg of this transfer…</Typography>}
           </Box>
           <Divider />
           <Stack spacing={2}>
-            {!transfer && <FormControl fullWidth><InputLabel id="pending-category-label">Category</InputLabel><Select labelId="pending-category-label" value={categoryId} label="Category" onChange={(event) => onCategoryChange(event.target.value)}>{categories.map((category) => <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>)}</Select></FormControl>}
+            {!transfer && !loanPayment && <FormControl fullWidth><InputLabel id="pending-category-label">Category</InputLabel><Select labelId="pending-category-label" value={categoryId} label="Category" onChange={(event) => onCategoryChange(event.target.value)}>{categories.map((category) => <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>)}</Select></FormControl>}
             <FormControl fullWidth><InputLabel id="pending-account-label">{item.kind === 'income' ? 'To account' : 'From account'}</InputLabel><Select labelId="pending-account-label" value={accountId} label={item.kind === 'income' ? 'To account' : 'From account'} onChange={(event) => onAccountChange(event.target.value)}>{accounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select></FormControl>
             {transfer && <FormControl fullWidth><InputLabel id="pending-destination-label">To account</InputLabel><Select labelId="pending-destination-label" value={destinationAccountId} label="To account" onChange={(event) => onDestinationChange(event.target.value)}>{destinationAccounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select></FormControl>}
           </Stack>

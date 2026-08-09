@@ -1,6 +1,7 @@
 import { Box, Card, CardContent, Chip, CircularProgress, Divider, IconButton, List, ListItem, ListItemText, Stack, Tooltip, Typography } from '@mui/material';
 import type { Household } from '@kippa/domain';
-import { LogoutIcon, SwitchAccountIcon } from '@/components/AppIcon';
+import { HomeIcon, LogoutIcon, SwitchAccountIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 
 type Props = {
   activeId: string;
@@ -15,8 +16,7 @@ export function YourHouseholdsCard({ activeId, busy, households, loading, onLeav
   return (
     <Card>
       <CardContent>
-        <Typography variant="h3">Your households</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{households.length} financial {households.length === 1 ? 'space' : 'spaces'} available</Typography>
+        <CardHeading icon={<HomeIcon variant="Bulk" />} title="Your households" subtitle={`${households.length} financial ${households.length === 1 ? 'space' : 'spaces'} available`} />
       </CardContent>
       <Divider />
       {(loading || busy) ? (

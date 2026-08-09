@@ -5,7 +5,7 @@ import { BudgetPulseCard } from '@/features/dashboard/components/BudgetPulseCard
 import { BudgetBreakdownCard } from '@/features/dashboard/components/BudgetBreakdownCard';
 import { MyAccountsCard } from '@/features/dashboard/components/MyAccountsCard';
 import { TransactionsCard } from '@/features/dashboard/components/TransactionsCard';
-import { FinancialOverviewCard } from '@/features/dashboard/components/FinancialOverviewCards';
+import { LoanProgressCard } from '@/features/dashboard/components/LoanProgressCard';
 
 export function Dashboard() {
   return (
@@ -26,7 +26,7 @@ export function Dashboard() {
         }}
       >
         <TotalBalanceHeroCard />
-        <FinancialOverviewCard variant="expense" />
+        <LoanProgressCard />
         <BudgetPulseCard />
       </Box>
 

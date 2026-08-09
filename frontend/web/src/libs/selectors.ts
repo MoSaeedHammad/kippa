@@ -1,5 +1,6 @@
-import { Account, FinanceTransaction, LedgerLine, BudgetCycle, BudgetAllocation, ExpectedIncome, Category, CurrencyCode } from '@kippa/domain';
+import { Account, FinanceTransaction, LedgerLine, BudgetCycle, BudgetAllocation, ExpectedIncome, Category, CurrencyCode, Loan } from '@kippa/domain';
 import { calculateAccountBalances, convertToBaseCurrency, getPostedLedgerLines, getPostedTransactions } from './financeCalculations';
+import { loanHasPaymentDueInCycle } from './loanCalculations';
 
 export interface DashboardData {
   accountBalances: { accountId: string; balance: number }[];
@@ -38,6 +39,7 @@ export interface DashboardData {
     ratio: number;
     status: 'on-track' | 'warning' | 'over';
   }[];
+  loanCommitments: { loanId: string; loanName: string; planned: number; paid: number; currency: CurrencyCode }[];
 }
 
 export function computeDashboard(
@@ -49,7 +51,8 @@ export function computeDashboard(
   allocations: BudgetAllocation[],
   expectedIncomes: ExpectedIncome[],
   displayRates: Record<string, number>,
-  baseCurrency: CurrencyCode
+  baseCurrency: CurrencyCode,
+  loans: Loan[] = [],
 ): DashboardData {
   // 1. Filter out voided transactions
   const activeTxs = getPostedTransactions(transactions);
@@ -113,7 +116,7 @@ export function computeDashboard(
   });
 
   cycleTxsList.forEach(tx => {
-    if (tx.type === 'expense' && tx.categoryId) {
+    if (tx.type === 'expense' && tx.categoryId && !tx.loanId) {
       // Find the ledger line for this expense
       const linesForTx = cycleLines.filter(l => l.transactionId === tx.id);
       linesForTx.forEach(l => {
@@ -149,9 +152,19 @@ export function computeDashboard(
     };
   });
 
-  // 7. Spending totals
-  const actualSpending = categoryStatus.reduce((acc, curr) => acc + curr.spent, 0);
-  const plannedBudget = allocations.reduce((acc, curr) => acc + curr.plannedAmount, 0);
+  const loanCommitments = activeCycle ? loans
+    .filter(loan => loanHasPaymentDueInCycle(loan, activeCycle.startDate, activeCycle.endDate))
+    .map(loan => {
+      const paid = cycleTxsList.filter(transaction => transaction.type === 'expense' && transaction.loanId === loan.id).reduce((sum, transaction) => {
+        return sum + cycleLines.filter(line => line.transactionId === transaction.id && line.signedAmount < 0).reduce((lineSum, line) => lineSum + Math.abs(convertToBaseCurrency(line.signedAmount, line.currency, baseCurrency, displayRates)), 0);
+      }, 0);
+      return { loanId: loan.id, loanName: loan.name, planned: convertToBaseCurrency(loan.installmentAmount, loan.currency, baseCurrency, displayRates), paid, currency: loan.currency };
+    }) : [];
+
+  // 7. Spending totals. Loan commitments count in the cycle plan and cash
+  // outflow, but remain outside category performance.
+  const actualSpending = cycleTxsList.filter(transaction => transaction.type === 'expense').reduce((sum, transaction) => sum + cycleLines.filter(line => line.transactionId === transaction.id && line.signedAmount < 0).reduce((lineSum, line) => lineSum + Math.abs(convertToBaseCurrency(line.signedAmount, line.currency, baseCurrency, displayRates)), 0), 0);
+  const plannedBudget = allocations.reduce((acc, curr) => acc + curr.plannedAmount, 0) + loanCommitments.reduce((sum, commitment) => sum + commitment.planned, 0);
   const progRatio = cycleProgress ? cycleProgress.ratio : 1;
 
   // Only project when at least 15% of the cycle has elapsed to avoid wild early extrapolation.
@@ -276,5 +289,6 @@ export function computeDashboard(
       cashSafe: cashSafeDailySpend,
     },
     categoryStatus,
+    loanCommitments,
   };
 }

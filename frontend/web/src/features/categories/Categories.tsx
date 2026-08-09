@@ -16,6 +16,7 @@ import {
   Grid
 } from '@mui/material';
 import { CategoryIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { 
   useCategories, 
@@ -53,20 +54,18 @@ export function Categories() {
     return (
       <Card>
         <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Box sx={{ width: 34, height: 34, borderRadius: '9px', bgcolor: 'action.hover', color: 'primary.main', display: 'grid', placeItems: 'center' }}>
-                <CategoryIcon fontSize="small" />
-              </Box>
-              <Box>
-                <Typography sx={{ color: 'text.primary', fontSize: 14, fontWeight: 750 }}>{title}</Typography>
-                <Typography sx={{ color: 'text.secondary', fontSize: 11 }}>{items.length} configured</Typography>
-              </Box>
-            </Stack>
-            <Typography sx={{ color: type === 'income' ? 'success.main' : 'text.secondary', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {type}
-            </Typography>
-          </Stack>
+          <Box sx={{ mb: 2 }}>
+            <CardHeading
+              icon={<CategoryIcon variant="Bulk" />}
+              title={title}
+              subtitle={`${items.length} configured`}
+              trailing={
+                <Typography sx={{ color: type === 'income' ? 'success.main' : 'text.secondary', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {type}
+                </Typography>
+              }
+            />
+          </Box>
 
           {isLoading ? (
             <Grid container spacing={1}>

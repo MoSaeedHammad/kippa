@@ -15,6 +15,7 @@ import { useNotifications } from '@/notifications/useNotifications';
 import { IosInstallBanner } from '@/notifications/IosInstallBanner';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { CalendarMonthIcon, CreditCardIcon, GroupAddIcon, NotificationsActiveIcon } from '@/components/AppIcon';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 
 interface NotificationSettingsFormProps {
   dbSettings: NotificationSettings;
@@ -108,10 +109,7 @@ export function NotificationSettingsForm({
           <Card>
             <CardContent>
               <Stack spacing={2.5}>
-                <Box>
-                  <Typography sx={{ fontSize: 16, fontWeight: 800, color: 'text.primary' }}>Alert preferences</Typography>
-                  <Typography sx={{ mt: 0.5, fontSize: 13, color: 'text.secondary' }}>Only enable the updates that help you act.</Typography>
-                </Box>
+                <CardHeading icon={<NotificationsActiveIcon variant="Bulk" />} title="Alert preferences" subtitle="Only enable the updates that help you act." />
                 <Stack divider={<Box sx={{ height: '1px', bgcolor: 'divider' }} />}>
                   {preferences.map(({ key, title, description, Icon }) => (
                     <Stack key={key} direction="row" spacing={1.5} alignItems="center" sx={{ py: 1.5 }}>

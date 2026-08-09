@@ -22,6 +22,11 @@ describe('parseFinancialMessage', () => {
     expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', amount: 225, accountHintLast4: '1001', counterparty: 'person314271@instapay' } });
   });
 
+  it('treats IPN purchase (debit from a merchant) as an ordinary expense', () => {
+    const result = parseFinancialMessage('Your HSBC Account ********1001 was debited with IPN purchase for EGP 124.00 on 09-08-2026 01:39 from Nat Gas with reference c94e683c.');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', amount: 124, accountHintLast4: '1001', currency: 'EGP', counterparty: 'Nat Gas', description: 'Purchase from Nat Gas' } });
+  });
+
   it('treats IPN outward as an ordinary expense', () => {
     const result = parseFinancialMessage('Your HSBC Account ********1001 was debited with IPN outward transfer for EGP 2,856.86 on 30-07-2026 03:47 to PERSON NAME with reference aaeb38db.');
     expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', amount: 2856.86, accountHintLast4: '1001', description: 'Transfer to PERSON NAME' } });
@@ -40,6 +45,14 @@ describe('parseFinancialMessage', () => {
     expect(result).toMatchObject({
       outcome: 'matched',
       parsed: { kind: 'transfer', transferLeg: 'credit', mergeKey: 'phone-banking-transfer', amount: 102200, currency: 'EGP', accountHintLast4: '6001' },
+    });
+  });
+
+  it('parses an HSBC transfer debit without the Phone Banking prefix', () => {
+    const result = parseFinancialMessage('From HSBC: 02AUG26 Transfer from 074-096***-001 EGP 38,112.39- Your available balance is EGP 51,421.02');
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: { kind: 'expense', amount: 38112.39, currency: 'EGP', date: '2026-08-02', accountHintLast4: '6001' },
     });
   });
 

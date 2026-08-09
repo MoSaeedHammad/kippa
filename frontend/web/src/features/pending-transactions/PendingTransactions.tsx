@@ -18,6 +18,7 @@ import { PageHeader } from '@/features/shared/components/PageHeader';
 import { PendingReviewDialog } from './components/PendingReviewDialog';
 import { MessageConnectionDialog } from './components/MessageConnectionDialog';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
+import { CardHeading } from '@/features/shared/components/CardHeading';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { Money } from '@/components/Money';
 import { CheckCircleIcon, HistoryIcon, KeyIcon } from '@/components/AppIcon';
@@ -113,7 +114,7 @@ export function PendingTransactions() {
   };
 
   const approve = async () => {
-    if (!selected || !accountId || (selected.kind !== 'transfer' && !categoryId) || (selected.kind === 'transfer' && !destinationAccountId)) return;
+    if (!selected || !accountId || (selected.kind !== 'transfer' && !selected.suggestedLoanId && !categoryId) || (selected.kind === 'transfer' && !destinationAccountId)) return;
     if (previewMode && selected.id.startsWith('preview-')) {
       enqueueSnackbar('Preview only — no transaction was created', { variant: 'success' });
       setSelected(null);
@@ -125,7 +126,7 @@ export function PendingTransactions() {
       await approveMutation.mutateAsync({
         householdId,
         pendingId: selected.id,
-        categoryId,
+        categoryId: selected.suggestedLoanId ? undefined : categoryId,
         accountId,
         destinationAccountId: selected.kind === 'transfer' ? destinationAccountId : undefined,
       });
@@ -306,8 +307,7 @@ export function PendingTransactions() {
       ) : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Resolved activity</Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25 }}>The latest 100 reviewed messages</Typography>
+            <CardHeading icon={<HistoryIcon variant="Bulk" />} title="Resolved activity" subtitle="The latest 100 reviewed messages" />
           </Box>
           <Divider />
           {resolved.map((item, index) => {

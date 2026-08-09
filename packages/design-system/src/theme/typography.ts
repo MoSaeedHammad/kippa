@@ -16,4 +16,10 @@ export const typography: ThemeOptions['typography'] = {
   assistantPromptLabel: { fontSize: '10px', lineHeight: '14px', fontWeight: 750, letterSpacing: '0.065em', textTransform: 'uppercase' },
   assistantPromptTitle: { fontSize: '15px', lineHeight: '21px', fontWeight: 750, letterSpacing: '-0.015em' },
   assistantMessage: { fontSize: '14px', lineHeight: '24px', fontWeight: 500, letterSpacing: 0 },
+  loanTitle: { display: 'block', fontSize: '17px', lineHeight: '24px', fontWeight: 750, letterSpacing: '-0.015em' },
+  loanMetric: { display: 'block', fontSize: '20px', lineHeight: '28px', fontWeight: 750, letterSpacing: '-0.02em' },
+  loanMetricCompact: { display: 'block', fontSize: '16px', lineHeight: '22px', fontWeight: 750, letterSpacing: '-0.015em' },
+  loanMeta: { display: 'block', fontSize: '12px', lineHeight: '18px', fontWeight: 650, letterSpacing: 0 },
+  cardTitle: { display: 'block', fontSize: '16px', lineHeight: '22px', fontWeight: 800, letterSpacing: '-0.012em' },
+  cardSubtitle: { display: 'block', fontSize: '12px', lineHeight: '18px', fontWeight: 600, letterSpacing: 0 },
 };

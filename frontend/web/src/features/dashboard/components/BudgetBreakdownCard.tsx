@@ -1,6 +1,5 @@
 
-import { Box, Card, CardContent, Skeleton, Stack, Typography, useTheme, LinearProgress, alpha } from '@mui/material';
-import { BarChart } from '@mui/x-charts/BarChart';
+import { Box, Card, CardContent, Chip, Skeleton, Stack, Typography, useTheme, LinearProgress, alpha } from '@mui/material';
 import {
   useAccounts,
   useTransactions,
@@ -9,13 +8,17 @@ import {
   useCycles,
   useDisplayRates,
   useHouseholdBaseCurrency,
-  useBudgetAllocations
+  useBudgetAllocations,
+  useLoans
 } from '@/hooks/useFinance';
 import { computeDashboard } from '@/libs/selectors';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Money } from '@/components/Money';
 import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { BarChartIcon, PaymentsIcon, SavingsIcon } from '@/components/AppIcon';
+import { CategoryIcon } from '@/components/AppIcon';
+import { DashboardCardHeading } from './DashboardCardHeading';
+import { CategoryPaceChart } from './CategoryPaceChart';
 
 const formatMaskedValue = (value: number, mask: (value: string) => string) => mask(Math.round(value).toLocaleString());
 
@@ -38,6 +41,7 @@ export function BudgetBreakdownCard() {
   const activeCycleId = activeCycle?.id;
 
   const { data: allocations, isLoading: allocsLoading } = useBudgetAllocations(householdId, activeCycleId);
+  const { data: loans = [] } = useLoans(householdId);
 
   const isLoading = allocsLoading || !transactions || !ledgerLines;
 
@@ -59,30 +63,20 @@ export function BudgetBreakdownCard() {
     allocations || [],
     [],
     displayRates,
-    baseCurrency
+    baseCurrency,
+    loans,
   );
 
   const totalPlanned = data.categoryStatus.reduce((sum, cat) => sum + cat.planned, 0);
   const totalSpent = data.categoryStatus.reduce((sum, cat) => sum + cat.spent, 0);
   const totalRemaining = totalPlanned - totalSpent;
   const spentPercent = totalPlanned > 0 ? Math.round((totalSpent / totalPlanned) * 100) : 0;
-  const chartCategories = [...data.categoryStatus]
-    .filter(category => category.planned > 0 || category.spent > 0)
-    .sort((a, b) => Math.max(b.planned, b.spent) - Math.max(a.planned, a.spent));
 
   return (
     <Card>
       <CardContent>
         <Stack spacing={3}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-            <Box>
-              <Typography sx={{ fontSize: 16, lineHeight: '22px', fontWeight: 800, color: 'text.primary' }}>Budget Breakdown</Typography>
-              <Typography sx={{ mt: 0.5, fontSize: 12, lineHeight: '16px', fontWeight: 600, color: 'text.secondary' }}>Planned versus actual spending by category</Typography>
-            </Box>
-            {activeCycle && (
-              <Typography sx={{ flexShrink: 0, fontSize: 11, lineHeight: '16px', fontWeight: 700, color: 'text.secondary' }}>{activeCycle.name}</Typography>
-            )}
-          </Stack>
+          <DashboardCardHeading icon={<CategoryIcon variant="Bulk" />} title="Budget Breakdown" subtitle="Planned versus actual spending by category" trailing={activeCycle ? <Chip label={activeCycle.name} /> : undefined} />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             {[
@@ -117,51 +111,15 @@ export function BudgetBreakdownCard() {
             ))}
           </Stack>
 
-          {chartCategories.length > 0 && (
-            <Box sx={{ width: '100%', height: 300, overflow: 'hidden' }}>
-                <BarChart
-                  xAxis={[{
-                    scaleType: 'band',
-                    data: chartCategories.map(category => category.categoryName.length > 11 ? `${category.categoryName.slice(0, 9)}…` : category.categoryName),
-                    disableLine: true,
-                    disableTicks: true,
-                    categoryGapRatio: chartCategories.length > 10 ? 0.42 : 0.28,
-                    barGapRatio: 0,
-                    tickLabelStyle: { fill: theme.palette.text.secondary, fontSize: chartCategories.length > 10 ? 8 : 9 },
-                  }]}
-                  yAxis={[{
-                    disableLine: true,
-                    disableTicks: true,
-                    tickLabelStyle: { fill: theme.palette.text.secondary, fontSize: 9 },
-                    valueFormatter: (value: number) => maskNumber(value.toLocaleString()),
-                  }]}
-                  series={[
-                    {
-                      data: chartCategories.map(category => Math.min(category.spent, Math.max(category.planned, category.spent))),
-                      label: 'Spent',
-                      stack: 'budget',
-                      color: theme.palette.primary.main,
-                      valueFormatter: value => `${value?.toLocaleString() ?? 0} ${baseCurrency}`,
-                    },
-                    {
-                      data: chartCategories.map(category => Math.max(0, category.planned - category.spent)),
-                      label: 'Remaining plan',
-                      stack: 'budget',
-                      color: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.13),
-                      valueFormatter: value => `${value?.toLocaleString() ?? 0} ${baseCurrency}`,
-                    },
-                  ]}
-                  height={300}
-                  margin={{ top: 28, right: 12, bottom: 48, left: 58 }}
-                  grid={{ horizontal: true }}
-                  sx={{
-                    '& .MuiBarElement-root': { rx: 8, ry: 8 },
-                    '& .MuiChartsGrid-line': { stroke: alpha(theme.palette.text.primary, 0.07), strokeDasharray: '3 5' },
-                    '& .MuiChartsLegend-root text': { fill: `${theme.palette.text.secondary} !important`, fontSize: '10px !important' },
-                  }}
-                />
-            </Box>
-          )}
+          {data.loanCommitments.length > 0 && <Stack spacing={1.5}>
+            <Typography variant="sectionLabel">Fixed commitments</Typography>
+            {data.loanCommitments.map(commitment => <Stack key={commitment.loanId} direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={1}>
+              <Stack direction="row" alignItems="center" spacing={1}><PaymentsIcon color="primary" /><Box><Typography variant="body1">{commitment.loanName}</Typography><Typography variant="body2" color="text.secondary">Included in this cycle outside category spending</Typography></Box></Stack>
+              <Chip label={commitment.paid > 0 ? `Paid ${commitment.paid.toLocaleString()} ${baseCurrency}` : `Due ${commitment.planned.toLocaleString()} ${baseCurrency}`} color={commitment.paid >= commitment.planned ? 'success' : 'warning'} />
+            </Stack>)}
+          </Stack>}
+
+          <CategoryPaceChart categories={data.categoryStatus} />
 
           <Stack spacing={1.5} aria-label="Budget breakdown details">
             <Box sx={{ display: { xs: 'none', md: 'grid' }, gridTemplateColumns: 'minmax(140px, 1.4fr) minmax(150px, 1fr) repeat(3, minmax(84px, .7fr))', gap: 2, px: 1 }}>

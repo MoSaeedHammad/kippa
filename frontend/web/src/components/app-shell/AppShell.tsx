@@ -8,6 +8,7 @@ import { SideNav } from '@/components/app-shell/SideNav';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useThemeMode } from '@/hooks/useThemeMode';
+import { useLoanReminders } from '@/features/loans/useLoanReminders';
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
@@ -22,6 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/categories': 'Categories',
   '/notifications': 'Notifications',
   '/ai': 'Kip',
+  '/loans': 'Loans',
 };
 
 export function AppShell() {
@@ -32,6 +34,7 @@ export function AppShell() {
 
   const logoSrc = resolvedMode === 'dark' ? '/icons/icon-dark.svg' : '/icons/icon.svg';
   const pageTitle = PAGE_TITLES[pathname];
+  useLoanReminders();
 
   return (
     <>

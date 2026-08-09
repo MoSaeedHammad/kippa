@@ -42,6 +42,12 @@ declare module '@mui/material/Paper' {
     assistantAction: true;
     assistantChart: true;
     saveFeedbackOverlay: true;
+    loanProgressSegment: true;
+    loanProgressSegmentPaid: true;
+    cardHeaderIcon: true;
+    categoryCapacity: true;
+    categoryCapacitySpent: true;
+    categoryCapacityOver: true;
   }
 }
 
@@ -54,6 +60,12 @@ declare module '@mui/material/styles' {
     assistantPromptLabel: React.CSSProperties;
     assistantPromptTitle: React.CSSProperties;
     assistantMessage: React.CSSProperties;
+    loanTitle: React.CSSProperties;
+    loanMetric: React.CSSProperties;
+    loanMetricCompact: React.CSSProperties;
+    loanMeta: React.CSSProperties;
+    cardTitle: React.CSSProperties;
+    cardSubtitle: React.CSSProperties;
   }
 
   interface TypographyVariantsOptions {
@@ -64,6 +76,12 @@ declare module '@mui/material/styles' {
     assistantPromptLabel?: React.CSSProperties;
     assistantPromptTitle?: React.CSSProperties;
     assistantMessage?: React.CSSProperties;
+    loanTitle?: React.CSSProperties;
+    loanMetric?: React.CSSProperties;
+    loanMetricCompact?: React.CSSProperties;
+    loanMeta?: React.CSSProperties;
+    cardTitle?: React.CSSProperties;
+    cardSubtitle?: React.CSSProperties;
   }
 }
 
@@ -76,5 +94,11 @@ declare module '@mui/material/Typography' {
     assistantPromptLabel: true;
     assistantPromptTitle: true;
     assistantMessage: true;
+    loanTitle: true;
+    loanMetric: true;
+    loanMetricCompact: true;
+    loanMeta: true;
+    cardTitle: true;
+    cardSubtitle: true;
   }
 }

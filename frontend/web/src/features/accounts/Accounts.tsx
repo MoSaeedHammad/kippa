@@ -8,7 +8,8 @@ import {
   Button,
   IconButton,
   Skeleton,
-  Chip
+  Chip,
+  Paper
 } from '@mui/material';
 import { AccountBalanceIcon } from '@/components/AppIcon';
 import { SavingsIcon } from '@/components/AppIcon';
@@ -103,12 +104,12 @@ export function Accounts() {
 
   const getAccountIcon = (type: string) => {
     switch (type) {
-      case 'savings': return <SavingsIcon sx={{ color: 'text.secondary' }} />;
+      case 'savings': return <SavingsIcon variant="Bulk" />;
       case 'cash':
-      case 'wallet': return <PaymentsIcon sx={{ color: 'text.secondary' }} />;
-      case 'credit': return <CreditCardIcon sx={{ color: 'text.secondary' }} />;
+      case 'wallet': return <PaymentsIcon variant="Bulk" />;
+      case 'credit': return <CreditCardIcon variant="Bulk" />;
       case 'running':
-      default: return <AccountBalanceIcon sx={{ color: 'text.secondary' }} />;
+      default: return <AccountBalanceIcon variant="Bulk" />;
     }
   };
 
@@ -175,9 +176,9 @@ export function Accounts() {
                           sx={{ cursor: acc.currency === baseCurrency ? 'default' : 'help' }}
                         >
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-                            <Box sx={{ width: 44, height: 44, borderRadius: 3, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Paper variant="cardHeaderIcon">
                               {getAccountIcon(acc.type)}
-                            </Box>
+                            </Paper>
                             <Box sx={{ minWidth: 0 }}>
                               <Typography noWrap sx={{ fontSize: 16, lineHeight: '22px', fontWeight: 800, color: 'text.primary' }}>{acc.name}</Typography>
                               <Typography sx={{ color: 'text.secondary', fontSize: 12, fontWeight: 600 }}>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Card, CardContent, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, Divider, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import { AccountBalanceIcon } from '@/components/AppIcon';
 import { SavingsIcon } from '@/components/AppIcon';
 import { PaymentsIcon } from '@/components/AppIcon';
@@ -21,6 +21,7 @@ import { Money } from '@/components/Money';
 import type { Card as CardType } from '@kippa/domain';
 import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalanceTooltip';
 import { calculateAccountBalances } from '@/libs/financeCalculations';
+import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function MyAccountsCard() {
   const { householdId } = useAppContext();
@@ -35,12 +36,12 @@ export function MyAccountsCard() {
 
   const getAccountIcon = (type: string) => {
     switch (type) {
-      case 'savings': return <SavingsIcon sx={{ color: 'inherit' }} />;
+      case 'savings': return <SavingsIcon variant="Bulk" />;
       case 'cash':
-      case 'wallet': return <PaymentsIcon sx={{ color: 'inherit' }} />;
-      case 'credit': return <CreditCardIcon sx={{ color: 'inherit' }} />;
+      case 'wallet': return <PaymentsIcon variant="Bulk" />;
+      case 'credit': return <CreditCardIcon variant="Bulk" />;
       case 'running':
-      default: return <AccountBalanceIcon sx={{ color: 'inherit' }} />;
+      default: return <AccountBalanceIcon variant="Bulk" />;
     }
   };
 
@@ -85,17 +86,7 @@ export function MyAccountsCard() {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-              <Box>
-                <Typography sx={{ fontSize: 16, lineHeight: '22px', fontWeight: 800, color: 'text.primary' }}>My Accounts</Typography>
-                <Typography sx={{ mt: 0.5, fontSize: 12, lineHeight: '16px', fontWeight: 600, color: 'text.secondary' }}>
-                  Cash, banks and linked cards
-                </Typography>
-              </Box>
-              <Typography sx={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, color: 'text.secondary' }}>
-                {visibleAccounts.length} accounts
-              </Typography>
-            </Stack>
+            <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title="My Accounts" subtitle="Cash, banks and linked cards" trailing={<Chip label={`${visibleAccounts.length} accounts`} />} />
 
             {visibleAccounts.length === 0 ? (
               <EmptyLayout title="No accounts yet" description="Add an account to start tracking your balances." />
@@ -116,9 +107,9 @@ export function MyAccountsCard() {
                         sx={{ minHeight: 72, py: 1.5, cursor: acc.currency === baseCurrency ? 'default' : 'help' }}
                       >
                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-                          <Box sx={{ width: 42, height: 42, flexShrink: 0, borderRadius: 2, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'primary.main' }}>
+                          <Paper variant="cardHeaderIcon">
                             {getAccountIcon(acc.type)}
-                          </Box>
+                          </Paper>
                           <Box sx={{ minWidth: 0 }}>
                             <Typography noWrap sx={{ fontSize: 13, lineHeight: '20px', fontWeight: 800, color: 'text.primary' }}>{acc.name}</Typography>
                             <Typography sx={{ fontSize: 11, lineHeight: '16px', fontWeight: 600, color: 'text.secondary', textTransform: 'capitalize' }}>{acc.type}</Typography>

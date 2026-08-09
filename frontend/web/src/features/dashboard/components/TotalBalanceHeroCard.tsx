@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, Skeleton, Stack, Typography } from '@mui/material';
 import {
   useAccounts,
   useTransactions,
@@ -16,6 +16,8 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { InfoTooltip } from '@/features/shared/components/InfoTooltip';
 import { metricExplanations } from '@/features/shared/constants/metricExplanations';
 import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalanceTooltip';
+import { AccountBalanceIcon } from '@/components/AppIcon';
+import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function TotalBalanceHeroCard() {
   const { householdId } = useAppContext();
@@ -68,10 +70,7 @@ export function TotalBalanceHeroCard() {
     <Card sx={{ height: 375 }}>
       <CardContent sx={{ height: '100%' }}>
         <Stack sx={{ minHeight: 260 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 750 }}>My balance</Typography>
-            <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>All accounts</Typography>
-          </Stack>
+          <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title="My balance" trailing={<Chip label="All accounts" />} />
 
           <Box sx={{ mt: 3 }}>
             <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>

@@ -11,6 +11,7 @@ export type AccountType = 'running' | 'savings' | 'cash' | 'wallet' | 'credit' |
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
 
 export type BudgetCycleStatus = 'planned' | 'open' | 'closed';
+export type LoanStatus = 'active' | 'paid' | 'paused';
 
 export type UserRole = 'owner' | 'member';
 
@@ -127,6 +128,33 @@ export type FinanceTransaction = {
   // settles on the credit account. Lets the UI show a charge as "paid" as a
   // recorded fact instead of guessing via FIFO amount allocation.
   settlesChargeIds?: string[] | null;
+  /** Present when this expense is a scheduled loan repayment. */
+  loanId?: string | null;
+  loanInstallmentNumber?: number | null;
+};
+
+export type Loan = {
+  id: string;
+  householdId: string;
+  name: string;
+  currency: CurrencyCode;
+  /** Total of all fixed installments. This is the contract cash commitment. */
+  originalTotal: number;
+  installmentAmount: number;
+  totalInstallments: number;
+  /** Historical installments represented as an opening balance, before linked app transactions. */
+  openingPaidInstallments?: number;
+  openingPaidAmount?: number;
+  firstPaymentDate: string;
+  dueDay: number;
+  graceDay?: number | null;
+  paymentAccountId: string;
+  /** Legacy migration link only. New loans are not categories. */
+  categoryId?: string | null;
+  status: LoanStatus;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type LedgerLine = {
@@ -246,6 +274,9 @@ export type AuditAction =
   | 'expected_income_saved'
   | 'reconciliation_created'
   | 'notification_settings_updated'
+  | 'loan_created'
+  | 'loan_updated'
+  | 'loan_payment_recorded'
   | 'household_joined'
   | 'household_left'
   | 'pending_message_discarded'
@@ -280,6 +311,10 @@ export type PendingFinancialMessage = {
   destinationHintLast4?: string | null;
   suggestedAccountId?: string | null;
   suggestedDestinationAccountId?: string | null;
+  /** Strictly matched active loan; approval records the next installment without a category. */
+  suggestedLoanId?: string | null;
+  suggestedLoanName?: string | null;
+  suggestedLoanInstallmentNumber?: number | null;
   /** Amount on the destination leg of a cross-currency transfer (from the credit SMS). */
   destinationAmount?: number | null;
   /** Currency of the destination leg when it differs from `currency`. */

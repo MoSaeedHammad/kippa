@@ -16,6 +16,12 @@ import { HistoryIcon } from '@/components/AppIcon';
 import {
   useCategories,
   useCycles,
+  useTransactions,
+  useLedgerLines,
+  useAllBudgetAllocations,
+  useAllExpectedIncomes,
+  useAccounts,
+  useDisplayRates,
   useBudgetAllocations,
   useCreateCycleMutation,
   useUpdateCycleStatusMutation,
@@ -25,9 +31,10 @@ import { CycleAnalytics } from '@/features/budget-cycles/CycleAnalytics';
 import { useAppContext } from '@/hooks/useAppContext';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { CloseCycleDialog, CreateCycleDialog, type NewCycleValues } from './components/CycleDialogs';
-import { ActiveCycleCard, CycleHistoryCard } from './components/CycleCards';
+import { ActiveCycleCard, CycleHistoryCard, type CycleHistoryStats } from './components/CycleCards';
 import { getDaysInfo } from './cycleUtils';
 import { BudgetAllocationDialog } from './components/BudgetAllocationDialog';
+import { calculateCycleData } from '@/libs/budgetAnalytics';
 
 // ── Main Component ───────────────────────────────────────────────────────
 
@@ -49,11 +56,36 @@ export function BudgetCycles() {
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useCategories(householdId);
   const { data: cycles = [], isLoading: cyclesLoading } = useCycles(householdId);
-  
+
   const activeCycle = cycles.find(c => c.status === 'open') || null;
 
   // Fetch allocations for whichever cycle is being edited
   const { data: dbAllocations = [], isLoading: allocsLoading } = useBudgetAllocations(householdId, editingCycleId ?? undefined);
+
+  // Per-cycle analytics (planned/spent/saved) + transaction counts for history cards.
+  // Mirrors the data already computed in CycleAnalytics so no new queries beyond what
+  // that panel already loads.
+  const { data: transactions = [] } = useTransactions(householdId);
+  const { data: ledgerLines = [] } = useLedgerLines(householdId);
+  const { data: allAllocations = [] } = useAllBudgetAllocations(householdId);
+  const { data: allExpectedIncomes = [] } = useAllExpectedIncomes(householdId);
+  const { data: accounts = [] } = useAccounts(householdId);
+  const foreignCodes = Array.from(new Set(accounts.map(a => a.currency).filter(c => c !== baseCurrency)));
+  const { data: displayRates = {} } = useDisplayRates(baseCurrency, foreignCodes);
+
+  const cycleStatsById = useMemo(() => {
+    const map = new Map<string, CycleHistoryStats>();
+    if (cycles.length === 0) return map;
+    const cycleData = calculateCycleData(cycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, baseCurrency, displayRates);
+    cycleData.forEach((datum) => {
+      map.set(datum.id, {
+        baseCurrency,
+        plannedBudget: datum.plannedBudget,
+        actualExpense: datum.actualExpense,
+      });
+    });
+    return map;
+  }, [cycles, transactions, ledgerLines, allAllocations, allExpectedIncomes, displayRates, baseCurrency]);
 
   // The cycle object being edited
   const editingCycle = editingCycleId ? cycles.find(c => c.id === editingCycleId) : null;
@@ -192,7 +224,7 @@ export function BudgetCycles() {
 
         {/* ── Cycle History Timeline ── */}
         <Box>
-          <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <HistoryIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
             <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '15px' }}>
               Previous Cycles
@@ -207,6 +239,7 @@ export function BudgetCycles() {
                   cycle={cycle}
                   isEditing={editingCycleId === cycle.id}
                   onToggleBudget={() => handleToggleBudgetForCycle(cycle.id)}
+                  stats={cycleStatsById.get(cycle.id)}
                 />
               ))}
             </Box>
