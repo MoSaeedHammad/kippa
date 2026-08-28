@@ -131,6 +131,8 @@ export type FinanceTransaction = {
   /** Present when this expense is a scheduled loan repayment. */
   loanId?: string | null;
   loanInstallmentNumber?: number | null;
+  /** Present when an imported card charge settled in the account currency after conversion from its original currency. */
+  originalCharge?: { currency: CurrencyCode; amount: number; rate: number } | null;
 };
 
 export type Loan = {
@@ -323,6 +325,8 @@ export type PendingFinancialMessage = {
   transferLeg?: 'debit' | 'credit' | null;
   /** Shared key used to correlate matching transfer legs. */
   mergeKey?: string | null;
+  /** True when a credit-card charge arrived in a currency different from the card's parent account; approval must supply the converted amount. */
+  conversionRequired?: boolean | null;
   createdAt: string;
   status: 'pending';
 };
