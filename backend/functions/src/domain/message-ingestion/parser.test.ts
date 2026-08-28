@@ -71,3 +71,20 @@ describe('parseFinancialMessage', () => {
     expect(buildMessagePreview('From HSBC: 27JUL26 ATM Cash Withdrawal from 074-096***-001 EGP 4,000.00- Your available balance is EGP 50,171.95')).not.toMatch(/50,171|074-096/);
   });
 });
+
+describe('parseFinancialMessage — Bank Misr', () => {
+  it('parses an instant transfer in as income with the account hint', () => {
+    const result = parseFinancialMessage('تم اضافة مبلغ 1980EGP       الى حساب رقم xxx7391      فى 30-AUG-2026  عن طريق التحويل اللحظي');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', provider: 'bank-misr', amount: 1980, currency: 'EGP', date: '2026-08-30', accountHintLast4: '7391', accountKind: 'bank', description: 'Instant transfer in' } });
+  });
+
+  it('parses an instant transfer out as an expense with the account hint', () => {
+    const result = parseFinancialMessage('تم تحويل مبلغ 20,000EGP     من حساب رقم xxx7391       فى 30-AUG-2026  عن طريق التحويل اللحظي');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', provider: 'bank-misr', amount: 20000, currency: 'EGP', date: '2026-08-30', accountHintLast4: '7391', description: 'Instant transfer out' } });
+  });
+
+  it('ignores internet-banking login alerts', () => {
+    const result = parseFinancialMessage('تم تسجيل الدخول علي حساب الانترنت البنكي الخاص بكم 27-08-2026 22:59:41');
+    expect(result).toMatchObject({ outcome: 'ignored' });
+  });
+});

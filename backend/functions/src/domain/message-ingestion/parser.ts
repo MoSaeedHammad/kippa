@@ -32,9 +32,10 @@ function amount(value: string): number {
 }
 
 function compactDate(value: string): string {
-  const match = value.toUpperCase().match(/^(\d{2})([A-Z]{3})(\d{2})$/);
+  const match = value.toUpperCase().match(/^(\d{2})-?([A-Z]{3})-?(\d{2})(\d{2})?$/);
   if (!match || !MONTHS[match[2]]) return new Date().toISOString().slice(0, 10);
-  return `20${match[3]}-${MONTHS[match[2]]}-${match[1]}`;
+  const year = match[4] ? match[3] + match[4] : `20${match[3]}`;
+  return `${year}-${MONTHS[match[2]]}-${match[1]}`;
 }
 
 function numericDate(value: string): string {
@@ -71,6 +72,10 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
 
   if (/statement date|minimum amount due|min\.?\s*amt due|total amt due/i.test(text)) {
     return { outcome: 'ignored', reason: 'Card statement alerts do not create transactions.' };
+  }
+
+  if (/تم تسجيل الدخول/.test(text)) {
+    return { outcome: 'ignored', reason: 'Bank login alerts do not create transactions.' };
   }
 
   const provider = /HSBC/i.test(text) ? 'hsbc' : source.toLowerCase();
@@ -226,6 +231,37 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
       title: 'Credit-card payment detected',
       message: `${amount(cardPayment[3])} ${cardPayment[2].toUpperCase()} reached card •${cardPayment[1]}. Match it to the charges you paid.`,
       deepLink: '/accounts',
+    };
+  }
+
+  // ── Bank Misr ────────────────────────────────────────────────────────
+  const misrTransferIn = text.match(
+    /تم اضافة مبلغ\s*([\d,]+(?:\.\d{1,2})?)\s*([A-Z]{3})\s*الى حساب رقم\s*x*(\d{4})\s*فى\s*(\d{2}-[A-Z]{3}-\d{4})\s*عن طريق التحويل اللحظي/i,
+  );
+  if (misrTransferIn) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider: 'bank-misr', accountKind: 'bank',
+        date: compactDate(misrTransferIn[4]), description: 'Instant transfer in',
+        accountHintLast4: misrTransferIn[3],
+        currency: misrTransferIn[2].toUpperCase(), amount: amount(misrTransferIn[1]),
+      },
+    };
+  }
+
+  const misrTransferOut = text.match(
+    /تم تحويل مبلغ\s*([\d,]+(?:\.\d{1,2})?)\s*([A-Z]{3})\s*من حساب رقم\s*x*(\d{4})\s*فى\s*(\d{2}-[A-Z]{3}-\d{4})\s*عن طريق التحويل اللحظي/i,
+  );
+  if (misrTransferOut) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider: 'bank-misr', accountKind: 'bank',
+        date: compactDate(misrTransferOut[4]), description: 'Instant transfer out',
+        accountHintLast4: misrTransferOut[3],
+        currency: misrTransferOut[2].toUpperCase(), amount: amount(misrTransferOut[1]),
+      },
     };
   }
 
