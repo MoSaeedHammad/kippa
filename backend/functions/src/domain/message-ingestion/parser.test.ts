@@ -87,4 +87,29 @@ describe('parseFinancialMessage — Bank Misr', () => {
     const result = parseFinancialMessage('تم تسجيل الدخول علي حساب الانترنت البنكي الخاص بكم 27-08-2026 22:59:41');
     expect(result).toMatchObject({ outcome: 'ignored' });
   });
+
+  it('parses a Bank Misr credit-card charge with a spaced province code', () => {
+    const result = parseFinancialMessage('عميلنا العزيز، شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية *2508، تم خصم مبلغ EGP 10 في WE-Mobile-Pre          Gi بتاريخ 27/08/2026، الرصيدالمتاحEGP 256692.68، للاطلاع  اضغط على bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', provider: 'bank-misr', accountKind: 'credit-card', accountHintLast4: '2508', currency: 'EGP', amount: 10, date: '2026-08-27', description: 'WE-Mobile-Pre', counterparty: 'WE-Mobile-Pre' } });
+  });
+
+  it('parses a Bank Misr credit-card charge with a glued province code', () => {
+    const result = parseFinancialMessage('عميلناالعزيز،شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية*2508 تم خصم مبلغ EGP 800 فيHK STORES              SPبتاريخ 22/08/2026،الرصيدالمتاحEGP 181564.92،وحدالاستخدام الدولي المتاحEGP148696.7للمزيداتصل 19888');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { accountHintLast4: '2508', amount: 800, description: 'HK STORES' } });
+  });
+
+  it('parses a Bank Misr credit-card charge with a > placeholder instead of a province code', () => {
+    const result = parseFinancialMessage('عميلنا العزيز، شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية *2508، تم خصم مبلغ EGP 165 في AmanPF*Shadia Pharmacy  > بتاريخ 25/08/2026، الرصيدالمتاحEGP 177380.92، للاطلاع  اضغط على bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { amount: 165, description: 'AmanPF*Shadia Pharmacy' } });
+  });
+
+  it('parses a USD international Bank Misr credit-card charge', () => {
+    const result = parseFinancialMessage('عميلناالعزيز،شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية*2508 تم خصم مبلغ USD 5.8 فيOPENROUTER, INC        NEبتاريخ 28/08/2026،الرصيدالمتاحEGP 256400.94،وحدالاستخدام الدولي المتاحEGP148404.96للمزيداتصل 19888');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { currency: 'USD', amount: 5.8, date: '2026-08-28', description: 'OPENROUTER, INC' } });
+  });
+
+  it('routes Bank Misr card-payment deposits to the manual card flow', () => {
+    const result = parseFinancialMessage('عميلنا العزيز، تم إيداع EGP 39700.38 بالبطاقة الائتمانية المنتهية بـ ****2508، فى BM-Online يوم  26/08/2026 ، ورصيدكم الحالي 216502.3 EGP، للاطلاع على معاملاتكم اضغط bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'notification', deepLink: '/accounts' });
+  });
 });

@@ -265,5 +265,34 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
     };
   }
 
+  const misrCardCharge = text.match(
+    /بطاقة بنك مصر الائتمانية\s*\*+\s*(\d{4})\s*[،,]?\s*تم خصم مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*في\s*(.+?)\s*(?:[A-Z]{2}|>)?\s*بتاريخ\s*(\d{2}\/\d{2}\/\d{4})/i,
+  );
+  if (misrCardCharge) {
+    const currency = (misrCardCharge[2] ?? misrCardCharge[4] ?? 'EGP').toUpperCase();
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider: 'bank-misr', accountKind: 'credit-card',
+        accountHintLast4: misrCardCharge[1], currency, amount: amount(misrCardCharge[3]),
+        date: numericDate(misrCardCharge[6]),
+        description: cleanParty(misrCardCharge[5]), counterparty: cleanParty(misrCardCharge[5]),
+      },
+    };
+  }
+
+  const misrCardPayment = text.match(
+    /تم إيداع\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*بالبطاقة الائتمانية المنتهية\s*بـ\s*\*+\s*(\d{4})/i,
+  );
+  if (misrCardPayment) {
+    const currency = (misrCardPayment[1] ?? misrCardPayment[3] ?? 'EGP').toUpperCase();
+    return {
+      outcome: 'notification',
+      title: 'Credit-card payment detected',
+      message: `${amount(misrCardPayment[2])} ${currency} reached card •${misrCardPayment[4]}. Match it to the charges you paid.`,
+      deepLink: '/accounts',
+    };
+  }
+
   return { outcome: 'unsupported', reason: 'No supported financial transaction was found.' };
 }
