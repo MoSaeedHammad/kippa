@@ -72,7 +72,7 @@ export function buildMessagePreview(raw: string): string {
     .slice(0, 280);
 }
 
-export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult {
+export function parseFinancialMessage(raw: string, source = 'sms', senderHint = ''): ParseResult {
   const text = raw.replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
   if (!text) return { outcome: 'unsupported', reason: 'Message is empty.' };
 
@@ -84,7 +84,9 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
     return { outcome: 'ignored', reason: 'Bank login alerts do not create transactions.' };
   }
 
-  const provider = /HSBC/i.test(text) ? 'hsbc' : source.toLowerCase();
+  const provider = /HSBC/i.test(text) || /hsbc/i.test(senderHint)
+    ? 'hsbc'
+    : /misr/i.test(senderHint) ? 'bank-misr' : source.toLowerCase();
 
   const debitPurchase = text.match(
     /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+(.+?)\s+Purchase from\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)-/i,

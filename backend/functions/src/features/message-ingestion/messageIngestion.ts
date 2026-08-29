@@ -4,6 +4,9 @@ import { projectID } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, UserProfile } from '@kippa/domain';
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
+import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
+import { extractMessage, extractSender } from '../../domain/message-ingestion/ingestBody.js';
+import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
 
@@ -35,6 +38,11 @@ type IngestionReceipt = {
 
 type IngestBody = {
   message?: unknown;
+  text?: unknown;
+  body?: unknown;
+  sms?: unknown;
+  content?: unknown;
+  sender?: unknown;
   source?: unknown;
   idempotencyKey?: unknown;
   receivedAt?: unknown;
@@ -47,9 +55,9 @@ function sha256(value: string): string {
 }
 
 function cleanSource(value: unknown): string {
-  if (typeof value !== 'string') return 'ios-shortcut';
+  if (typeof value !== 'string') return 'device';
   const cleaned = value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 64);
-  return cleaned || 'ios-shortcut';
+  return cleaned || 'device';
 }
 
 function assertString(value: unknown, label: string, maxLength = 200): string {
@@ -81,7 +89,7 @@ function credentialMatches(credential: IngestionCredential, suppliedSecret: stri
 async function resolveSuggestions(
   householdId: string,
   parsed: ParsedFinancialMessage,
-): Promise<{ accountId?: string; destinationAccountId?: string }> {
+): Promise<{ accountId?: string; destinationAccountId?: string; conversionRequired: boolean }> {
   const db = getFirestore();
   const [accountsSnapshot, cardsSnapshot] = await Promise.all([
     db.collection(`households/${householdId}/accounts`).get(),
@@ -89,36 +97,7 @@ async function resolveSuggestions(
   ]);
   const accounts = accountsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Account);
   const cards = cardsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Card);
-  const activeAccounts = accounts.filter((account) => account.isActive && account.currency === parsed.currency);
-
-  const cardAccount = (hint: string | undefined, kind?: 'credit' | 'debit') => {
-    const card = cards.find((candidate) => candidate.isActive
-      && (!kind || candidate.kind === kind)
-      && !!hint
-      && candidate.last4 === hint);
-    return card?.parentAccountId;
-  };
-
-  let accountId: string | undefined;
-  if (parsed.accountKind === 'credit-card') {
-    accountId = cardAccount(parsed.accountHintLast4, 'credit');
-  } else {
-    accountId = cardAccount(parsed.accountHintLast4, 'debit');
-    if (!accountId) {
-      const running = activeAccounts.filter((account) => account.type === 'running');
-      if (running.length === 1) accountId = running[0].id;
-    }
-  }
-
-  let destinationAccountId: string | undefined;
-  if (parsed.destinationKind === 'cash') {
-    const cashAccounts = activeAccounts.filter((account) => account.type === 'cash');
-    if (cashAccounts.length === 1) destinationAccountId = cashAccounts[0].id;
-  } else if (parsed.destinationKind === 'credit-card') {
-    destinationAccountId = cardAccount(parsed.destinationHintLast4, 'credit');
-  }
-
-  return { accountId, destinationAccountId };
+  return pickSuggestions(accounts, cards, parsed);
 }
 
 function installmentDate(loan: Loan, installmentNumber: number): string {
@@ -267,16 +246,18 @@ export const ingestFinancialMessage = onRequest(
       return;
     }
 
-    const body = (request.body ?? {}) as IngestBody;
-    if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > MAX_MESSAGE_LENGTH) {
+    const message = extractMessage(request.body);
+    if (!message || message.length > MAX_MESSAGE_LENGTH) {
       response.status(400).json({ error: 'invalid_message' });
       return;
     }
-    const source = cleanSource(body.source);
-    const parsedResult = parseFinancialMessage(body.message, source);
-    const dedupeMaterial = typeof body.idempotencyKey === 'string' && body.idempotencyKey.trim()
-      ? body.idempotencyKey.trim().slice(0, 256)
-      : body.message.replace(/\s+/g, ' ').trim();
+    const source = cleanSource((request.body as IngestBody).source);
+    const sender = extractSender(request.body);
+    const parsedResult = parseFinancialMessage(message, source, sender);
+    const idempotencyKey = (request.body as IngestBody).idempotencyKey;
+    const dedupeMaterial = typeof idempotencyKey === 'string' && idempotencyKey.trim()
+      ? idempotencyKey.trim().slice(0, 256)
+      : message.replace(/\s+/g, ' ').trim();
     const receiptId = sha256(`${credentialId}\0${dedupeMaterial}`);
     const receiptRef = db.doc(`messageIngestionReceipts/${receiptId}`);
     const existingReceipt = await receiptRef.get();
@@ -385,7 +366,7 @@ export const ingestFinancialMessage = onRequest(
           suggestedDestinationAccountId: destAccount?.id ?? null,
           transferLeg: null, // fully merged — no longer a half-pending
           mergeKey: null,
-          messagePreview: `${buildMessagePreview(body.message)} · ${half.messagePreview}`,
+          messagePreview: `${buildMessagePreview(message)} · ${half.messagePreview}`,
         };
 
         const batch = db.batch();
@@ -433,7 +414,7 @@ export const ingestFinancialMessage = onRequest(
       date: parsed.date,
       description: loanSuggestion ? `${loanSuggestion.loanName} — installment ${loanSuggestion.installmentNumber}` : parsed.description,
       counterparty: parsed.counterparty ?? null,
-      messagePreview: buildMessagePreview(body.message),
+      messagePreview: buildMessagePreview(message),
       accountHintLast4: parsed.accountHintLast4 ?? null,
       destinationHintLast4: parsed.destinationHintLast4 ?? null,
       suggestedAccountId: suggestions.accountId ?? null,
@@ -441,6 +422,7 @@ export const ingestFinancialMessage = onRequest(
       suggestedLoanId: loanSuggestion?.loanId ?? null,
       suggestedLoanName: loanSuggestion?.loanName ?? null,
       suggestedLoanInstallmentNumber: loanSuggestion?.installmentNumber ?? null,
+      conversionRequired: suggestions.conversionRequired || null,
       destinationAmount: null,
       destinationCurrency: null,
       transferLeg: parsed.transferLeg ?? null,
@@ -490,12 +472,17 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     categoryId?: unknown;
     accountId?: unknown;
     destinationAccountId?: unknown;
+    convertedAmount?: unknown;
   };
   const householdId = assertString(data.householdId, 'householdId');
   const pendingId = assertString(data.pendingId, 'pendingId');
   const categoryId = typeof data.categoryId === 'string' ? data.categoryId.trim() : '';
   const accountId = assertString(data.accountId, 'accountId');
   const destinationAccountId = typeof data.destinationAccountId === 'string' ? data.destinationAccountId.trim() : '';
+  const convertedAmountRaw = (request.data as { convertedAmount?: unknown }).convertedAmount;
+  const convertedAmount = typeof convertedAmountRaw === 'number' && Number.isFinite(convertedAmountRaw) && convertedAmountRaw > 0
+    ? convertedAmountRaw
+    : null;
   const profile = await requireHouseholdMember(uid, householdId);
   const db = getFirestore();
   const pendingRef = db.doc(`households/${householdId}/pendingFinancialMessages/${pendingId}`);
@@ -563,7 +550,19 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
         throw new HttpsError('failed-precondition', `Choose an ${pending.kind} category.`);
       }
     }
-    if (!account?.isActive || account.currency !== pending.currency) {
+    const conversionRequired = !!pending.conversionRequired;
+    if (conversionRequired) {
+      if (convertedAmount == null) {
+        throw new HttpsError('invalid-argument', 'Enter the amount in the card account currency to approve this charge.');
+      }
+      if (!(pending.amount > 0)) {
+        throw new HttpsError('invalid-argument', 'This message has no parsable original amount.');
+      }
+      if (pending.suggestedAccountId && accountId !== pending.suggestedAccountId) {
+        throw new HttpsError('failed-precondition', 'Foreign-currency card charges must be approved against the linked card account.');
+      }
+    }
+    if (!account?.isActive || (!conversionRequired && account.currency !== pending.currency)) {
       throw new HttpsError('failed-precondition', 'Choose an active account in the message currency.');
     }
 
@@ -584,6 +583,8 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     const destAmount = isCrossCurrency ? (pending.destinationAmount ?? pending.amount) : pending.amount;
     const destCurrency = isCrossCurrency ? (pending.destinationCurrency as string) : pending.currency;
 
+    const settled = settledAmounts(pending.amount, pending.currency, conversionRequired ? convertedAmount : null, account!.currency);
+
     const now = new Date().toISOString();
     transaction.create(transactionRef, {
       id: transactionId,
@@ -599,12 +600,13 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       status: 'posted',
       loanId: isLoanPayment ? suggestedLoanId : null,
       loanInstallmentNumber: isLoanPayment ? suggestedInstallment : null,
+      originalCharge: settled.originalCharge,
       importedFrom: { kind: 'financial-message', pendingId, provider: pending.provider, source: pending.source },
     });
     transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
       id: `${transactionId}_source`, householdId, transactionId, accountId,
-      signedAmount: pending.kind === 'income' ? pending.amount : -pending.amount,
-      currency: pending.currency, createdAt: now,
+      signedAmount: pending.kind === 'income' ? settled.amount : -settled.amount,
+      currency: settled.currency, createdAt: now,
     });
     if (pending.kind === 'transfer' && destinationAccount) {
       transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_destination`), {
@@ -636,7 +638,9 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       userPhotoURL: profile.photoURL ?? null,
       action: isLoanPayment ? 'loan_payment_recorded' : 'transaction_created',
       summary: isLoanPayment
-        ? `${profile.displayName || 'User'} approved imported loan installment ${suggestedInstallment}/${loan?.totalInstallments}: ${pending.amount} ${pending.currency}`
+        ? `${profile.displayName || 'User'} approved imported loan installment ${suggestedInstallment}/${loan?.totalInstallments}: ${settled.amount} ${settled.currency}`
+        : settled.originalCharge
+        ? `${profile.displayName || 'User'} approved imported ${pending.kind}: ${settled.amount} ${settled.currency} (from ${pending.amount} ${pending.currency}) - ${pending.description}`
         : isCrossCurrency
         ? `${profile.displayName || 'User'} approved imported transfer: ${pending.amount} ${pending.currency} → ${destAmount} ${destCurrency} - ${pending.description}`
         : `${profile.displayName || 'User'} approved imported ${pending.kind}: ${pending.amount} ${pending.currency} - ${pending.description}`,
