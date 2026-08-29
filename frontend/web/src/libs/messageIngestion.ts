@@ -24,6 +24,7 @@ export const messageIngestionLib = {
     categoryId?: string;
     accountId: string;
     destinationAccountId?: string;
+    convertedAmount?: number;
   }): Promise<string> {
     const callable = httpsCallable<typeof data, { transactionId: string }>(requireFunctions(), 'approvePendingFinancialMessage');
     return (await callable(data)).data.transactionId;
@@ -58,7 +59,7 @@ export const messageIngestionLib = {
       { householdId: string; label: string },
       { credentialId: string; token: string; endpoint: string }
     >(requireFunctions(), 'createMessageIngestionCredential');
-    return (await callable({ householdId, label: 'iPhone Shortcut' })).data;
+    return (await callable({ householdId, label: 'SMS forwarder' })).data;
   },
 
   async listCredentials(householdId: string): Promise<MessageIngestionCredential[]> {

@@ -72,7 +72,7 @@ export function PendingTransactions() {
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
   const { data: resolved = [], isLoading: historyLoading } = useResolvedPendingFinancialMessages(householdId);
   const [tab, setTab] = useState<'review' | 'history'>('review');
-  const { accountId, categoryId, confirmDiscard, destinationAccountId, selected, setAccountId, setCategoryId, setConfirmDiscard, setDestinationAccountId, setSelected } = usePendingReviewState();
+  const { accountId, categoryId, confirmDiscard, convertedAmount, destinationAccountId, selected, setAccountId, setCategoryId, setConfirmDiscard, setConvertedAmount, setDestinationAccountId, setSelected } = usePendingReviewState();
   const [itemStates, setItemStates] = useState<Record<string, PendingItemState>>({});
   const [setupOpen, setSetupOpen] = useState(false);
   const connections = useMessageConnections(householdId);
@@ -89,7 +89,8 @@ export function PendingTransactions() {
 
   const availableAccounts = useMemo(() => {
     if (!selected) return [];
-    return accounts.filter((account) => account.isActive && account.currency === selected.currency);
+    return accounts.filter((account) => account.isActive
+      && (selected.conversionRequired ? account.id === selected.suggestedAccountId : account.currency === selected.currency));
   }, [accounts, selected]);
 
   const availableDestinationAccounts = useMemo(() => {
@@ -105,6 +106,7 @@ export function PendingTransactions() {
     setAccountId(item.suggestedAccountId ?? '');
     setDestinationAccountId(item.suggestedDestinationAccountId ?? '');
     setConfirmDiscard(false);
+    setConvertedAmount('');
   };
 
   const closeReview = () => {
@@ -114,7 +116,10 @@ export function PendingTransactions() {
   };
 
   const approve = async () => {
-    if (!selected || !accountId || (selected.kind !== 'transfer' && !selected.suggestedLoanId && !categoryId) || (selected.kind === 'transfer' && !destinationAccountId)) return;
+    if (!selected || !accountId
+      || (selected.kind !== 'transfer' && !selected.suggestedLoanId && !categoryId)
+      || (selected.kind === 'transfer' && !destinationAccountId)
+      || (selected.conversionRequired && !(Number(convertedAmount) > 0))) return;
     if (previewMode && selected.id.startsWith('preview-')) {
       enqueueSnackbar('Preview only — no transaction was created', { variant: 'success' });
       setSelected(null);
@@ -129,6 +134,7 @@ export function PendingTransactions() {
         categoryId: selected.suggestedLoanId ? undefined : categoryId,
         accountId,
         destinationAccountId: selected.kind === 'transfer' ? destinationAccountId : undefined,
+        convertedAmount: selected.conversionRequired ? Number(convertedAmount) : undefined,
       });
       setItemStates((current) => ({ ...current, [pendingId]: 'settled' }));
       enqueueSnackbar('Transaction approved', { variant: 'success' });
@@ -225,9 +231,9 @@ export function PendingTransactions() {
         <Stack direction="row" spacing={1.5} alignItems="center">
           <KeyIcon sx={{ color: 'primary.main' }} />
           <Box>
-            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>iPhone message connection</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>Bank message connection</Typography>
             <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-              {activeConnections ? `${activeConnections} active secure connection` : 'Connect the HSBC message automation securely'}
+              Connect your bank's SMS automation securely
             </Typography>
           </Box>
         </Stack>
@@ -348,7 +354,7 @@ export function PendingTransactions() {
         </Card>
       ))}
 
-      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} />
+      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} />
 
       <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} open={setupOpen} />
     </Stack>

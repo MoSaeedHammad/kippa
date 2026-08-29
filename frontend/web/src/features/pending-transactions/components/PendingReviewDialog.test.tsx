@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
@@ -75,4 +76,59 @@ it('shows the suggested account and commits a category selection', async () => {
   await user.click(screen.getByRole('option', { name: 'Apple Music' }));
 
   expect(onCategoryChange).toHaveBeenCalledWith(category.id);
+});
+
+const usdItem: PendingFinancialMessage = {
+  ...item,
+  id: 'pending-usd',
+  amount: 5.8,
+  currency: 'USD',
+  description: 'OPENROUTER, INC',
+  conversionRequired: true,
+};
+
+it('requires a converted amount before approving a foreign-currency card charge', async () => {
+  const user = userEvent.setup();
+  const onConvertedAmountChange = vi.fn();
+
+  function Harness() {
+    const [convertedAmount, setConvertedAmount] = useState('');
+    return (
+      <PrivacyModeProvider>
+        <PendingReviewDialog
+          accountId={creditAccount.id}
+          accounts={[creditAccount]}
+          busy={false}
+          categories={[category]}
+          categoryId={category.id}
+          confirmDiscard={false}
+          convertedAmount={convertedAmount}
+          destinationAccountId=""
+          destinationAccounts={[]}
+          item={usdItem}
+          onAccountChange={vi.fn()}
+          onApprove={vi.fn()}
+          onCategoryChange={vi.fn()}
+          onClose={vi.fn()}
+          onConvertedAmountChange={(value) => {
+            setConvertedAmount(value);
+            onConvertedAmountChange(value);
+          }}
+          onDestinationChange={vi.fn()}
+          onDiscard={vi.fn()}
+          state="idle"
+        />
+      </PrivacyModeProvider>
+    );
+  }
+
+  render(<Harness />);
+
+  const approveButton = screen.getByRole('button', { name: 'Approve' });
+  expect(approveButton).toBeDisabled();
+
+  await user.type(screen.getByLabelText('Amount in EGP'), '290');
+
+  expect(onConvertedAmountChange).toHaveBeenCalled();
+  expect(approveButton).toBeEnabled();
 });

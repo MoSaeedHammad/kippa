@@ -1,18 +1,21 @@
-import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import type { Account, Category, PendingFinancialMessage } from '@kippa/domain';
 import { CheckCircleIcon, DeleteIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
 
-type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled' };
+type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; convertedAmount: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onConvertedAmountChange: (value: string) => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled' };
 
 export function PendingReviewDialog(props: Props) {
-  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onDestinationChange, onDiscard, state } = props;
+  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, convertedAmount, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onConvertedAmountChange, onDestinationChange, onDiscard, state } = props;
   if (!item) return null;
   const transfer = item.kind === 'transfer';
   const crossCurrency = !!item.destinationCurrency && item.destinationCurrency !== item.currency;
   const halfPending = !!item.transferLeg;
   const loanPayment = !!item.suggestedLoanId;
-  const canApprove = transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId);
+  const conversionRequired = !!item.conversionRequired;
+  const targetCurrency = accounts.find((account) => account.id === accountId)?.currency ?? item.currency;
+  const canApprove = (transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId))
+    && (!conversionRequired || Number(convertedAmount) > 0);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
@@ -34,6 +37,18 @@ export function PendingReviewDialog(props: Props) {
           <Stack spacing={2}>
             {!transfer && !loanPayment && <FormControl fullWidth><InputLabel id="pending-category-label">Category</InputLabel><Select labelId="pending-category-label" value={categoryId} label="Category" onChange={(event) => onCategoryChange(event.target.value)}>{categories.map((category) => <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>)}</Select></FormControl>}
             <FormControl fullWidth><InputLabel id="pending-account-label">{item.kind === 'income' ? 'To account' : 'From account'}</InputLabel><Select labelId="pending-account-label" value={accountId} label={item.kind === 'income' ? 'To account' : 'From account'} onChange={(event) => onAccountChange(event.target.value)}>{accounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select></FormControl>
+            {conversionRequired && (
+              <TextField
+                fullWidth
+                label={`Amount in ${targetCurrency}`}
+                value={convertedAmount}
+                onChange={(event) => onConvertedAmountChange(event.target.value)}
+                slotProps={{ htmlInput: { inputMode: 'decimal', type: 'number' } }}
+                helperText={Number(convertedAmount) > 0 && item.amount > 0
+                  ? `1 ${item.currency} ≈ ${(Number(convertedAmount) / item.amount).toFixed(3)} ${targetCurrency}`
+                  : `Enter what the bank billed in ${targetCurrency}`}
+              />
+            )}
             {transfer && <FormControl fullWidth><InputLabel id="pending-destination-label">To account</InputLabel><Select labelId="pending-destination-label" value={destinationAccountId} label="To account" onChange={(event) => onDestinationChange(event.target.value)}>{destinationAccounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select></FormControl>}
           </Stack>
           <Divider />
