@@ -80,3 +80,15 @@ Use Firebase Cloud Messaging where appropriate.
 
 For PWA push support, implementation must account for browser/platform restrictions, especially iOS Home Screen web apps.
 
+## Bank SMS ingestion
+
+`ingestFinancialMessage` accepts forwarded SMS from any device:
+
+- `POST https://<region>-<project>.cloudfunctions.net/ingestFinancialMessage`
+- Header: `Authorization: Bearer <credentialId>.<secret>` (create in *Pending → Connect*)
+- Body: JSON `{"text": "<sms>", "sender": "BankMisr"}` — also accepts `message`/`body`/`sms`/`content` field names, form-encoded, or a raw text body. Optional: `source`, `idempotencyKey`, `receivedAt`.
+
+Supported message matrix: HSBC (purchases, ATM, phone-banking transfers, IPN, card payments, statements-ignored) and Bank Misr (instant transfers in/out, credit-card charges EGP+USD, ATM withdrawals, cash deposits, card payments, login alerts-ignored). USD card charges require the EGP amount at approval; the original and rate are stored on the transaction.
+
+Android setup: use any SMS-forwarder app (e.g. Transponder, SMS Forwarder, MacroDroid). Create a rule for senders `BankMisr` and `HSBC` that POSTs `{"text": "%text%", "sender": "%sender%"}` with the Bearer header to the endpoint above.
+
