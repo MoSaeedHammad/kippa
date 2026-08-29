@@ -112,4 +112,14 @@ describe('parseFinancialMessage — Bank Misr', () => {
     const result = parseFinancialMessage('عميلنا العزيز، تم إيداع EGP 39700.38 بالبطاقة الائتمانية المنتهية بـ ****2508، فى BM-Online يوم  26/08/2026 ، ورصيدكم الحالي 216502.3 EGP، للاطلاع على معاملاتكم اضغط bnkmsr.com/online');
     expect(result).toMatchObject({ outcome: 'notification', deepLink: '/accounts' });
   });
+
+  it('parses a machine (ATM) withdrawal on a debit card as a transfer to cash', () => {
+    const result = parseFinancialMessage('شكرًا لاستخدامك بطاقة بنك مصر  ****8616 ، تم الخصم مبلغEGP 15000.00  الة رقم 01880117 BM F.D SMA يوم  25/08 ، الرصيد المتاحEGP 173908.57لمزيد من المعلومات اضغط هنا bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', provider: 'bank-misr', accountHintLast4: '8616', destinationKind: 'cash', currency: 'EGP', amount: 15000, date: `${new Date().getUTCFullYear()}-08-25`, description: 'ATM cash withdrawal' } });
+  });
+
+  it('parses a machine cash deposit as a transfer from cash into the bank account', () => {
+    const result = parseFinancialMessage('شكرًا لاستخدامك بطاقة بنك مصر ****8616، تم إضافة مبلغEGP 9800.00 الة رقم 01880111 BM F.D SMA يوم 25/08، الرصيد المتاح EGP 188908.57لمزيد من المعلومات اضغط هنا bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', provider: 'bank-misr', destinationKind: 'bank', destinationHintLast4: '8616', accountHintLast4: undefined, currency: 'EGP', amount: 9800, description: 'Cash deposit at machine' } });
+  });
 });

@@ -9,7 +9,7 @@ export type ParsedFinancialMessage = {
   accountHintLast4?: string;
   destinationHintLast4?: string;
   accountKind: 'bank' | 'credit-card';
-  destinationKind?: 'cash' | 'credit-card';
+  destinationKind?: 'cash' | 'credit-card' | 'bank';
   /** Marks one leg of a multi-message cross-currency transfer so the ingestion layer can merge them. */
   transferLeg?: 'debit' | 'credit';
   /** Shared key used to correlate matching transfer legs. */
@@ -41,6 +41,12 @@ function compactDate(value: string): string {
 function numericDate(value: string): string {
   const match = value.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : new Date().toISOString().slice(0, 10);
+}
+
+function dayMonthDate(value: string): string {
+  const match = value.match(/^(\d{2})\/(\d{2})$/);
+  if (!match) return new Date().toISOString().slice(0, 10);
+  return `${new Date().getUTCFullYear()}-${match[2]}-${match[1]}`;
 }
 
 function last4(value?: string): string | undefined {
@@ -291,6 +297,43 @@ export function parseFinancialMessage(raw: string, source = 'sms'): ParseResult 
       title: 'Credit-card payment detected',
       message: `${amount(misrCardPayment[2])} ${currency} reached card •${misrCardPayment[4]}. Match it to the charges you paid.`,
       deepLink: '/accounts',
+    };
+  }
+
+  const misrMachineDebit = text.match(
+    /بطاقة بنك مصر\s*\*+\s*(\d{4})\s*[،,]?\s*تم الخصم مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*الة رقم\s*\d+.*?يوم\s*(\d{2}\/\d{2})/i,
+  );
+  if (misrMachineDebit) {
+    const currency = (misrMachineDebit[2] ?? misrMachineDebit[4] ?? 'EGP').toUpperCase();
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
+        accountHintLast4: misrMachineDebit[1],
+        currency, amount: amount(misrMachineDebit[3]),
+        date: dayMonthDate(misrMachineDebit[5]),
+        description: 'ATM cash withdrawal', destinationKind: 'cash',
+      },
+    };
+  }
+
+  const misrMachineCredit = text.match(
+    /بطاقة بنك مصر\s*\*+\s*(\d{4})\s*[،,]?\s*تم إضافة مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*الة رقم\s*\d+.*?يوم\s*(\d{2}\/\d{2})/i,
+  );
+  if (misrMachineCredit) {
+    const currency = (misrMachineCredit[2] ?? misrMachineCredit[4] ?? 'EGP').toUpperCase();
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
+        // Cash deposits credit the bank account tied to the card; there is no
+        // source bank account, so the hint is explicitly absent.
+        destinationHintLast4: misrMachineCredit[1],
+        accountHintLast4: undefined,
+        currency, amount: amount(misrMachineCredit[3]),
+        date: dayMonthDate(misrMachineCredit[5]),
+        description: 'Cash deposit at machine', destinationKind: 'bank',
+      },
     };
   }
 
