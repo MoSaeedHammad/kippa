@@ -65,8 +65,12 @@ function cleanParty(value: string): string {
 export function buildMessagePreview(raw: string): string {
   return raw
     .replace(/\b\d{3}-\d{3}\*{2,}-\d{3}\b/g, '••• account')
-    .replace(/\*{3,}\d{3,4}/g, '••••')
+    .replace(/\*+\d{3,4}/g, '••••')
     .replace(/(?:Your available (?:balance|limit) is|with reference)\s+[^.]+\.?/gi, '')
+    // Bank Misr balance runs (available balance / current balance / international
+    // usage limit), in glued and spaced forms, each through their amount. The
+    // currency is Latin letters and may sit before or after the amount.
+    .replace(/و?\s*(?:ال)?(?:رصيدكم\s*الحالي|رصيد\s*المتاح|حد\s*الاستخدام\s*الدولي\s*المتاح)\s*(?:[A-Z]{3}\s*)?[\d,]+(?:\.\d{1,2})?(?:\s*[A-Z]{3})?/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 280);

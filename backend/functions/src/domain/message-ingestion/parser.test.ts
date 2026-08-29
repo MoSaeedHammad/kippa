@@ -70,6 +70,19 @@ describe('parseFinancialMessage', () => {
   it('does not persist balances or account numbers in previews', () => {
     expect(buildMessagePreview('From HSBC: 27JUL26 ATM Cash Withdrawal from 074-096***-001 EGP 4,000.00- Your available balance is EGP 50,171.95')).not.toMatch(/50,171|074-096/);
   });
+
+  it('masks Arabic balances and single-star card markers in Bank Misr previews', () => {
+    const preview = buildMessagePreview('عميلنا العزيز، شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية *2508، تم خصم مبلغ EGP 10 في WE-Mobile-Pre          Gi بتاريخ 27/08/2026، الرصيدالمتاحEGP 256692.68، للاطلاع  اضغط على bnkmsr.com/online');
+    expect(preview).not.toContain('256692.68');
+    expect(preview).not.toContain('2508');
+    expect(preview).toContain('WE-Mobile-Pre');
+    expect(preview).toContain('27/08/2026');
+  });
+
+  it('masks the Arabic balance in Bank Misr machine-withdrawal previews', () => {
+    const preview = buildMessagePreview('شكرًا لاستخدامك بطاقة بنك مصر ****8616 ، تم الخصم مبلغEGP 15000.00  الة رقم 01880117 BM F.D SMA يوم  25/08 ، الرصيد المتاحEGP 173908.57لمزيد من المعلومات اضغط هنا bnkmsr.com/online');
+    expect(preview).not.toContain('173908.57');
+  });
 });
 
 describe('parseFinancialMessage — Bank Misr', () => {

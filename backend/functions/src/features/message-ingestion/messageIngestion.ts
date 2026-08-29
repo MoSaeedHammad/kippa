@@ -147,8 +147,8 @@ export const createMessageIngestionCredential = onCall(async (request) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
   const householdId = assertString((request.data as { householdId?: unknown })?.householdId, 'householdId');
   const label = typeof (request.data as { label?: unknown })?.label === 'string'
-    ? (request.data as { label: string }).label.trim().slice(0, 80) || 'iPhone Shortcut'
-    : 'iPhone Shortcut';
+    ? (request.data as { label: string }).label.trim().slice(0, 80) || 'SMS forwarder'
+    : 'SMS forwarder';
   await requireHouseholdMember(uid, householdId);
 
   const runtimeProjectId = projectID.value();
