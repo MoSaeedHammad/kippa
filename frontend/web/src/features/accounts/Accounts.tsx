@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -40,8 +41,10 @@ import { Money } from '@/components/Money';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalanceTooltip';
 import { AddAccountCard, EditAccountDialog } from './components/AccountForms';
+import { ReceiptLongIcon } from '@/components/AppIcon';
 
 export function Accounts() {
+  const navigate = useNavigate();
   const { householdId } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -196,6 +199,14 @@ export function Accounts() {
                           </Stack>
                         </Stack>
                         </ForeignBalanceTooltip>
+
+                        <Button
+                          startIcon={<ReceiptLongIcon />}
+                          onClick={() => navigate(`/accounts/statements?account=${encodeURIComponent(acc.id)}`)}
+                          sx={{ alignSelf: 'flex-start' }}
+                        >
+                          View statement
+                        </Button>
 
                         {canHoldCard && (
                           <Box>

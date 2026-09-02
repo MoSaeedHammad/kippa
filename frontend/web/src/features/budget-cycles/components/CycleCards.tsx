@@ -1,6 +1,6 @@
 import { alpha, Box, Button, Card, Chip, LinearProgress, Paper, Stack, Typography, useTheme } from '@mui/material';
 import type { BudgetCycle, CurrencyCode } from '@kippa/domain';
-import { CalendarTodayIcon, CheckCircleOutlineIcon, EditIcon, EventIcon, ExpandLessIcon, TimerIcon } from '@/components/AppIcon';
+import { BarChartIcon, CalendarTodayIcon, CheckCircleOutlineIcon, EditIcon, EventIcon, ExpandLessIcon, TimerIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
 import { formatCycleDate, type CycleDaysInfo } from '../cycleUtils';
 
@@ -68,10 +68,11 @@ type CycleHistoryCardProps = {
   cycle: BudgetCycle;
   isEditing: boolean;
   onToggleBudget: () => void;
+  onViewReport?: () => void;
   stats?: CycleHistoryStats;
 };
 
-export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, stats }: CycleHistoryCardProps) {
+export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, onViewReport, stats }: CycleHistoryCardProps) {
   const theme = useTheme();
   const statusColor = cycle.status === 'open' ? theme.palette.success.main : cycle.status === 'planned' ? theme.palette.primary.main : theme.palette.text.secondary;
   const statusBg = alpha(statusColor, cycle.status === 'closed' ? 0.12 : 0.08);
@@ -122,9 +123,12 @@ export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, stats }: Cy
         </Box>
       )}
 
-      <Button variant="outlined" startIcon={isEditing ? <ExpandLessIcon /> : <EditIcon />} onClick={onToggleBudget} sx={{ mt: 2, alignSelf: 'flex-end', minWidth: 138 }}>
-        {isEditing ? 'Hide Budget' : 'Edit Budget'}
-      </Button>
+      <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 2 }}>
+        {onViewReport && <Button variant="segmented" startIcon={<BarChartIcon />} onClick={onViewReport}>View Report</Button>}
+        <Button variant="outlined" startIcon={isEditing ? <ExpandLessIcon /> : <EditIcon />} onClick={onToggleBudget}>
+          {isEditing ? 'Hide Budget' : 'Edit Budget'}
+        </Button>
+      </Stack>
     </Card>
   );
 }

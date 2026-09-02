@@ -24,7 +24,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <AppProvider>
         <ThemeModeProvider>
           <PrivacyModeProvider>
-            <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+            <SnackbarProvider
+              maxSnack={3}
+              preventDuplicate
+              autoHideDuration={4500}
+              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
               <App />
             </SnackbarProvider>
           </PrivacyModeProvider>
@@ -33,4 +38,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
-

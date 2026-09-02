@@ -14,7 +14,9 @@ const Dashboard = lazy(() => import('@/features/dashboard/Dashboard').then(m => 
 const FastEntry = lazy(() => import('@/features/fast-entry/FastEntry').then(m => ({ default: m.FastEntry })));
 const Reconciliation = lazy(() => import('@/features/reconciliation/Reconciliation').then(m => ({ default: m.Reconciliation })));
 const BudgetCycles = lazy(() => import('@/features/budget-cycles/BudgetCycles').then(m => ({ default: m.BudgetCycles })));
+const CycleReport = lazy(() => import('@/features/budget-cycles/CycleReport').then(m => ({ default: m.CycleReport })));
 const Accounts = lazy(() => import('@/features/accounts/Accounts').then(m => ({ default: m.Accounts })));
+const AccountStatements = lazy(() => import('@/features/accounts/AccountStatements').then(m => ({ default: m.AccountStatements })));
 const Household = lazy(() => import('@/features/household/Household').then(m => ({ default: m.Household })));
 const Categories = lazy(() => import('@/features/categories/Categories').then(m => ({ default: m.Categories })));
 const Notifications = lazy(() => import('@/features/notifications/Notifications').then(m => ({ default: m.Notifications })));
@@ -64,10 +66,12 @@ export default function App() {
               <Route path="entry" element={<FastEntry />} />
               <Route path="reconciliation" element={<Reconciliation />} />
               <Route path="cycles" element={<BudgetCycles />} />
+              <Route path="cycles/report" element={<CycleReport />} />
               <Route path="transactions" element={<TransactionHistory />} />
               <Route path="pending" element={<PendingTransactions />} />
               <Route path="activity" element={<AuditLog />} />
               <Route path="accounts" element={<Accounts />} />
+              <Route path="accounts/statements" element={<AccountStatements />} />
               <Route path="household" element={<Household />} />
               <Route path="categories" element={<Categories />} />
               <Route path="notifications" element={<Notifications />} />

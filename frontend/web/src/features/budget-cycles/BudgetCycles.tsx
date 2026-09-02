@@ -35,10 +35,12 @@ import { ActiveCycleCard, CycleHistoryCard, type CycleHistoryStats } from './com
 import { getDaysInfo } from './cycleUtils';
 import { BudgetAllocationDialog } from './components/BudgetAllocationDialog';
 import { calculateCycleData } from '@/libs/budgetAnalytics';
+import { useNavigate } from 'react-router-dom';
 
 // ── Main Component ───────────────────────────────────────────────────────
 
 export function BudgetCycles() {
+  const navigate = useNavigate();
   const { householdId } = useAppContext();
   const { enqueueSnackbar } = useSnackbar();
   const baseCurrency = useHouseholdBaseCurrency();
@@ -239,6 +241,7 @@ export function BudgetCycles() {
                   cycle={cycle}
                   isEditing={editingCycleId === cycle.id}
                   onToggleBudget={() => handleToggleBudgetForCycle(cycle.id)}
+                  onViewReport={cycle.status === 'closed' ? () => navigate(`/cycles/report?cycle=${encodeURIComponent(cycle.id)}`) : undefined}
                   stats={cycleStatsById.get(cycle.id)}
                 />
               ))}

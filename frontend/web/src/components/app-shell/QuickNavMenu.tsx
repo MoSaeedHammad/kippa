@@ -63,6 +63,7 @@ const SECTIONS = [
     title: 'Money',
     items: [
       { label: 'Bank Accounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
+      { label: 'Statements', icon: <ReceiptLongIcon fontSize="small" />, path: '/accounts/statements' },
       { label: 'Transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
       { label: 'Categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
     ],
@@ -71,6 +72,7 @@ const SECTIONS = [
     title: 'Planning',
     items: [
       { label: 'Budget Cycles', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
+      { label: 'Cycle Reports', icon: <HistoryIcon fontSize="small" />, path: '/cycles/report' },
       { label: 'Loans', icon: <PaymentsIcon fontSize="small" />, path: '/loans' },
       { label: 'Reconciliation', icon: <SyncAltIcon fontSize="small" />, path: '/reconciliation' },
     ],

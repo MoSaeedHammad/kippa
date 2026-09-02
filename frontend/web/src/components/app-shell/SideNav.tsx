@@ -38,6 +38,7 @@ const menuItems: NavItem[] = [
     icon: BarChartIcon,
     children: [
       { label: 'Budget cycles', path: '/cycles' },
+      { label: 'Cycle reports', path: '/cycles/report' },
       { label: 'Categories', path: '/categories' },
     ],
   },
@@ -59,6 +60,7 @@ const menuItems: NavItem[] = [
     icon: AccountBalanceIcon,
     children: [
       { label: 'Account overview', path: '/accounts' },
+      { label: 'Statements', path: '/accounts/statements' },
       { label: 'Reconciliation', path: '/reconciliation' },
     ],
   },
@@ -140,7 +142,7 @@ export function SideNav() {
             }}
           >
             {item.children.map(child => {
-              const childActive = `${pathname}${search}` === child.path;
+              const childActive = child.path.includes('?') ? `${pathname}${search}` === child.path : pathname === child.path;
               return (
                 <ListItemButton
                   key={child.path}
