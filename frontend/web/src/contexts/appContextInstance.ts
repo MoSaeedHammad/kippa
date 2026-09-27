@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { UserProfile, Household, JoinStatus, JoinRequest, HouseholdMember } from '@kippa/domain';
+import { UserProfile, Household, JoinStatus, JoinRequest, HouseholdMember, AccessLevel } from '@kippa/domain';
 
 export interface AppContextType {
   userProfile: UserProfile | null;
@@ -11,8 +11,8 @@ export interface AppContextType {
   logout: () => Promise<void>;
   switchHousehold: (id: string) => Promise<void>;
   createHousehold: (name: string) => Promise<Household>;
-  requestToJoinHousehold: (id: string) => Promise<JoinStatus>;
-  decideJoinRequest: (householdId: string, requesterUid: string, decision: 'approve' | 'reject') => Promise<void>;
+  requestToJoinHousehold: (id: string, requestedLevel?: AccessLevel) => Promise<JoinStatus>;
+  decideJoinRequest: (householdId: string, requesterUid: string, decision: 'approve' | 'reject', accessLevel?: AccessLevel) => Promise<void>;
   leaveHousehold: (id: string) => Promise<void>;
   updateUserProfile: (profile: UserProfile) => void;
   pendingRequests: JoinRequest[];

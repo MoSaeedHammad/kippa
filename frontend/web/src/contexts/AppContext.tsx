@@ -5,7 +5,7 @@ import { authLib } from '@/libs/auth';
 import { ledgerLib } from '@/libs/ledger';
 import { db as firestoreDb } from '@/config/firebase';
 import { detectBaseCurrency } from '@/libs/currencyMeta';
-import { UserProfile, Household, JoinStatus, JoinRequest } from '@kippa/domain';
+import { UserProfile, Household, JoinStatus, JoinRequest, AccessLevel } from '@kippa/domain';
 import { AppContext } from '@/contexts/appContextInstance';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -128,18 +128,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return household;
   };
 
-  const requestToJoinHousehold = async (id: string): Promise<JoinStatus> => {
+  const requestToJoinHousehold = async (id: string, requestedLevel?: AccessLevel): Promise<JoinStatus> => {
     if (!userProfile) throw new Error('Not authenticated');
-    return authLib.requestToJoinHousehold(userProfile.uid, id);
+    return authLib.requestToJoinHousehold(userProfile.uid, id, requestedLevel);
   };
 
   const decideJoinRequest = async (
     householdId: string,
     requesterUid: string,
     decision: 'approve' | 'reject',
+    accessLevel?: AccessLevel,
   ): Promise<void> => {
     if (!userProfile) throw new Error('Not authenticated');
-    await authLib.decideJoinRequest(userProfile.uid, householdId, requesterUid, decision);
+    await authLib.decideJoinRequest(userProfile.uid, householdId, requesterUid, decision, accessLevel);
     // Invalidate any queries that list members/requests.
     queryClient.invalidateQueries({ queryKey: ['householdMembers', householdId] });
   };

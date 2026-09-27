@@ -61,7 +61,7 @@ export function SharedBalancePage() {
     setEditingEntry(null);
   };
 
-  const handlePropose = async (input: Parameters<typeof proposeMutation.mutateAsync>[0]) => {
+  const handlePropose = async (input: Omit<Parameters<typeof proposeMutation.mutateAsync>[0], 'householdId'>) => {
     try {
       await proposeMutation.mutateAsync({ householdId, ...input });
       enqueueSnackbar('Entry sent for approval', { variant: 'success' });

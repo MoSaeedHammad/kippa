@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAppContext } from '@/hooks/useAppContext';
 import {
   AccountBalanceIcon,
   AddIcon,
