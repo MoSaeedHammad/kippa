@@ -45,7 +45,7 @@ export function HouseholdMembersCard({ busy, loading, members, onDecide, onAcces
                     <Avatar src={member.photoURL || undefined} sx={{ width: 36, height: 36, mr: 1.5 }}>{member.displayName?.charAt(0)?.toUpperCase() || '?'}</Avatar>
                     <ListItemText
                       primary={member.displayName}
-                      secondary={member.isOwner ? member.email : `${member.email} · ${ACCESS_LEVEL_LABEL[member.accessLevel]}`}
+                      secondary={member.isOwner ? member.email : `${member.email} · ${ACCESS_LEVEL_LABEL[member.accessLevel ?? 'full']}`}
                     />
                   </ListItem>
                 </Box>
