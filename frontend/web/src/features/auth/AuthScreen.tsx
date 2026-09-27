@@ -22,6 +22,7 @@ import { InfoOutlinedIcon } from '@/components/AppIcon';
 import { KeyIcon } from '@/components/AppIcon';
 import { isFirebaseReady } from '@/libs/auth';
 import { useAppContext } from '@/hooks/useAppContext';
+import { versionLabel } from '@/version';
 import type { AccessLevel } from '@kippa/domain';
 
 function readInviteParams(): { inviteId: string; level: AccessLevel | null } {
@@ -389,6 +390,9 @@ export function AuthScreen() {
           </Box>
           <Typography sx={{ mt: 2.5, textAlign: 'center', color: alpha(theme.palette.primary.contrastText, 0.72), fontSize: 13 }}>
             Secure sign-in · Your financial data stays private
+          </Typography>
+          <Typography sx={{ mt: 1, textAlign: 'center', color: alpha(theme.palette.primary.contrastText, 0.55), fontSize: 11 }}>
+            {versionLabel}
           </Typography>
         </Box>
       </Box>

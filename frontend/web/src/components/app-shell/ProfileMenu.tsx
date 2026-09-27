@@ -23,6 +23,7 @@ import { VisibilityOffIcon } from '@/components/AppIcon';
 import type { ThemeModePref } from '@/contexts/themeModeContext';
 import type { UserProfile, Household } from '@kippa/domain';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
+import { versionDetails, versionLabel } from '@/version';
 
 interface ProfileMenuProps {
   anchorEl: HTMLElement | null;
@@ -320,6 +321,14 @@ export function ProfileMenu({
         <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
         <ListItemText primary="Sign Out" />
       </MenuItem>
+      <Divider />
+      <Box sx={{ px: 2, py: 1 }}>
+        <Tooltip title={versionDetails} placement="top">
+          <Typography variant="fieldHint" color="text.secondary" sx={{ cursor: 'default' }}>
+            {versionLabel}
+          </Typography>
+        </Tooltip>
+      </Box>
     </Menu>
   );
 }

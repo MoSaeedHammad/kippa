@@ -1,4 +1,24 @@
 import { defineConfig, type Plugin } from 'vite';
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+
+function gitInfo(arg: string, fallback: string): string {
+  try {
+    return execSync(`git ${arg}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// Baked into the bundle so a deployed build can be identified by branch,
+// commit, base and build time (see src/version.ts / ProfileMenu footer).
+const buildInfo = {
+  appVersion: JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version as string,
+  gitBranch: gitInfo('rev-parse --abbrev-ref HEAD', 'unknown'),
+  gitCommit: gitInfo('rev-parse --short HEAD', 'unknown'),
+  gitBase: gitInfo('merge-base main HEAD', ''),
+  buildTime: new Date().toISOString().replace(/[:.]/g, '-'),
+};
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
@@ -42,6 +62,13 @@ function localPreviewAuth(): Plugin {
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(buildInfo.appVersion),
+    __GIT_BRANCH__: JSON.stringify(buildInfo.gitBranch),
+    __GIT_COMMIT__: JSON.stringify(buildInfo.gitCommit),
+    __GIT_BASE__: JSON.stringify(buildInfo.gitBase ? gitInfo(`rev-parse --short ${buildInfo.gitBase}`, 'unknown') : 'unknown'),
+    __BUILD_TIME__: JSON.stringify(buildInfo.buildTime),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -7,6 +7,9 @@ import App from '@/App';
 import { AppProvider } from '@/contexts/AppContext';
 import { ThemeModeProvider } from '@/hooks/ThemeModeProvider';
 import { PrivacyModeProvider } from '@/hooks/PrivacyModeProvider';
+import { versionDetails } from '@/version';
+
+console.info(`[kippa] ${versionDetails.split('\n').join(' · ')}`);
 
 const queryClient = new QueryClient({
   defaultOptions: {
