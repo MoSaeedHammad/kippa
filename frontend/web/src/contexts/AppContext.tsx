@@ -51,7 +51,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const info = await ledgerLib.getHouseholdInfo(id);
           return info || {
             id,
-            name: `Household (${id})`,
+            name: `Shared account (${id})`,
             baseCurrency: detectBaseCurrency(),
             createdAt: '',
             createdBy: ''

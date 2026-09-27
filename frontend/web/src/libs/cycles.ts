@@ -50,7 +50,7 @@ export const cyclesLib = {
     auditUser?: AuditUser
   ): Promise<void> {
     const cycle = await dbLib.getDoc(householdId, 'budgetCycles', cycleId) as BudgetCycle | null;
-    if (!cycle) throw new Error('Budget cycle not found');
+    if (!cycle) throw new Error('Statement not found');
 
     const updated: BudgetCycle = {
       ...cycle,

@@ -182,7 +182,7 @@ export function ProfileMenu({
             </Typography>
           </Box>
           {householdId && (
-            <Tooltip title="Copy Household ID">
+            <Tooltip title="Copy Invite ID">
               <IconButton
                 size="small"
                 onClick={(e) => {

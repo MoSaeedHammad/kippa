@@ -6,9 +6,15 @@ import type {
   NotificationSettings,
   JoinRequest,
   JoinStatus,
+  AccessLevel,
 } from '@kippa/domain';
+import { accessLevelOf } from '../../libs/householdAccess.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
+
+function parseAccessLevel(raw: unknown): AccessLevel | null {
+  return raw === 'full' || raw === 'sharedBalanceOnly' ? raw : null;
+}
 
 /**
  * Creates a new household and makes the caller the owner.
@@ -88,12 +94,15 @@ export const requestToJoinHousehold = onCall(async (req) => {
   }
 
   const now = Date.now();
+  // The invite link may suggest an access level; the owner still decides at approval.
+  const requestedLevel = parseAccessLevel((req.data as { requestedLevel?: unknown })?.requestedLevel);
   const joinRequest: JoinRequest = {
     uid,
     displayName: user?.displayName ?? 'Unknown',
     email: user?.email ?? '',
     photoURL: user?.photoURL ?? null,
     status: 'pending',
+    requestedLevel,
     requestedAt: now,
   };
   await db.doc(`households/${householdId}/joinRequests/${uid}`).set(joinRequest);
@@ -118,6 +127,7 @@ export const decideJoinRequest = onCall(async (req) => {
     householdId?: string;
     requesterUid?: string;
     decision?: 'approve' | 'reject';
+    accessLevel?: unknown;
   };
   const householdId = data?.householdId?.trim();
   const requesterUid = data?.requesterUid?.trim();
@@ -159,9 +169,15 @@ export const decideJoinRequest = onCall(async (req) => {
 
   const now = Date.now();
   if (decision === 'approve') {
+    // The owner picks the access level at approval; fall back to the level the
+    // joiner suggested, then to full (legacy behavior).
+    const accessLevel = parseAccessLevel(data.accessLevel)
+      ?? parseAccessLevel(existing.requestedLevel)
+      ?? 'full';
     const batch = db.batch();
     batch.update(db.doc(`users/${requesterUid}`), {
       householdIds: FieldValue.arrayUnion(householdId),
+      [`memberships.${householdId}`]: { accessLevel },
     });
     batch.set(
       db.doc(`households/${householdId}/joinRequests/${requesterUid}`),
@@ -231,6 +247,7 @@ export const listHouseholdMembers = onCall(async (req) => {
         email: u.email ?? '',
         photoURL: u.photoURL ?? null,
         isOwner: d.id === ownerUid,
+        accessLevel: accessLevelOf(u, householdId),
       };
     }),
   };

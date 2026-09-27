@@ -129,10 +129,10 @@ export function BudgetCycles() {
       });
 
       setOpenCreateDialog(false);
-      enqueueSnackbar('Budget cycle created.', { variant: 'success' });
+      enqueueSnackbar('Statement created.', { variant: 'success' });
       return true;
     } catch (err: any) {
-      enqueueSnackbar(err?.message || 'Failed to create budget cycle.', { variant: 'error' });
+      enqueueSnackbar(err?.message || 'Failed to create statement.', { variant: 'error' });
       return false;
     }
   };
@@ -144,7 +144,7 @@ export function BudgetCycles() {
       setOpenCloseDialog(false);
       return true;
     } catch (err: any) {
-      enqueueSnackbar(err?.message || 'Failed to close budget cycle.', { variant: 'error' });
+      enqueueSnackbar(err?.message || 'Failed to close statement.', { variant: 'error' });
       return false;
     }
   };
@@ -177,7 +177,7 @@ export function BudgetCycles() {
       <Stack spacing={3}>
         {/* Page Header */}
         <PageHeader
-          title="Budget Cycles"
+          title="Statements"
           subtitle={activeCycle
             ? `Active: ${activeCycle.name}`
             : 'No active cycle'
@@ -212,7 +212,7 @@ export function BudgetCycles() {
               />
             ) : (
               <EmptyLayout
-                title="No active budget cycle"
+                title="No active statement"
                 description="Create a new cycle to start allocating budgets and tracking expenses."
                 action={<Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenCreateDialog(true)}>New Cycle</Button>}
               />
@@ -246,7 +246,7 @@ export function BudgetCycles() {
           ) : (
             <EmptyLayout
               title="No previous cycles found"
-              description="Closed budget cycles will be listed here."
+              description="Closed statements will be listed here."
             />
           )}
         </Box>

@@ -51,7 +51,7 @@ export function CreateCycleDialog({ busy, onClose, onCreate, open }: CreateCycle
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Create Budget Cycle</DialogTitle>
+      <DialogTitle>Create Statement</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
           <TextField
@@ -108,7 +108,7 @@ export function CloseCycleDialog({ busy, onClose, onConfirm, open }: CloseCycleD
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle color="error">Close Budget Cycle</DialogTitle>
+      <DialogTitle color="error">Close Statement</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Closing the active cycle compiles balances, carries forward leftovers and locks edits. Confirm items below:

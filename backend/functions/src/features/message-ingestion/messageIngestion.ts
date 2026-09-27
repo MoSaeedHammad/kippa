@@ -2,13 +2,15 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { projectID } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
-import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, UserProfile } from '@kippa/domain';
+import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, SharedBalanceEntry, UserProfile } from '@kippa/domain';
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
 import { extractMessage, extractSender } from '../../domain/message-ingestion/ingestBody.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
+import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
+import { getAccessLevel, getMemberProfileInHousehold, requireFullHouseholdMember, requireHouseholdMember } from '../../libs/householdAccess.js';
 
 type IngestionCredential = {
   id: string;
@@ -68,16 +70,6 @@ function assertString(value: unknown, label: string, maxLength = 200): string {
     throw new HttpsError('invalid-argument', `${label} is too long.`);
   }
   return value.trim();
-}
-
-async function requireHouseholdMember(uid: string, householdId: string): Promise<UserProfile> {
-  const snapshot = await getFirestore().doc(`users/${uid}`).get();
-  const profile = snapshot.data() as UserProfile | undefined;
-  const memberships = profile?.householdIds ?? (profile?.householdId ? [profile.householdId] : []);
-  if (!profile || !memberships.includes(householdId)) {
-    throw new HttpsError('permission-denied', 'You are not a member of this household.');
-  }
-  return profile;
 }
 
 function credentialMatches(credential: IngestionCredential, suppliedSecret: string): boolean {
@@ -149,7 +141,7 @@ export const createMessageIngestionCredential = onCall(async (request) => {
   const label = typeof (request.data as { label?: unknown })?.label === 'string'
     ? (request.data as { label: string }).label.trim().slice(0, 80) || 'SMS forwarder'
     : 'SMS forwarder';
-  await requireHouseholdMember(uid, householdId);
+  await requireFullHouseholdMember(uid, householdId);
 
   const runtimeProjectId = projectID.value();
   if (!runtimeProjectId) {
@@ -246,6 +238,13 @@ export const ingestFinancialMessage = onRequest(
       return;
     }
 
+    // Shared-balance-only members must never receive bank-message pushes;
+    // the pending message itself stays visible to full members only.
+    const ownerIsFullMember = (await getAccessLevel(credential.ownerUid, credential.householdId)) === 'full';
+    const ownerTokensIfFull = async () => ownerIsFullMember
+      ? await getTokensForUsers(credential.householdId, [credential.ownerUid])
+      : [];
+
     const message = extractMessage(request.body);
     if (!message || message.length > MAX_MESSAGE_LENGTH) {
       response.status(400).json({ error: 'invalid_message' });
@@ -281,7 +280,7 @@ export const ingestFinancialMessage = onRequest(
         receiptRef.set(receipt),
         credentialRef.set({ lastUsedAt: now }, { merge: true }),
       ]);
-      const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
+      const tokens = await ownerTokensIfFull();
       await sendToMany(
         credential.householdId,
         tokens,
@@ -384,7 +383,7 @@ export const ingestFinancialMessage = onRequest(
         batch.set(credentialRef, { lastUsedAt: now }, { merge: true });
         await batch.commit();
 
-        const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
+        const tokens = await ownerTokensIfFull();
         await sendToMany(
           credential.householdId,
           tokens,
@@ -444,7 +443,7 @@ export const ingestFinancialMessage = onRequest(
     batch.create(db.doc(`households/${credential.householdId}/pendingFinancialMessages/${receiptId}`), pending);
     batch.set(credentialRef, { lastUsedAt: now }, { merge: true });
     await batch.commit();
-    const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
+    const tokens = await ownerTokensIfFull();
     const notifBody = pending.transferLeg
       ? `${pending.amount} ${pending.currency} · ${pending.description} (waiting for the other leg)`
       : `${pending.amount} ${pending.currency} · ${pending.description}`;
@@ -473,6 +472,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     accountId?: unknown;
     destinationAccountId?: unknown;
     convertedAmount?: unknown;
+    sharedBalanceTag?: unknown;
   };
   const householdId = assertString(data.householdId, 'householdId');
   const pendingId = assertString(data.pendingId, 'pendingId');
@@ -483,11 +483,31 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
   const convertedAmount = typeof convertedAmountRaw === 'number' && Number.isFinite(convertedAmountRaw) && convertedAmountRaw > 0
     ? convertedAmountRaw
     : null;
-  const profile = await requireHouseholdMember(uid, householdId);
+  // Optional IOU/split tag: creates a pending shared-balance entry for the
+  // counterparty to approve right after the message itself is posted.
+  const sharedBalanceTag = data.sharedBalanceTag == null
+    ? null
+    : (() => {
+      const result = validateSharedBalanceTag(data.sharedBalanceTag);
+      if (!result.ok) throw new HttpsError('invalid-argument', result.error);
+      return result.value;
+    })();
+  const profile = await requireFullHouseholdMember(uid, householdId);
   const db = getFirestore();
   const pendingRef = db.doc(`households/${householdId}/pendingFinancialMessages/${pendingId}`);
   const transactionId = `import_${pendingId}`;
   const transactionRef = db.doc(`households/${householdId}/transactions/${transactionId}`);
+
+  let tagCounterpartyProfile: UserProfile | null = null;
+  if (sharedBalanceTag) {
+    if (sharedBalanceTag.counterpartyUid === uid) {
+      throw new HttpsError('invalid-argument', 'The counterparty must be another member.');
+    }
+    tagCounterpartyProfile = await getMemberProfileInHousehold(sharedBalanceTag.counterpartyUid, householdId);
+    if (!tagCounterpartyProfile) {
+      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this shared account.');
+    }
+  }
 
   const cycleSnapshot = await db.collection(`households/${householdId}/budgetCycles`)
     .where('status', '==', 'open').limit(1).get();
@@ -630,6 +650,55 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       transaction.create(paymentLockRef, { loanId: suggestedLoanId, installmentNumber: suggestedInstallment, transactionId, createdAt: now });
       if (suggestedInstallment >= loan.totalInstallments) transaction.set(loanRef!, { status: 'paid', updatedAt: now }, { merge: true });
     }
+    if (sharedBalanceTag && tagCounterpartyProfile) {
+      // The debt lives in the message currency (the original real-world amount).
+      const tagAmount = sharedBalanceTag.kind === 'split' ? sharedBalanceTag.amount as number : pending.amount;
+      if (!(tagAmount > 0) || tagAmount > pending.amount) {
+        throw new HttpsError('failed-precondition', 'The shared-balance share must be within the message amount.');
+      }
+      // An expense/transfer means the approver paid; on income the counterparty did.
+      const fromUid = pending.kind === 'income' ? sharedBalanceTag.counterpartyUid : uid;
+      const toUid = pending.kind === 'income' ? uid : sharedBalanceTag.counterpartyUid;
+      const approverName = profile.displayName || 'User';
+      const counterpartyName = tagCounterpartyProfile.displayName || 'User';
+      const entryId = `sb_${pendingId}`;
+      const entry: SharedBalanceEntry = {
+        id: entryId,
+        householdId,
+        kind: sharedBalanceTag.kind,
+        fromUid,
+        toUid,
+        amount: tagAmount,
+        currency: pending.currency,
+        typeLabel: 'Bank transfer',
+        note: pending.description,
+        date: pending.date,
+        status: 'pending',
+        createdBy: uid,
+        revision: 1,
+        mirrorTransactionId: null,
+        sourceTransactionId: transactionId,
+        sourcePendingId: pendingId,
+        fromDisplayName: fromUid === uid ? approverName : counterpartyName,
+        toDisplayName: toUid === uid ? approverName : counterpartyName,
+        createdAt: now,
+        updatedAt: now,
+        decidedAt: null,
+        decidedBy: null,
+      };
+      transaction.create(db.doc(`households/${householdId}/sharedBalanceEntries/${entryId}`), entry);
+      transaction.create(db.doc(`households/${householdId}/auditLog/sb_proposed_${entryId}`), {
+        id: `sb_proposed_${entryId}`,
+        householdId,
+        userId: uid,
+        userDisplayName: approverName,
+        userPhotoURL: profile.photoURL ?? null,
+        action: 'shared_balance_proposed',
+        summary: `${approverName} tagged ${pending.kind} as ${sharedBalanceTag.kind}: ${tagAmount} ${pending.currency} — waiting for approval`,
+        details: { entryId, kind: sharedBalanceTag.kind, amount: tagAmount, currency: pending.currency, sourceTransactionId: transactionId },
+        createdAt: now,
+      });
+    }
     transaction.create(db.doc(`households/${householdId}/auditLog/${transactionId}`), {
       id: transactionId,
       householdId,
@@ -659,6 +728,27 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     transaction.delete(pendingRef);
   });
 
+  if (sharedBalanceTag && tagCounterpartyProfile) {
+    try {
+      const tokens = await getTokensForUsers(householdId, [sharedBalanceTag.counterpartyUid]);
+      if (tokens.length > 0) {
+        await sendToMany(
+          householdId,
+          tokens,
+          buildMessagePayload({
+            type: 'shared_balance',
+            title: sharedBalanceTag.kind === 'split' ? 'Approve split' : 'Approve IOU',
+            body: `${profile.displayName || 'User'} tagged a bank message for you — review it in Shared balance.`,
+            householdId,
+            deepLink: '/shared-balance',
+          }),
+        );
+      }
+    } catch (error) {
+      console.error('Could not send shared-balance tag notification', error);
+    }
+  }
+
   return { transactionId };
 });
 
@@ -667,7 +757,7 @@ export const discardPendingFinancialMessage = onCall(async (request) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
   const householdId = assertString((request.data as { householdId?: unknown })?.householdId, 'householdId');
   const pendingId = assertString((request.data as { pendingId?: unknown })?.pendingId, 'pendingId');
-  const profile = await requireHouseholdMember(uid, householdId);
+  const profile = await requireFullHouseholdMember(uid, householdId);
   const db = getFirestore();
   const pendingRef = db.doc(`households/${householdId}/pendingFinancialMessages/${pendingId}`);
   await db.runTransaction(async (transaction) => {
@@ -705,7 +795,7 @@ export const listResolvedPendingFinancialMessages = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
   const householdId = assertString((request.data as { householdId?: unknown })?.householdId, 'householdId');
-  await requireHouseholdMember(uid, householdId);
+  await requireFullHouseholdMember(uid, householdId);
 
   const snapshot = await getFirestore().collection('messageIngestionReceipts')
     .where('householdId', '==', householdId)
@@ -736,7 +826,7 @@ export const restoreDiscardedPendingFinancialMessage = onCall(async (request) =>
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
   const householdId = assertString((request.data as { householdId?: unknown })?.householdId, 'householdId');
   const pendingId = assertString((request.data as { pendingId?: unknown })?.pendingId, 'pendingId');
-  const profile = await requireHouseholdMember(uid, householdId);
+  const profile = await requireFullHouseholdMember(uid, householdId);
   const db = getFirestore();
   const receiptRef = db.doc(`messageIngestionReceipts/${pendingId}`);
   const pendingRef = db.doc(`households/${householdId}/pendingFinancialMessages/${pendingId}`);

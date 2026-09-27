@@ -206,7 +206,7 @@ export function FastEntry() {
     return (
       <Box sx={{ py: 0.5, width: '100%', maxWidth: 520, mx: 'auto' }}>
         <Stack spacing={3}>
-          <PageHeader title="Fast Entry" subtitle="Log expenses, income & transfers" />
+          <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
           <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: '20px' }} />
           <Skeleton variant="rectangular" width="100%" height={250} sx={{ borderRadius: '20px' }} />
         </Stack>
@@ -218,7 +218,7 @@ export function FastEntry() {
     return (
       <Box sx={{ py: 0.5, width: '100%', maxWidth: 520, mx: 'auto' }}>
         <Stack spacing={3}>
-          <PageHeader title="Fast Entry" subtitle="Log expenses, income & transfers" />
+          <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
           <EmptyLayout
             title="No accounts to log entries against"
             description="Add an account first — you'll need one to record expenses, income, or transfers."
@@ -233,7 +233,7 @@ export function FastEntry() {
       <Stack spacing={2.5}>
         
         {/* Page Header */}
-        <PageHeader title="Fast Entry" subtitle="Log expenses, income & transfers" />
+        <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
 
         {/* Keep the entry type visible before the amount on every viewport. */}
         <Stack direction="row" spacing={1} sx={{ width: '100%' }}>

@@ -295,7 +295,7 @@ export function useDisplayRates(
 
 /**
  * Resolve the active household's base currency.
- * Falls back to detectBaseCurrency() when the household info isn't loaded yet
+ * Falls back to detectBaseCurrency() when the shared account info isn't loaded yet
  * or is missing the field (legacy data).
  */
 export function useHouseholdBaseCurrency(): CurrencyCode {
@@ -322,7 +322,7 @@ export function useUserHouseholds(userProfile: UserProfile | null) {
           const info = await ledgerLib.getHouseholdInfo(id);
           return info || {
             id,
-            name: `Household (${id})`,
+            name: `Shared account (${id})`,
             baseCurrency: detectBaseCurrency(),
             createdAt: '',
             createdBy: ''
@@ -348,7 +348,7 @@ export function useAuditLog(householdId: string, count: number = 200) {
     });
     return () => {
       unsubscribe();
-      // Reset when the household/count subscription changes so we don't show
+      // Reset when the shared account/count subscription changes so we don't show
       // stale entries from a previous household while the new one loads.
       setEntries([]);
       setIsLoading(true);
@@ -434,7 +434,13 @@ function useLastSeen(householdId: string, userId: string | undefined): [string, 
  * the current user last viewed the activity feed. Used to drive the bell badge.
  */
 export function useUnreadActivityCount(householdId: string, userId: string | undefined) {
-  const { entries } = useAuditLog(householdId, 200);
+  const { userProfile, householdId: activeHouseholdId } = useAppContext();
+  // Shared-balance-only members cannot read the audit log (rules), so the
+  // activity bell stays silent for them instead of erroring on subscribe.
+  const isScoped = userProfile
+    ? (userProfile.memberships?.[activeHouseholdId]?.accessLevel ?? 'full') !== 'full'
+    : false;
+  const { entries } = useAuditLog(isScoped ? '' : householdId, 200);
   const [lastSeen, setLastSeen] = useLastSeen(householdId, userId);
 
   const unreadCount = entries.filter(

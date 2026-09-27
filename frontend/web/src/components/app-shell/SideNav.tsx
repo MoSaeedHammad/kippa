@@ -37,7 +37,7 @@ const menuItems: NavItem[] = [
     path: '/cycles',
     icon: BarChartIcon,
     children: [
-      { label: 'Budget cycles', path: '/cycles' },
+      { label: 'Statements', path: '/cycles' },
       { label: 'Categories', path: '/categories' },
     ],
   },
@@ -47,7 +47,8 @@ const menuItems: NavItem[] = [
     icon: ReceiptLongIcon,
     children: [
       { label: 'All transactions', path: '/transactions' },
-      { label: 'Pending review', path: '/pending' },
+      { label: 'Approvals', path: '/pending' },
+      { label: 'Shared balance', path: '/shared-balance' },
       { label: 'Expenses', path: '/transactions?type=expense' },
       { label: 'Income', path: '/transactions?type=income' },
       { label: 'Transfers', path: '/transactions?type=transfer' },
@@ -63,7 +64,7 @@ const menuItems: NavItem[] = [
     ],
   },
   {
-    label: 'Household',
+    label: 'Shared account',
     path: '/household',
     icon: HomeIcon,
     children: [
@@ -74,18 +75,38 @@ const menuItems: NavItem[] = [
   },
 ];
 
+// Shared-balance-only members can only see the shared balance, their
+// notifications, and the shared account page — everything else is blocked by
+// the security rules anyway, so showing it would only lead to errors.
+const sharedBalanceOnlyMenu: NavItem[] = [
+  { label: 'Shared balance', path: '/shared-balance', icon: ReceiptLongIcon },
+  {
+    label: 'Shared account',
+    path: '/household',
+    icon: HomeIcon,
+    children: [
+      { label: 'Members & settings', path: '/household' },
+      { label: 'Notifications', path: '/notifications' },
+    ],
+  },
+];
+
 export function SideNav() {
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
+  const { userProfile, householdId } = useAppContext();
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ Transactions: true });
+
+  const accessLevel = userProfile?.memberships?.[householdId]?.accessLevel ?? 'full';
+  const navForLevel = accessLevel === 'sharedBalanceOnly' ? sharedBalanceOnlyMenu : menuItems;
 
   const matches = (item: NavItem) => {
     const normalizedQuery = query.trim().toLowerCase();
     return item.label.toLowerCase().includes(normalizedQuery)
       || item.children?.some(child => child.label.toLowerCase().includes(normalizedQuery));
   };
-  const visibleMenu = menuItems.filter(matches);
+  const visibleMenu = navForLevel.filter(matches);
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;

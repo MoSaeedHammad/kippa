@@ -86,7 +86,7 @@ export function NotificationSettingsForm({
     },
     {
       key: 'joinRequestEnabled' as const,
-      title: 'Household join requests',
+      title: 'Join requests',
       description: 'Stay informed when a member requests access or a decision is made.',
       Icon: GroupAddIcon,
     },

@@ -13,6 +13,20 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.householdId == householdId;
     }
 
+    // Access level of the caller in the given household, as set by the owner
+    // at join approval (updateMemberAccessLevel / decideJoinRequest callables).
+    // A missing memberships entry means 'full' so legacy members are unaffected.
+    function householdAccessLevel(householdId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        .get('memberships', {})
+        .get(householdId, {})
+        .get('accessLevel', 'full');
+    }
+
+    function isFullHouseholdMember(householdId) {
+      return isHouseholdMember(householdId) && householdAccessLevel(householdId) == 'full';
+    }
+
     function isHouseholdOwner(householdId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/households/$(householdId)/householdInfo/info)
@@ -41,18 +55,18 @@ service cloud.firestore {
       // AI messages are user-authored nested records. The parent conversation
       // stores createdBy; members may only access their own conversation threads.
       match /aiConversations/{conversationId} {
-        allow read: if isHouseholdMember(householdId)
+        allow read: if isFullHouseholdMember(householdId)
           && resource.data.createdBy == request.auth.uid;
-        allow create: if isHouseholdMember(householdId)
+        allow create: if isFullHouseholdMember(householdId)
           && request.resource.data.createdBy == request.auth.uid;
-        allow update, delete: if isHouseholdMember(householdId)
+        allow update, delete: if isFullHouseholdMember(householdId)
           && resource.data.createdBy == request.auth.uid
           && request.resource.data.createdBy == resource.data.createdBy;
 
         match /messages/{messageId} {
-          allow read: if isHouseholdMember(householdId)
+          allow read: if isFullHouseholdMember(householdId)
             && get(/databases/$(database)/documents/households/$(householdId)/aiConversations/$(conversationId)).data.createdBy == request.auth.uid;
-          allow create: if isHouseholdMember(householdId)
+          allow create: if isFullHouseholdMember(householdId)
             && get(/databases/$(database)/documents/households/$(householdId)/aiConversations/$(conversationId)).data.createdBy == request.auth.uid
             && request.resource.data.conversationId == conversationId;
           allow update, delete: if false;
@@ -60,12 +74,12 @@ service cloud.firestore {
       }
 
       match /aiMemories/{memoryId} {
-        allow create: if isHouseholdMember(householdId)
+        allow create: if isFullHouseholdMember(householdId)
           && request.resource.data.id == memoryId
           && isValidAiMemory(request.resource.data, householdId);
-        allow read: if isHouseholdMember(householdId)
+        allow read: if isFullHouseholdMember(householdId)
           && request.auth.uid == resource.data.userId;
-        allow update: if isHouseholdMember(householdId)
+        allow update: if isFullHouseholdMember(householdId)
           && request.auth.uid == resource.data.userId
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.householdId == resource.data.householdId
@@ -75,21 +89,45 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Default: only members can read/write household data.
-      // (notificationSettings, fcmTokens, accounts, transactions, etc.)
+      // Pending bank messages expose account hints and balances — full
+      // members only. Approval is server-only (Admin SDK bypasses rules).
       match /pendingFinancialMessages/{pendingId} {
+        allow read: if isFullHouseholdMember(householdId);
+        allow write: if false;
+      }
+
+      // Shared-balance entries are the only financial collection visible to
+      // shared-balance-only members. All writes go through callables so the
+      // counterparty-approval rule is enforced server-side.
+      match /sharedBalanceEntries/{entryId} {
         allow read: if isHouseholdMember(householdId);
         allow write: if false;
       }
 
-      // Direct household collections remain member-managed. Pending message
-      // records are excluded because approval must be server-validated and
-      // ledger writes must be atomic.
+      // Any member (any access level) registers push tokens and own settings,
+      // otherwise shared-balance-only members could never be notified.
+      match /fcmTokens/{tokenId} {
+        allow read, write: if isHouseholdMember(householdId);
+      }
+
+      match /notificationSettings/{settingUid} {
+        allow read, write: if isHouseholdMember(householdId)
+          && settingUid == request.auth.uid;
+      }
+
+      // Default: full members can read/write household data. Shared-balance
+      // only members are excluded because accounts, transactions, cards,
+      // statements and the audit log all reveal private financial details.
+      // (pendingFinancialMessages, sharedBalanceEntries, fcmTokens,
+      // notificationSettings, aiConversations and aiMemories are matched above.)
       match /{collectionName}/{documentId} {
         allow read, write: if collectionName != 'pendingFinancialMessages'
+          && collectionName != 'sharedBalanceEntries'
+          && collectionName != 'fcmTokens'
+          && collectionName != 'notificationSettings'
           && collectionName != 'aiConversations'
           && collectionName != 'aiMemories'
-          && isHouseholdMember(householdId);
+          && isFullHouseholdMember(householdId);
       }
 
       // Household info is readable by any signed-in user (so joiners can
@@ -128,21 +166,24 @@ service cloud.firestore {
 
     match /users/{userId} {
       // A user can read their own doc, create it on signup, and edit profile
-      // fields. The membership fields (householdId, householdIds, role) are
-      // server-only — EXCEPT the client may switch its active householdId to a
-      // value that is already present in its own householdIds. householdIds
-      // and role are immutable from the client (they must equal their prior
-      // server value).
+      // fields. The membership fields (householdId, householdIds, role and
+      // memberships — which carries the access level the rules trust) are
+      // server-only — EXCEPT the client may switch its active householdId to
+      // a value already present in its own householdIds. householdIds, role
+      // and memberships are immutable from the client (they must equal their
+      // prior server value); only the owner-side callables can change them.
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn()
         && request.auth.uid == userId
         && request.resource.data.householdId == null
         && (!('householdIds' in request.resource.data)
-            || request.resource.data.householdIds.size() == 0);
+            || request.resource.data.householdIds.size() == 0)
+        && !('memberships' in request.resource.data);
       allow update: if isSignedIn()
         && request.auth.uid == userId
         && request.resource.data.role == resource.data.role
         && request.resource.data.householdIds == resource.data.householdIds
+        && request.resource.data.get('memberships', {}) == resource.data.get('memberships', {})
         && (
           request.resource.data.householdId == resource.data.householdId
           || (

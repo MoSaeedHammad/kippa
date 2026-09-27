@@ -21,3 +21,8 @@ export {
   revokeMessageIngestionCredential,
   restoreDiscardedPendingFinancialMessage,
 } from './features/message-ingestion/messageIngestion.js';
+export {
+  proposeSharedBalanceEntry,
+  decideSharedBalanceEntry,
+  updateMemberAccessLevel,
+} from './features/shared-balance/sharedBalance.js';

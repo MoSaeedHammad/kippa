@@ -26,12 +26,25 @@ const RIGHT_ITEMS: NavItem[] = [
   { label: 'Pending', path: '/pending', icon: <HourglassEmptyIcon /> },
 ];
 
+// Shared-balance-only members are blocked from everything else by the rules.
+const SCOPED_LEFT_ITEMS: NavItem[] = [
+  { label: 'Shared balance', path: '/shared-balance', icon: <ReceiptLongIcon /> },
+];
+const SCOPED_RIGHT_ITEMS: NavItem[] = [
+  { label: 'Shared account', path: '/household', icon: <DashboardIcon /> },
+];
+
 export function BottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const theme = useTheme();
-  const { householdId } = useAppContext();
-  const { data: pendingItems = [] } = usePendingFinancialMessages(householdId);
+  const { userProfile, householdId } = useAppContext();
+  const isScoped = userProfile
+    ? (userProfile.memberships?.[householdId]?.accessLevel ?? 'full') !== 'full'
+    : false;
+  const leftItems = isScoped ? SCOPED_LEFT_ITEMS : LEFT_ITEMS;
+  const rightItems = isScoped ? SCOPED_RIGHT_ITEMS : RIGHT_ITEMS;
+  const { data: pendingItems = [] } = usePendingFinancialMessages(isScoped ? '' : householdId);
   const pendingCount = pendingItems.length;
 
   const isEntry = pathname === '/entry';
@@ -61,7 +74,7 @@ export function BottomNav() {
         type="button"
         key={item.path}
         onClick={() => navigate(item.path)}
-        aria-label={isPending && pendingCount > 0 ? `Pending review, ${pendingCount} items require attention` : item.label}
+        aria-label={isPending && pendingCount > 0 ? `Approvals, ${pendingCount} items require attention` : item.label}
         sx={{
           border: 0,
           bgcolor: 'transparent',
@@ -210,7 +223,7 @@ export function BottomNav() {
           gap: '4px',
         }}
       >
-        {LEFT_ITEMS.map(renderNavItem)}
+        {leftItems.map(renderNavItem)}
 
         {/* Center + button — emerges from the notch in the pill above */}
         <Box
@@ -245,7 +258,7 @@ export function BottomNav() {
           <AddIcon />
         </Box>
 
-        {RIGHT_ITEMS.map(renderNavItem)}
+        {rightItems.map(renderNavItem)}
       </Box>
     </Paper>
   );

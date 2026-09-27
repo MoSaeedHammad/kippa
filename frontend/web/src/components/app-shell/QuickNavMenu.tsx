@@ -7,7 +7,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AccountBalanceIcon } from '@/components/AppIcon';
+import { useAppContext } from '@/hooks/useAppContext';
+import { AccountBalanceIcon,
+  SwapHorizIcon,
+} from '@/components/AppIcon';
 import { ReceiptLongIcon } from '@/components/AppIcon';
 import { CategoryIcon } from '@/components/AppIcon';
 import { HomeIcon } from '@/components/AppIcon';
@@ -58,28 +61,52 @@ const sectionHeaderStyle = {
   display: 'block',
 };
 
-const SECTIONS = [
+const FULL_SECTIONS = [
   {
     title: 'Money',
     items: [
       { label: 'Bank Accounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
       { label: 'Transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
+      { label: "Shared balance", icon: <SwapHorizIcon fontSize="small" />, path: "/shared-balance" },
       { label: 'Categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
     ],
   },
   {
     title: 'Planning',
     items: [
-      { label: 'Budget Cycles', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
+      { label: 'Statements', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
       { label: 'Loans', icon: <PaymentsIcon fontSize="small" />, path: '/loans' },
       { label: 'Reconciliation', icon: <SyncAltIcon fontSize="small" />, path: '/reconciliation' },
     ],
   },
   {
-    title: 'Household',
+    title: 'Shared account',
     items: [
-      { label: 'Household Sharing', icon: <HomeIcon fontSize="small" />, path: '/household' },
+      { label: 'Shared account', icon: <HomeIcon fontSize="small" />, path: '/household' },
       { label: 'Activity Log', icon: <HistoryIcon fontSize="small" />, path: '/activity' },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
+      { label: 'Reminders & Alerts', icon: <NotificationsActiveIcon fontSize="small" />, path: '/notifications' },
+    ],
+  },
+] as const;
+
+// Shared-balance-only members are blocked from accounts, transactions and
+// activity by the rules — surface only what they can actually use.
+const SCOPED_SECTIONS = [
+  {
+    title: 'Money',
+    items: [
+      { label: 'Shared balance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
+    ],
+  },
+  {
+    title: 'Shared account',
+    items: [
+      { label: 'Shared account', icon: <HomeIcon fontSize="small" />, path: '/household' },
     ],
   },
   {
@@ -99,6 +126,11 @@ const SECTIONS = [
 export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { userProfile, householdId } = useAppContext();
+  const isScoped = userProfile
+    ? (userProfile.memberships?.[householdId]?.accessLevel ?? 'full') !== 'full'
+    : false;
+  const sections = isScoped ? SCOPED_SECTIONS : FULL_SECTIONS;
 
   const go = (path: string) => {
     onClose();
@@ -143,7 +175,7 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
       transformOrigin={{ horizontal: 'right', vertical: 'top' }}
       anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
     >
-      {SECTIONS.map((section, sIdx) => (
+      {sections.map((section, sIdx) => (
         <div key={section.title}>
           {sIdx > 0 && <Divider sx={{ my: 1 }} />}
           <Typography variant="body2" sx={sectionHeaderStyle}>

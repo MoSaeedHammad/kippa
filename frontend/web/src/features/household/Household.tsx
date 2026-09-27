@@ -24,10 +24,11 @@ import { CheckIcon } from '@/components/AppIcon';
 import { HourglassEmptyIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 
-import type { Household, CurrencyCode } from '@kippa/domain';
+import type { Household, CurrencyCode, AccessLevel } from '@kippa/domain';
 import { useAppContext } from '@/hooks/useAppContext';
 import { CurrencySelect } from '@/features/shared/components/CurrencySelect';
 import { ledgerLib } from '@/libs/ledger';
+import { authLib } from '@/libs/auth';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { HouseholdMembersCard } from './components/HouseholdMembersCard';
 import { YourHouseholdsCard } from './components/YourHouseholdsCard';
@@ -62,13 +63,21 @@ export function Household() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyInviteLink = (id: string) => {
+    const link = `${window.location.origin}/join?invite=${id}`;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    enqueueSnackbar('Invite link copied — they sign in and request to join; you pick their access level.', { variant: 'success' });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleSwitchHousehold = async (id: string) => {
     setActionLoading(true);
     try {
       await switchHousehold(id);
-      enqueueSnackbar('Switched to household successfully!', { variant: 'success' });
+      enqueueSnackbar('Switched shared account successfully!', { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to switch household.', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to switch shared account.', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -76,16 +85,16 @@ export function Household() {
 
   const handleCreateHousehold = async () => {
     if (!newHouseholdName.trim()) {
-      enqueueSnackbar('Please enter a household name', { variant: 'warning' });
+      enqueueSnackbar('Please enter a shared account name', { variant: 'warning' });
       return;
     }
     setActionLoading(true);
     try {
       const newHh = await createHousehold(newHouseholdName.trim());
       setNewHouseholdName('');
-      enqueueSnackbar(`Household "${newHh.name}" created and set as active!`, { variant: 'success' });
+      enqueueSnackbar(`Shared account "${newHh.name}" created and set as active!`, { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create household', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to create shared account', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -93,13 +102,13 @@ export function Household() {
 
   const handleJoinHousehold = async () => {
     if (!householdIdToJoin.trim()) {
-      enqueueSnackbar('Please enter a valid household ID', { variant: 'warning' });
+      enqueueSnackbar('Please enter a valid Invite ID', { variant: 'warning' });
       return;
     }
     setActionLoading(true);
     try {
       await requestToJoinHousehold(householdIdToJoin.trim());
-      enqueueSnackbar('Request sent — the household owner will review it.', { variant: 'success' });
+      enqueueSnackbar('Request sent — the shared account owner will review it.', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
     } finally {
@@ -107,14 +116,33 @@ export function Household() {
     }
   };
 
-  const handleDecide = async (requesterUid: string, decision: 'approve' | 'reject') => {
+  const handleDecide = async (requesterUid: string, decision: 'approve' | 'reject', accessLevel?: AccessLevel) => {
     if (!householdId) return;
     setActionLoading(true);
     try {
-      await decideJoinRequest(householdId, requesterUid, decision);
+      await decideJoinRequest(householdId, requesterUid, decision, accessLevel);
       enqueueSnackbar(decision === 'approve' ? 'Request approved.' : 'Request rejected.', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message || 'Failed to decide request.', { variant: 'error' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAccessLevelChange = async (memberUid: string, accessLevel: AccessLevel) => {
+    if (!householdId) return;
+    setActionLoading(true);
+    try {
+      await authLib.updateMemberAccessLevel(householdId, memberUid, accessLevel);
+      await queryClient.invalidateQueries({ queryKey: ['householdMembers', householdId] });
+      enqueueSnackbar(
+        accessLevel === 'full'
+          ? 'Member now has full access.'
+          : 'Member now sees the shared balance only.',
+        { variant: 'success' },
+      );
+    } catch (err: any) {
+      enqueueSnackbar(err.message || 'Failed to update access level.', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -133,10 +161,10 @@ export function Household() {
     setActionLoading(true);
     try {
       await leaveHousehold(householdToLeave.id);
-      enqueueSnackbar(`Successfully left household "${householdToLeave.name}"`, { variant: 'success' });
+      enqueueSnackbar(`Successfully left shared account "${householdToLeave.name}"`, { variant: 'success' });
       handleCloseLeaveConfirm();
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to leave household.', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to leave shared account.', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -167,7 +195,7 @@ export function Household() {
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="Household"
+          title="Shared account"
           subtitle="Manage members, shared access, and the financial spaces you belong to."
         />
 
@@ -214,11 +242,35 @@ export function Household() {
 
                 <Stack spacing={1}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Household Invite ID
+                    Invite
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px' }}>
-                    Share this ID with someone. They'll request to join, and you approve them.
+                    Share the link and they request to join — you pick what they can see (Full or Shared balance only) when approving.
                   </Typography>
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    justifyContent: 'space-between',
+                    bgcolor: 'surfaceContainerLow',
+                    p: 1.5,
+                    borderRadius: 3,
+                    gap: 1
+                  }}>
+                    <Typography variant="caption" sx={{ color: 'text.primary', py: 0.5 }}>
+                      Invite link — opens the join screen with this shared account pre-filled
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={() => handleCopyInviteLink(activeHh.id)}
+                      startIcon={copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+                      color={copied ? "success" : "primary"}
+                      sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
+                    >
+                      {copied ? "Copied!" : "Copy invite link"}
+                    </Button>
+                  </Box>
                   <Box sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
@@ -236,11 +288,11 @@ export function Household() {
                       size="small"
                       variant="text"
                       onClick={() => handleCopyHouseholdId(activeHh.id)}
-                      startIcon={copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
-                      color={copied ? "success" : "primary"}
+                      startIcon={<ContentCopyIcon fontSize="small" />}
+                      color="primary"
                       sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
                     >
-                      {copied ? "Copied!" : "Copy ID"}
+                      Copy ID
                     </Button>
                   </Box>
                 </Stack>
@@ -253,7 +305,14 @@ export function Household() {
         {/* Members + Pending Requests — owner only */}
         {isOwner && (
           <Grid size={{ xs: 12, lg: 5 }}>
-          <HouseholdMembersCard busy={actionLoading} loading={isMembersLoading} members={householdMembers} onDecide={handleDecide} requests={pendingRequests} />
+          <HouseholdMembersCard
+            busy={actionLoading}
+            loading={isMembersLoading}
+            members={householdMembers}
+            onDecide={handleDecide}
+            onAccessLevelChange={handleAccessLevelChange}
+            requests={pendingRequests}
+          />
           </Grid>
         )}
         </Grid>
@@ -268,7 +327,7 @@ export function Household() {
           <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardContent>
-                  <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Manage households" subtitle="Create a new space or join someone else's." />
+                  <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Manage shared accounts" subtitle="Create a new space or join someone else's." />
                 </CardContent>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)} variant="fullWidth">
@@ -280,12 +339,12 @@ export function Household() {
                   {tabValue === 0 && (
                     <Stack spacing={2}>
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                        Start a separate, brand-new household database container.
+                        Start a separate, brand-new shared account database container.
                       </Typography>
                       <TextField
                         fullWidth
-                        label="Household Name"
-                        placeholder="e.g. Vacation Household"
+                        label="Shared account name"
+                        placeholder="e.g. Vacation home"
                         value={newHouseholdName}
                         onChange={e => setNewHouseholdName(e.target.value)}
                         disabled={actionLoading}
@@ -303,7 +362,7 @@ export function Household() {
                   {tabValue === 1 && (
                     <Stack spacing={2}>
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                        Paste an Invite ID from a household owner. They'll need to approve your request before you can join.
+                        Paste an Invite ID from a shared account owner. They'll need to approve your request before you can join.
                       </Typography>
                       <TextField
                         fullWidth
@@ -354,7 +413,7 @@ export function Household() {
                             onClick={() => handleSwitchHousehold(householdIdToJoin.trim())}
                             disabled={householdIdToJoin.trim() === householdId || actionLoading}
                           >
-                            Switch to this Household
+                            Switch to this shared account
                           </Button>
                         </>
                       )}

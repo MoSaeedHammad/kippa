@@ -17,7 +17,7 @@ export function ActivityBell({ onClick }: ActivityBellProps) {
   const { userProfile, householdId } = useAppContext();
   const { unreadCount } = useUnreadActivityCount(householdId, userProfile?.uid);
 
-  const label = unreadCount > 0 ? `${unreadCount} new household activit${unreadCount === 1 ? 'y' : 'ies'}` : 'No new activity';
+  const label = unreadCount > 0 ? `${unreadCount} new shared account activit${unreadCount === 1 ? 'y' : 'ies'}` : 'No new activity';
 
   return (
     <Tooltip title={label}>

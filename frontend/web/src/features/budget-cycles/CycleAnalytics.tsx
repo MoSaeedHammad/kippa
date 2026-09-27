@@ -150,7 +150,7 @@ export function CycleAnalytics() {
             <Box sx={{ width: '100%', overflowX: 'auto', pb: 0.5 }}>
               <Box
                 role="img"
-                aria-label={`Cash flow by budget cycle in ${baseCurrency}`}
+                aria-label={`Cash flow by statement in ${baseCurrency}`}
                 sx={{
                   height: { xs: 300, sm: 360 },
                   minWidth: Math.max(620, cycleData.length * 92),

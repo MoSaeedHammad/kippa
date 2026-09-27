@@ -25,6 +25,8 @@ export const messageIngestionLib = {
     accountId: string;
     destinationAccountId?: string;
     convertedAmount?: number;
+    /** Optional IOU/split tag creating a pending shared-balance entry on approval. */
+    sharedBalanceTag?: { kind: 'iou' | 'split'; counterpartyUid: string; amount?: number };
   }): Promise<string> {
     const callable = httpsCallable<typeof data, { transactionId: string }>(requireFunctions(), 'approvePendingFinancialMessage');
     return (await callable(data)).data.transactionId;

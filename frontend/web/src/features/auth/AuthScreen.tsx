@@ -22,6 +22,14 @@ import { InfoOutlinedIcon } from '@/components/AppIcon';
 import { KeyIcon } from '@/components/AppIcon';
 import { isFirebaseReady } from '@/libs/auth';
 import { useAppContext } from '@/hooks/useAppContext';
+import type { AccessLevel } from '@kippa/domain';
+
+function readInviteParams(): { inviteId: string; level: AccessLevel | null } {
+  const params = new URLSearchParams(window.location.search);
+  const inviteId = params.get('invite')?.trim() ?? '';
+  const level = params.get('level') === 'shared' ? 'sharedBalanceOnly' : null;
+  return { inviteId, level };
+}
 
 export function AuthScreen() {
   const theme = useTheme();
@@ -37,9 +45,11 @@ export function AuthScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  // Household setup state
+  // Shared account setup state. An invite link (/join?invite=<id>) pre-fills
+  // the join field so the invitee only signs in and requests to join.
   const [householdName, setHouseholdName] = useState('');
-  const [householdIdToJoin, setHouseholdIdToJoin] = useState('');
+  const [{ inviteId: inviteFromLink, level: levelFromLink }] = useState(readInviteParams);
+  const [householdIdToJoin, setHouseholdIdToJoin] = useState(inviteFromLink);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -55,14 +65,14 @@ export function AuthScreen() {
   const handleCreateHousehold = async () => {
     if (!userProfile) return;
     if (!householdName.trim()) {
-      enqueueSnackbar('Please enter a household name', { variant: 'warning' });
+      enqueueSnackbar('Please enter a shared account name', { variant: 'warning' });
       return;
     }
     setLoading(true);
     try {
       await createHousehold(householdName.trim());
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create household', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to create shared account', { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -71,13 +81,13 @@ export function AuthScreen() {
   const handleJoinHousehold = async () => {
     if (!userProfile) return;
     if (!householdIdToJoin.trim()) {
-      enqueueSnackbar('Please enter a valid household ID', { variant: 'warning' });
+      enqueueSnackbar('Please enter a valid Invite ID', { variant: 'warning' });
       return;
     }
     setLoading(true);
     try {
-      await requestToJoinHousehold(householdIdToJoin.trim());
-      enqueueSnackbar('Request sent — the household owner will review it.', { variant: 'success' });
+      await requestToJoinHousehold(householdIdToJoin.trim(), levelFromLink ?? undefined);
+      enqueueSnackbar('Request sent — the shared account owner will review it.', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
     } finally {
@@ -129,7 +139,7 @@ export function AuthScreen() {
                   mb: 1.5
                 }}
               >
-                Setup Your Workspace
+                Set Up Your Shared Account
               </Typography>
               <Typography 
                 variant="body1" 
@@ -140,7 +150,7 @@ export function AuthScreen() {
                   px: 2
                 }}
               >
-                Welcome back, <strong>{userProfile.displayName}</strong>! To get started, you need to create a new household workspace or join an existing shared one.
+                Welcome back, <strong>{userProfile.displayName}</strong>! To get started, you need to create a new shared account or join an existing shared one.
               </Typography>
             </Box>
 
@@ -185,17 +195,17 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Create a New Household
+                    Create a New Shared Account
                   </Typography>
                   
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
-                    Establish a brand new shared ledger workspace. As the creator, you'll be the household administrator and can invite other members via a shared ID anytime.
+                    Establish a brand new shared ledger workspace. As the creator, you'll be the owner and can invite other members with an invite link anytime.
                   </Typography>
 
                   <Stack spacing={2} sx={{ mt: 'auto' }}>
                     <TextField
                       fullWidth
-                      label="Household Name"
+                      label="Shared account name"
                       placeholder="e.g. My Cozy Home"
                       value={householdName}
                       onChange={e => setHouseholdName(e.target.value)}
@@ -216,7 +226,7 @@ export function AuthScreen() {
                       onClick={handleCreateHousehold}
                       loading={loading}
                     >
-                      Create Household
+                      Create Shared Account
                     </Button>
                   </Stack>
                 </CardContent>
@@ -257,18 +267,18 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Join an Existing Household
+                    Join an Existing Shared Account
                   </Typography>
                   
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
-                    Connect to an existing workspace created by someone else. You will need their Household ID to instantly sync up and share budget ledger logs.
+                    Connect to an existing workspace created by someone else. You will need their Invite ID to instantly sync up and share budget ledger logs.
                   </Typography>
 
                   <Stack spacing={2} sx={{ mt: 'auto' }}>
                     <TextField
                       fullWidth
-                      label="Household ID"
-                      placeholder="Paste ID here (e.g. uuid-format)"
+                      label="Invite ID"
+                      placeholder="Paste the Invite ID from your invite link"
                       value={householdIdToJoin}
                       onChange={e => setHouseholdIdToJoin(e.target.value)}
                       disabled={loading}
@@ -288,7 +298,7 @@ export function AuthScreen() {
                       onClick={handleJoinHousehold}
                       loading={loading}
                     >
-                      Join Household
+                      Join Shared Account
                     </Button>
                   </Stack>
                 </CardContent>
@@ -301,7 +311,7 @@ export function AuthScreen() {
               icon={<InfoOutlinedIcon fontSize="small" />}
               sx={{ width: '100%' }}
             >
-              <strong>Tip:</strong> You can find your Household ID inside the user profile menu at the top-right corner of the application once logged in.
+              <strong>Tip:</strong> You can find your Invite ID inside the user profile menu at the top-right corner of the application once logged in.
             </Alert>
 
             {/* Logout / Switch User */}
@@ -345,7 +355,7 @@ export function AuthScreen() {
             Track your spending effortlessly
           </Typography>
           <Typography sx={{ mt: 2.5, mb: 4.5, color: alpha(theme.palette.primary.contrastText, 0.78), fontSize: { xs: 15, sm: 17 }, lineHeight: 1.55, maxWidth: 420 }}>
-            Manage your household finances, follow every expense, and keep your goals in sight.
+            Manage your shared account finances, follow every expense, and keep your goals in sight.
           </Typography>
 
           <Box sx={{ width: '100%' }}>

@@ -13,7 +13,7 @@ export function AnalyticsPlaceholder({ loading }: { loading: boolean }) {
         ) : (
           <EmptyLayout
             title="No analytics data yet"
-            description="Once you have at least one completed budget cycle with transactions, trends and insights will appear here."
+            description="Once you have at least one completed statement with transactions, trends and insights will appear here."
           />
         )}
       </CardContent>

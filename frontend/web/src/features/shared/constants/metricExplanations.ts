@@ -13,7 +13,7 @@ export const metricExplanations: Record<string, ReactNode> = {
     'shown as a percentage (actual spending ÷ planned budget).',
 
   cycleProgress:
-    'How far through the current budget cycle you are today, shown as a ' +
+    'How far through the current statement you are today, shown as a ' +
     'percentage of days elapsed out of the total cycle length.',
 
   projectedCycleSpending:

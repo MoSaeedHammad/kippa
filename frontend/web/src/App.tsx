@@ -22,6 +22,7 @@ const TransactionHistory = lazy(() => import('@/features/transactions/Transactio
 const AuditLog = lazy(() => import('@/features/activity/AuditLog').then(m => ({ default: m.AuditLog })));
 const PendingTransactions = lazy(() => import('@/features/pending-transactions/PendingTransactions').then(m => ({ default: m.PendingTransactions })));
 const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ default: m.AiAssistant })));
+const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBalancePage').then(m => ({ default: m.SharedBalancePage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
 
 
@@ -30,7 +31,7 @@ export default function App() {
   const { resolvedMode } = useThemeMode();
   const theme = useMemo(() => createAppTheme(resolvedMode), [resolvedMode]);
 
-  // Register FCM push notifications once the user has a household. Side-effect
+  // Register FCM push notifications once the user has a shared account. Side-effect
   // only — this instance handles the logout-unregister and re-register-on-reload
   // paths. It does NOT auto-prompt (iOS requires a user gesture for that);
   // the Notifications settings page owns the prompt via its own instance.
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="cycles" element={<BudgetCycles />} />
               <Route path="transactions" element={<TransactionHistory />} />
               <Route path="pending" element={<PendingTransactions />} />
+              <Route path="shared-balance" element={<SharedBalancePage />} />
               <Route path="activity" element={<AuditLog />} />
               <Route path="accounts" element={<Accounts />} />
               <Route path="household" element={<Household />} />

@@ -5,7 +5,8 @@ export type NotificationType =
   | 'card_expiry'
   | 'household_join'
   | 'pending_financial_message'
-  | 'card_payment_detected';
+  | 'card_payment_detected'
+  | 'shared_balance';
 
 export interface NotificationPayloadInput {
   type: NotificationType;

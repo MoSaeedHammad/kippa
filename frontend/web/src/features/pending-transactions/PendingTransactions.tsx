@@ -34,6 +34,7 @@ import {
 } from '@/hooks/useFinance';
 import type { PendingFinancialMessage } from '@kippa/domain';
 import { useMessageConnections } from './hooks/useMessageConnections';
+import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 import { usePendingReviewState } from './hooks/usePendingReviewState';
 type PendingItemState = 'idle' | 'approving' | 'discarding' | 'settled';
 
@@ -67,12 +68,13 @@ export function PendingTransactions() {
   const { data: remotePending = [], isLoading: remoteLoading } = usePendingFinancialMessages(householdId);
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
+  const { data: members = [] } = useSharedBalanceMembers(householdId);
   const approveMutation = useApprovePendingFinancialMessageMutation();
   const discardMutation = useDiscardPendingFinancialMessageMutation();
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
   const { data: resolved = [], isLoading: historyLoading } = useResolvedPendingFinancialMessages(householdId);
   const [tab, setTab] = useState<'review' | 'history'>('review');
-  const { accountId, categoryId, confirmDiscard, convertedAmount, destinationAccountId, selected, setAccountId, setCategoryId, setConfirmDiscard, setConvertedAmount, setDestinationAccountId, setSelected } = usePendingReviewState();
+  const { accountId, categoryId, confirmDiscard, convertedAmount, destinationAccountId, selected, sharedBalanceTag, setAccountId, setCategoryId, setConfirmDiscard, setConvertedAmount, setDestinationAccountId, setSelected, setSharedBalanceTag } = usePendingReviewState();
   const [itemStates, setItemStates] = useState<Record<string, PendingItemState>>({});
   const [setupOpen, setSetupOpen] = useState(false);
   const connections = useMessageConnections(householdId);
@@ -107,12 +109,14 @@ export function PendingTransactions() {
     setDestinationAccountId(item.suggestedDestinationAccountId ?? '');
     setConfirmDiscard(false);
     setConvertedAmount('');
+    setSharedBalanceTag({ kind: 'none', counterpartyUid: '', share: '' });
   };
 
   const closeReview = () => {
     if (approveMutation.isPending || discardMutation.isPending) return;
     setSelected(null);
     setConfirmDiscard(false);
+    setSharedBalanceTag({ kind: 'none', counterpartyUid: '', share: '' });
   };
 
   const approve = async () => {
@@ -135,6 +139,11 @@ export function PendingTransactions() {
         accountId,
         destinationAccountId: selected.kind === 'transfer' ? destinationAccountId : undefined,
         convertedAmount: selected.conversionRequired ? Number(convertedAmount) : undefined,
+        sharedBalanceTag: sharedBalanceTag.kind === 'none' ? undefined : {
+          kind: sharedBalanceTag.kind,
+          counterpartyUid: sharedBalanceTag.counterpartyUid,
+          ...(sharedBalanceTag.kind === 'split' ? { amount: Number(sharedBalanceTag.share) } : {}),
+        },
       });
       setItemStates((current) => ({ ...current, [pendingId]: 'settled' }));
       enqueueSnackbar('Transaction approved', { variant: 'success' });
@@ -354,7 +363,7 @@ export function PendingTransactions() {
         </Card>
       ))}
 
-      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} />
+      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} members={members} sharedBalanceTag={sharedBalanceTag} onSharedBalanceTagChange={setSharedBalanceTag} />
 
       <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} open={setupOpen} />
     </Stack>

@@ -21,6 +21,7 @@ import {
 } from '../../domain/notifications/warnings.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
+import { accessLevelOf, listFullMemberUids } from '../../libs/householdAccess.js';
 import { todayInTz } from '../../domain/timezone.js';
 import {
   formatTransactionNotificationBody,
@@ -39,6 +40,9 @@ export const onTransactionCreated = onDocumentCreated(
     const householdId = event.params.householdId;
     const txn = event.data?.data() as FinanceTransaction | undefined;
     if (!txn || txn.status === 'voided') return;
+    // Mirror transactions of approved shared-balance entries already pushed
+    // their own notification at proposal time; never double-notify.
+    if (txn.sharedBalanceEntryId) return;
 
     const db = getFirestore();
 
@@ -52,8 +56,14 @@ export const onTransactionCreated = onDocumentCreated(
       ...(d.data() as Omit<UserProfile, 'uid'>),
     }));
 
-    // --- 2. Transaction push to everyone except the author ---
-    const recipientUids = members.filter((m) => m.uid !== txn.createdBy).map((m) => m.uid);
+    // Spending activity is private to full members — shared-balance-only
+    // members must not learn about transactions they cannot see.
+    const fullMembers = members.filter(
+      (m) => accessLevelOf(m, householdId) === 'full',
+    );
+
+    // --- 2. Transaction push to full members except the author ---
+    const recipientUids = fullMembers.filter((m) => m.uid !== txn.createdBy).map((m) => m.uid);
 
     if (recipientUids.length > 0) {
       const author = members.find((m) => m.uid === txn.createdBy);
@@ -257,14 +267,18 @@ async function checkCategoryWarning(
   });
   if (!notification) return;
 
-  // Find members with categoryWarningEnabled
+  // Find members with categoryWarningEnabled — full members only, since the
+  // warning reveals spending amounts.
   const settingsSnap = await db
     .collection(`households/${householdId}/notificationSettings`)
     .where('categoryWarningEnabled', '==', true)
     .get();
+  const fullMemberUids = new Set(
+    (await listFullMemberUids(householdId)),
+  );
   const settingsUids = settingsSnap.docs.map(
     (d) => (d.data() as NotificationSettings).userId,
-  );
+  ).filter((uid) => fullMemberUids.has(uid));
 
   if (settingsUids.length > 0) {
     const tokens = await getTokensForUsers(householdId, settingsUids);

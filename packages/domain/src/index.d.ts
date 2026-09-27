@@ -15,6 +15,18 @@ export type LoanStatus = 'active' | 'paid' | 'paused';
 
 export type UserRole = 'owner' | 'member';
 
+/**
+ * What a member may see inside a shared account. `full` is today's behavior
+ * (everything); `sharedBalanceOnly` limits a member to shared-balance entries
+ * and the member list. Enforced in firestore.rules, never just in the UI.
+ */
+export type AccessLevel = 'full' | 'sharedBalanceOnly';
+
+/** Per-shared-account membership details stored on the user doc. */
+export type Membership = {
+  accessLevel: AccessLevel;
+};
+
 export type UserProfile = {
   uid: string;
   displayName: string;
@@ -22,6 +34,8 @@ export type UserProfile = {
   householdId: string | null;
   householdIds?: string[];
   role: UserRole;
+  /** Access level per household id. A missing entry means 'full' (legacy members). */
+  memberships?: Record<string, Membership>;
   createdAt: string;
   photoURL?: string;
   lastSeenActivities?: Record<string, string>;
@@ -43,6 +57,8 @@ export type JoinRequest = {
   email: string;
   photoURL?: string | null;
   status: JoinStatus;
+  /** Access level the joiner suggests (invite link may carry it); the owner decides at approval. */
+  requestedLevel?: AccessLevel | null;
   requestedAt: number;
   decidedAt?: number;
   decidedBy?: string;
@@ -58,6 +74,7 @@ export type HouseholdMember = {
   email: string;
   photoURL?: string | null;
   isOwner: boolean;
+  accessLevel: AccessLevel;
 };
 
 export type Account = {
@@ -69,6 +86,8 @@ export type Account = {
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
+  /** Marks the virtual shared-balance account that receives mirror entries. */
+  isSharedBalance?: boolean;
 };
 
 export type CardKind = 'debit' | 'credit';
@@ -133,6 +152,47 @@ export type FinanceTransaction = {
   loanInstallmentNumber?: number | null;
   /** Present when an imported card charge settled in the account currency after conversion from its original currency. */
   originalCharge?: { currency: CurrencyCode; amount: number; rate: number } | null;
+  /** Set when this transaction is the ledger mirror of an approved shared-balance entry. */
+  sharedBalanceEntryId?: string | null;
+};
+
+export type SharedBalanceEntryKind = 'iou' | 'split' | 'repayment';
+
+/**
+ * A between-two-members entry on the shared balance. `fromUid` provided the
+ * money/value; `toUid` owes `fromUid` `amount`. A repayment flows the other
+ * way (debtor → creditor), reducing the debt. Entries count toward the
+ * balance only once `status` is 'approved' — approval is always granted by
+ * the counterparty (the non-author), never the author.
+ */
+export type SharedBalanceEntry = {
+  id: string;
+  householdId: string;
+  kind: SharedBalanceEntryKind;
+  fromUid: string;
+  toUid: string;
+  amount: number;
+  currency: CurrencyCode;
+  /** Banking-style label chosen by the author: Cash, InstaPay, bank transfer, loan, shared bill… */
+  typeLabel: string;
+  note?: string | null;
+  date: string; // YYYY-MM-DD
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  createdBy: string;
+  /** Bumped on every edit; edits reset an approved entry to pending. */
+  revision: number;
+  /** Posted adjustment transaction created at approval (the ledger mirror). */
+  mirrorTransactionId?: string | null;
+  /** Set when the entry was created from a bank-message approval tag. */
+  sourceTransactionId?: string | null;
+  sourcePendingId?: string | null;
+  /** Snapshot display names so shared-balance-only members need no users/ reads. */
+  fromDisplayName: string;
+  toDisplayName: string;
+  createdAt: string;
+  updatedAt: string;
+  decidedAt?: string | null;
+  decidedBy?: string | null;
 };
 
 export type Loan = {
@@ -282,7 +342,13 @@ export type AuditAction =
   | 'household_joined'
   | 'household_left'
   | 'pending_message_discarded'
-  | 'pending_message_restored';
+  | 'pending_message_restored'
+  | 'shared_balance_proposed'
+  | 'shared_balance_approved'
+  | 'shared_balance_rejected'
+  | 'shared_balance_cancelled'
+  | 'shared_balance_edited'
+  | 'member_access_updated';
 
 export type AuditLogEntry = {
   id: string;

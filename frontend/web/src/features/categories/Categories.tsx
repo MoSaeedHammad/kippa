@@ -102,7 +102,7 @@ export function Categories() {
   return (
     <Container maxWidth="xl" sx={{ py: 1, px: { xs: 2, sm: 3, lg: 5 } }}>
       <Stack spacing={3}>
-        <PageHeader title="Categories" subtitle="Organize income and spending for reports and budget cycles" />
+        <PageHeader title="Categories" subtitle="Organize income and spending for reports and statements" />
 
         <Grid container spacing={{ xs: 2, lg: 3 }} alignItems="flex-start">
           <Grid size={{ xs: 12, md: 8 }}>

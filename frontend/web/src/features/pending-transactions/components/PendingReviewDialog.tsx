@@ -1,12 +1,13 @@
 import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
-import type { Account, Category, PendingFinancialMessage } from '@kippa/domain';
-import { CheckCircleIcon, DeleteIcon } from '@/components/AppIcon';
+import type { Account, Category, HouseholdMember, PendingFinancialMessage } from '@kippa/domain';
+import { CheckCircleIcon, DeleteIcon, SwapHorizIcon } from '@/components/AppIcon';
+import type { SharedBalanceTagDraft } from '../hooks/usePendingReviewState';
 import { Money } from '@/components/Money';
 
-type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; convertedAmount: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onConvertedAmountChange: (value: string) => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled' };
+type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; convertedAmount: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onConvertedAmountChange: (value: string) => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled'; members?: HouseholdMember[]; sharedBalanceTag?: SharedBalanceTagDraft; onSharedBalanceTagChange?: (tag: SharedBalanceTagDraft) => void };
 
 export function PendingReviewDialog(props: Props) {
-  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, convertedAmount, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onConvertedAmountChange, onDestinationChange, onDiscard, state } = props;
+  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, convertedAmount, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onConvertedAmountChange, onDestinationChange, onDiscard, state, members = [], sharedBalanceTag, onSharedBalanceTagChange } = props;
   if (!item) return null;
   const transfer = item.kind === 'transfer';
   const crossCurrency = !!item.destinationCurrency && item.destinationCurrency !== item.currency;
@@ -14,8 +15,13 @@ export function PendingReviewDialog(props: Props) {
   const loanPayment = !!item.suggestedLoanId;
   const conversionRequired = !!item.conversionRequired;
   const targetCurrency = accounts.find((account) => account.id === accountId)?.currency ?? item.currency;
+  const tag = sharedBalanceTag ?? { kind: 'none' as const, counterpartyUid: '', share: '' };
+  const tagEnabled = tag.kind !== 'none';
+  const tagShareValid = tag.kind !== 'split' || (Number(tag.share) > 0 && Number(tag.share) <= item.amount);
   const canApprove = (transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId))
-    && (!conversionRequired || Number(convertedAmount) > 0);
+    && (!conversionRequired || Number(convertedAmount) > 0)
+    && (!tagEnabled || (!!tag.counterpartyUid && tagShareValid));
+  const otherMembers = members.filter((member) => member.uid !== item.receivedBy);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
@@ -53,6 +59,57 @@ export function PendingReviewDialog(props: Props) {
           </Stack>
           <Divider />
           <Box><Typography variant="sectionLabel" color="primary">Bank message</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.messagePreview}</Typography></Box>
+          {onSharedBalanceTagChange && otherMembers.length > 0 && (
+            <>
+              <Divider />
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <SwapHorizIcon sx={{ color: 'primary.main' }} />
+                  <Typography variant="sectionLabel" color="primary">Shared balance (optional)</Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Tag this message as an IOU or split — the other member approves it before it counts.
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel id="pending-tag-kind-label">Shared balance tag</InputLabel>
+                  <Select
+                    labelId="pending-tag-kind-label"
+                    value={tag.kind}
+                    label="Shared balance tag"
+                    onChange={(event) => onSharedBalanceTagChange({ ...tag, kind: event.target.value as SharedBalanceTagDraft['kind'], counterpartyUid: '', share: '' })}
+                  >
+                    <MenuItem value="none">No tag</MenuItem>
+                    <MenuItem value="iou">IOU — full amount for them</MenuItem>
+                    <MenuItem value="split">Split — a share of it is theirs</MenuItem>
+                  </Select>
+                </FormControl>
+                {tagEnabled && (
+                  <FormControl fullWidth>
+                    <InputLabel id="pending-tag-member-label">Member</InputLabel>
+                    <Select
+                      labelId="pending-tag-member-label"
+                      value={tag.counterpartyUid}
+                      label="Member"
+                      onChange={(event) => onSharedBalanceTagChange({ ...tag, counterpartyUid: event.target.value })}
+                    >
+                      {otherMembers.map((member) => <MenuItem key={member.uid} value={member.uid}>{member.displayName}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                )}
+                {tag.kind === 'split' && (
+                  <TextField
+                    fullWidth
+                    label={`Their share (max ${item.amount})`}
+                    value={tag.share}
+                    onChange={(event) => onSharedBalanceTagChange({ ...tag, share: event.target.value })}
+                    slotProps={{ htmlInput: { inputMode: 'decimal', type: 'number' } }}
+                    error={!!tag.share && !tagShareValid}
+                    helperText={`The entry stores only their share — your full ${item.amount} ${item.currency} stays private.`}
+                  />
+                )}
+              </Stack>
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

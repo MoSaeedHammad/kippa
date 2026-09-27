@@ -139,7 +139,7 @@ export function TransactionHistory() {
               Transaction History
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              View, search, and manage your household transactions.
+              View, search, and manage your shared account transactions.
             </Typography>
           </Box>
         </Box>
@@ -172,8 +172,8 @@ export function TransactionHistory() {
             }}
           >
             <FormControl fullWidth>
-              <InputLabel id="history-cycle-label">Budget Cycle</InputLabel>
-              <Select labelId="history-cycle-label" value={selectedCycleId} label="Budget Cycle" onChange={e => handleCycleChange(e.target.value)}>
+              <InputLabel id="history-cycle-label">Statement</InputLabel>
+              <Select labelId="history-cycle-label" value={selectedCycleId} label="Statement" onChange={e => handleCycleChange(e.target.value)}>
                 <MenuItem value="all">All Cycles</MenuItem>
                 <MenuItem value="active">Active Cycle</MenuItem>
                 {cycles.filter(c => c.status !== 'open').map(c => (

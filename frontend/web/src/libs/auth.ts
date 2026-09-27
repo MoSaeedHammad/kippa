@@ -11,7 +11,7 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions, isFirebaseConfigured, isFirebaseReady } from '@/config/firebase';
 import { dbLib } from '@/libs/db';
 import { detectBaseCurrency } from '@/libs/currencyMeta';
-import { UserProfile, Household, JoinStatus, HouseholdMember } from '@kippa/domain';
+import { UserProfile, Household, JoinStatus, HouseholdMember, AccessLevel } from '@kippa/domain';
 
 const FIREBASE_REQUIRED_MSG =
   'Firebase is not configured. Copy .env.example to .env and set VITE_FIREBASE_* credentials.';
@@ -139,35 +139,48 @@ export const authLib = {
   },
 
   /**
-   * Request to join a household. Creates a pending joinRequest the owner must
+   * Request to join a shared account. Creates a pending joinRequest the owner must
    * approve — does NOT grant membership.
    */
-  async requestToJoinHousehold(_userId: string, householdId: string): Promise<JoinStatus> {
+  async requestToJoinHousehold(_userId: string, householdId: string, requestedLevel?: AccessLevel): Promise<JoinStatus> {
     requireAuth();
     const requestFn = httpsCallable<
-      { householdId: string },
+      { householdId: string; requestedLevel?: AccessLevel },
       { status: JoinStatus }
     >(functions!, 'requestToJoinHousehold');
-    const res = await requestFn({ householdId });
+    const res = await requestFn({ householdId, ...(requestedLevel ? { requestedLevel } : {}) });
     return res.data.status;
   },
 
   /**
-   * Owner approves or rejects a pending join request.
+   * Owner approves or rejects a pending join request. The access level the
+   * owner grants (falling back to the joiner's requested level) takes effect
+   * immediately in the security rules.
    */
   async decideJoinRequest(
     _userId: string,
     householdId: string,
     requesterUid: string,
     decision: 'approve' | 'reject',
+    accessLevel?: AccessLevel,
   ): Promise<JoinStatus> {
     requireAuth();
     const decideFn = httpsCallable<
-      { householdId: string; requesterUid: string; decision: 'approve' | 'reject' },
+      { householdId: string; requesterUid: string; decision: 'approve' | 'reject'; accessLevel?: AccessLevel },
       { status: JoinStatus }
     >(functions!, 'decideJoinRequest');
-    const res = await decideFn({ householdId, requesterUid, decision });
+    const res = await decideFn({ householdId, requesterUid, decision, ...(accessLevel ? { accessLevel } : {}) });
     return res.data.status;
+  },
+
+  /** Owner flips a member between full and shared-balance-only access. */
+  async updateMemberAccessLevel(householdId: string, memberUid: string, accessLevel: AccessLevel): Promise<void> {
+    requireAuth();
+    const updateFn = httpsCallable<
+      { householdId: string; memberUid: string; accessLevel: AccessLevel },
+      { accessLevel: AccessLevel }
+    >(functions!, 'updateMemberAccessLevel');
+    await updateFn({ householdId, memberUid, accessLevel });
   },
 
   /**
@@ -182,7 +195,7 @@ export const authLib = {
 
     const householdIds = profile.householdIds || [];
     if (!householdIds.includes(householdId)) {
-      throw new Error('You are not a member of this household');
+      throw new Error('You are not a member of this shared account');
     }
 
     const hh = await dbLib.getDoc(householdId, 'householdInfo', 'info');
@@ -219,7 +232,7 @@ export const authLib = {
   },
 
   /**
-   * Lists the members of a household via the listHouseholdMembers Callable.
+   * Lists the members of a shared account via the listHouseholdMembers Callable.
    * Server-side because Firestore rules restrict users/{uid} reads to the doc
    * owner — a client-side query across members would be denied.
    */
