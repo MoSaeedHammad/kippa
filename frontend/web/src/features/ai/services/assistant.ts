@@ -1,6 +1,5 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { APICallError, NoSuchToolError, stepCountIs, streamText, type ModelMessage } from 'ai';
-import { AI_MODEL, requireGeminiApiKey } from './aiConfig';
+import { AI_MODEL, AI_PROVIDER, getChatModel } from './aiConfig';
 import { createAiToolRegistry, toAiSdkTools } from './readTools';
 import type { AiChartSpec, AiMessage, PendingAiAction } from '../types';
 import { AiError } from '../types';
@@ -93,16 +92,19 @@ export function classifyProviderError(error: unknown): AiError {
   const message = providerErrorText(error);
   const normalized = message.toLowerCase();
   if (normalized.includes('quota_exceeded') || normalized.includes('generaterequestsperday') || normalized.includes('permodelperday') || normalized.includes('requestsperday')) {
-    return new AiError('quota', 'Kip’s free Gemini allowance has been used for today. It resets at midnight Pacific time, and your message is saved.', msUntilNextPacificReset());
+    if (AI_PROVIDER === 'gemini') {
+      return new AiError('quota', 'Kip’s free AI allowance has been used for today. It resets at midnight Pacific time, and your message is saved.', msUntilNextPacificReset());
+    }
+    return new AiError('rate-limit', 'Kip has reached the AI service’s usage limit. Your message is saved and will be ready to retry.', retryAfterMsFromError(message) ?? 60_000);
   }
   if (normalized.includes('429') || normalized.includes('resource_exhausted') || normalized.includes('rate limit') || normalized.includes('quota exceeded') || normalized.includes('exceeded your current quota')) {
-    return new AiError('rate-limit', 'Kip has reached Gemini’s free usage limit. Your message is saved and will be ready to retry when the cooldown ends.', retryAfterMsFromError(message) ?? 60_000);
+    return new AiError('rate-limit', 'Kip has reached the AI service’s usage limit. Your message is saved and will be ready to retry when the cooldown ends.', retryAfterMsFromError(message) ?? 60_000);
   }
   if (normalized.includes('api key') || normalized.includes('401') || normalized.includes('403')) {
     return new AiError('authentication', 'Kip is temporarily unavailable because its AI connection is not configured correctly.');
   }
   if (normalized.includes('network') || normalized.includes('fetch')) {
-    return new AiError('network', 'Kippa could not reach Gemini. Check your connection and try again.');
+    return new AiError('network', 'Kippa could not reach the AI service. Check your connection and try again.');
   }
   return new AiError('provider', 'Kip could not finish that response. Your message is safe—please try again.');
 }
@@ -118,8 +120,7 @@ export async function streamAssistantReply(args: {
   onChart?: (chart: AiChartSpec) => void;
   signal?: AbortSignal;
 }): Promise<string> {
-  const apiKey = requireGeminiApiKey();
-  const google = createGoogleGenerativeAI({ apiKey });
+  const chatModel = getChatModel();
   const contextMessages = selectContextMessages(args.messages);
   const latestUserMessage = [...contextMessages].reverse().find(message => message.role === 'user');
   const memories = await aiMemoryService.relevant(args.householdId, args.userId, latestUserMessage?.content ?? '').catch(() => []);
@@ -130,7 +131,7 @@ export async function streamAssistantReply(args: {
   let complete = '';
   try {
     const result = streamText({
-      model: google(AI_MODEL),
+      model: chatModel(AI_MODEL),
       system: `${SYSTEM_PROMPT}${memoryContext}`,
       messages: modelMessages,
       tools: toAiSdkTools(createAiToolRegistry(), { householdId: args.householdId, userId: args.userId, userDisplayName: args.userDisplayName, userPhotoURL: args.userPhotoURL, sourceMessageIds: latestUserMessage ? [latestUserMessage.id] : [] }, args.onActionProposed, args.onChart),

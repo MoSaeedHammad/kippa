@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "4.0.31",
+    "@ai-sdk/openai-compatible": "3.0.20",
     "@date-io/date-fns": "^3.2.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
