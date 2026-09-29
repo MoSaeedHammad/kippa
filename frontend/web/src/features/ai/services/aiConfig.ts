@@ -4,8 +4,8 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 export type AiProviderName = 'gemini' | 'glm';
 
 const GEMINI_MODEL = 'gemini-3.6-flash';
-/** GLM's OpenAI-compatible endpoint (chat completions + tool calling). */
-const GLM_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4';
+/** GLM's OpenAI-compatible endpoint. Zhipu China: https://open.bigmodel.cn/api/paas/v4 · Z.ai international: https://api.z.ai/api/paas/v4 */
+const GLM_BASE_URL = envValue('VITE_GLM_BASE_URL') || 'https://open.bigmodel.cn/api/paas/v4';
 
 function envValue(name: string): string {
   return (import.meta.env as Record<string, string | undefined>)[name]?.trim() ?? '';
