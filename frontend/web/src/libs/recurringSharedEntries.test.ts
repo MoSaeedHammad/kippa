@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RecurringSharedEntryRule } from '@kippa/domain';
+import type { RecurringSharedEntryRule, SharedBalanceEntry } from '@kippa/domain';
 import { formatFrequencyPhrase, nextOccurrenceAfter, summarizeSharedAccounts } from './recurringSharedEntries';
 
 function rule(overrides: Partial<RecurringSharedEntryRule>): RecurringSharedEntryRule {
@@ -61,12 +61,13 @@ describe('nextOccurrenceAfter', () => {
 
 describe('summarizeSharedAccounts', () => {
   const household = (id: string, name: string) => ({ id, name, baseCurrency: 'EGP', createdAt: '', createdBy: 'user-a' });
-  const entry = (overrides: Record<string, unknown>) => ({
+  const baseEntry: SharedBalanceEntry = {
     id: 'e', householdId: 'hh1', kind: 'iou', fromUid: 'user-a', toUid: 'user-b', amount: 10,
     currency: 'EGP', typeLabel: 'Cash', note: null, date: '2026-01-01', status: 'pending',
     createdBy: 'user-b', revision: 1, fromDisplayName: 'A', toDisplayName: 'B',
-    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z', ...overrides,
-  });
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  };
+  const entry = (overrides: Partial<SharedBalanceEntry>): SharedBalanceEntry => ({ ...baseEntry, ...overrides });
 
   it('computes balance, pending count and sorts by latest activity', () => {
     const summaries = summarizeSharedAccounts(

@@ -220,7 +220,7 @@ export function SharedBalancePage() {
         </Stack>
       )}
 
-      <RecurringRulesCard householdId={householdId} viewerUid={viewerUid} />
+      <RecurringRulesCard householdId={householdId} viewerUid={viewerUid} members={members} />
 
       <AddSharedBalanceEntryDialog
         open={dialogOpen}

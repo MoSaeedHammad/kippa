@@ -9,9 +9,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { RecurringSharedEntryRule } from '@kippa/domain';
+import type { HouseholdMember, RecurringSharedEntryRule } from '@kippa/domain';
 import { CardHeading } from '@/features/shared/components/CardHeading';
-import { PauseIcon, PlayIcon, SyncAltIcon, TrashIcon } from '@/components/AppIcon';
+import { DeleteIcon, PauseIcon, PlayIcon, SyncAltIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
 import { formatFrequencyPhrase, nextOccurrenceAfter } from '@/libs/recurringSharedEntries';
 import { useRecurringRules, useUpsertRecurringRuleMutation } from '../hooks/useRecurringRules';
@@ -19,16 +19,17 @@ import { useRecurringRules, useUpsertRecurringRuleMutation } from '../hooks/useR
 type Props = {
   householdId: string;
   viewerUid: string;
+  members: HouseholdMember[];
 };
 
-function directionPhrase(rule: RecurringSharedEntryRule, viewerUid: string): string {
-  if (rule.createdBy === rule.fromUid) {
-    return rule.fromUid === viewerUid ? 'You pay them' : `${rule.fromDisplayName} pays ${rule.toDisplayName}`;
-  }
-  return rule.toUid === viewerUid ? 'They pay you' : `${rule.fromDisplayName} pays ${rule.toDisplayName}`;
+function directionPhrase(rule: RecurringSharedEntryRule, viewerUid: string, members: HouseholdMember[]): string {
+  const nameOf = (uid: string) => members.find((member) => member.uid === uid)?.displayName ?? 'Member';
+  if (rule.fromUid === viewerUid) return 'You pay them';
+  if (rule.toUid === viewerUid) return 'They pay you';
+  return `${nameOf(rule.fromUid)} pays ${nameOf(rule.toUid)}`;
 }
 
-export function RecurringRulesCard({ householdId, viewerUid }: Props) {
+export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
   const { data: rules = [] } = useRecurringRules(householdId);
   const upsertMutation = useUpsertRecurringRuleMutation(householdId);
   const { enqueueSnackbar } = useSnackbar();
@@ -71,7 +72,7 @@ export function RecurringRulesCard({ householdId, viewerUid }: Props) {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="cardSubtitle" sx={{ fontWeight: 700 }} noWrap>
-                  {rule.typeLabel} · {directionPhrase(rule, viewerUid)}
+                  {rule.typeLabel} · {directionPhrase(rule, viewerUid, members)}
                 </Typography>
                 {rule.status === 'paused' && <Chip label="Paused" size="small" color="warning" />}
                 {rule.status === 'cancelled' && <Chip label="Cancelled" size="small" color="default" />}
@@ -100,7 +101,7 @@ export function RecurringRulesCard({ householdId, viewerUid }: Props) {
                 )}
                 <Tooltip title="Cancel recurring entry">
                   <IconButton size="small" color="error" disabled={busy} onClick={() => act(rule, 'cancel')}>
-                    <TrashIcon fontSize="small" />
+                    <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Stack>

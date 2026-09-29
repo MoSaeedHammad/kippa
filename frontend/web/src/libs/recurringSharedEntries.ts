@@ -1,8 +1,8 @@
 import { httpsCallable } from 'firebase/functions';
-import type { Household, HouseholdMember, RecurringSharedEntryRule, RecurringFrequency } from '@kippa/domain';
+import type { Household, HouseholdMember, RecurringSharedEntryRule, RecurringFrequency, SharedBalanceEntry } from '@kippa/domain';
 import { functions } from '@/config/firebase';
 import { dbLib } from '@/libs/db';
-import { computeSharedBalance, type SharedBalanceEntry } from '@/libs/sharedBalance';
+import { computeSharedBalance } from '@/libs/sharedBalance';
 
 function requireFunctions() {
   if (!functions) throw new Error('Firebase Functions is not configured.');
