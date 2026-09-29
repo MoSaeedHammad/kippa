@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
-import type { Account, Household, SharedBalanceEntry, UserProfile } from '@kippa/domain';
+import { FieldValue, getFirestore, type Firestore } from 'firebase-admin/firestore';
+import type { Account, Household, NotificationSettings, RecurringSharedEntryRule, SharedBalanceEntry, UserProfile } from '@kippa/domain';
+import {
+  buildSharedBalanceEntry,
+  occurrenceEntryId,
+  validateRecurringRuleInput,
+} from '../../domain/shared-balance/recurring.js';
 import {
   buildSharedBalanceMirror,
   counterpartyOf,
@@ -47,12 +52,13 @@ async function ensureSharedBalanceAccount(
   await ref.set(account, { merge: true });
 }
 
-async function notifyUser(
+export async function notifyUser(
   householdId: string,
   uid: string,
   title: string,
   body: string,
   deepLink: string,
+  type: 'shared_balance' | 'recurring_shared_entry' = 'shared_balance',
 ): Promise<void> {
   try {
     const tokens = await getTokensForUsers(householdId, [uid]);
@@ -60,7 +66,7 @@ async function notifyUser(
     await sendToMany(
       householdId,
       tokens,
-      buildMessagePayload({ type: 'shared_balance', title, body, householdId, deepLink }),
+      buildMessagePayload({ type, title, body, householdId, deepLink }),
     );
   } catch (error) {
     console.error('Could not send shared-balance notification', error);
@@ -86,6 +92,55 @@ async function writeAudit(
     details,
     createdAt: new Date().toISOString(),
   });
+}
+
+/**
+ * Creates one pending entry for a recurring-rule occurrence (deterministic id,
+ * so a rerun is a no-op). Shared by the upsert callable (first occurrence) and
+ * the daily cron. Returns true when the occurrence was newly created.
+ */
+export async function materializeOccurrence(
+  db: Firestore,
+  rule: RecurringSharedEntryRule,
+  dateIso: string,
+  authorDisplayName: string,
+  counterpartyDisplayName: string,
+): Promise<boolean> {
+  const entryId = occurrenceEntryId(rule.id, dateIso);
+  const entryRef = db.doc(`households/${rule.householdId}/sharedBalanceEntries/${entryId}`);
+  const ruleRef = db.doc(`households/${rule.householdId}/recurringSharedEntryRules/${rule.id}`);
+  let created = false;
+  await db.runTransaction(async (transaction) => {
+    const existing = await transaction.get(entryRef);
+    if (existing.exists) return;
+    const now = new Date().toISOString();
+    transaction.create(
+      entryRef,
+      buildSharedBalanceEntry({
+        id: entryId,
+        householdId: rule.householdId,
+        kind: rule.kind,
+        fromUid: rule.fromUid,
+        toUid: rule.toUid,
+        amount: rule.amount,
+        currency: rule.currency,
+        typeLabel: rule.typeLabel,
+        note: rule.note ?? null,
+        date: dateIso,
+        createdBy: rule.createdBy,
+        authorDisplayName,
+        counterpartyDisplayName,
+        recurringRuleId: rule.id,
+        now,
+      }),
+    );
+    transaction.update(ruleRef, {
+      occurrencesCreated: FieldValue.increment(1),
+      lastOccurrenceDate: dateIso,
+    });
+    created = true;
+  });
+  return created;
 }
 
 /**
@@ -117,7 +172,7 @@ export const proposeSharedBalanceEntry = onCall(async (request) => {
   const db = getFirestore();
   const now = new Date().toISOString();
   const entryId = `sb_${randomUUID()}`;
-  const entry: SharedBalanceEntry = {
+  const entry = buildSharedBalanceEntry({
     id: entryId,
     householdId,
     kind: normalized.kind,
@@ -128,19 +183,12 @@ export const proposeSharedBalanceEntry = onCall(async (request) => {
     typeLabel: normalized.typeLabel,
     note: normalized.note,
     date: normalized.date,
-    status: 'pending',
     createdBy: uid,
-    revision: 1,
-    mirrorTransactionId: null,
-    sourceTransactionId: null,
-    sourcePendingId: null,
-    fromDisplayName: normalized.fromUid === uid ? author.displayName || 'User' : counterpartyProfile.displayName || 'User',
-    toDisplayName: normalized.toUid === uid ? author.displayName || 'User' : counterpartyProfile.displayName || 'User',
-    createdAt: now,
-    updatedAt: now,
-    decidedAt: null,
-    decidedBy: null,
-  };
+    authorDisplayName: author.displayName || 'User',
+    counterpartyDisplayName: counterpartyProfile.displayName || 'User',
+    recurringRuleId: null,
+    now,
+  });
   await db.doc(`households/${householdId}/sharedBalanceEntries/${entryId}`).set(entry);
   await writeAudit(
     householdId,
@@ -406,4 +454,159 @@ export const updateMemberAccessLevel = onCall(async (request) => {
     '/household',
   );
   return { accessLevel };
+});
+
+/** Cap on concurrent active rules per household — sane bound on cron work. */
+const MAX_ACTIVE_RULES_PER_HOUSEHOLD = 30;
+
+/**
+ * Pushes the counterparty one "recurring occurrence due" notification per
+ * rule (mentions the count when several backfilled at once). Honors the
+ * recurringEntriesEnabled setting; absent setting = enabled.
+ */
+export async function notifyCounterpartyOfOccurrences(
+  householdId: string,
+  counterpartyUid: string,
+  rule: Pick<RecurringSharedEntryRule, 'typeLabel' | 'amount' | 'currency'>,
+  count: number,
+): Promise<void> {
+  try {
+    const settingsSnap = await getFirestore()
+      .doc(`households/${householdId}/notificationSettings/${counterpartyUid}`)
+      .get();
+    const settings = settingsSnap.data() as Partial<NotificationSettings> | undefined;
+    if (settings?.recurringEntriesEnabled === false) return;
+    await notifyUser(
+      householdId,
+      counterpartyUid,
+      'Recurring entry due',
+      `${rule.typeLabel} · ${rule.amount} ${rule.currency}${count > 1 ? ` — ${count} entries` : ''} — confirm to update the balance`,
+      '/shared-balance',
+      'recurring_shared_entry',
+    );
+  } catch (error) {
+    console.error('Could not send recurring-entry notification', error);
+  }
+}
+
+/**
+ * Creates / edits / pauses / resumes / cancels a recurring shared-balance
+ * entry rule. Author-only for all non-create actions. On create, the first
+ * occurrence (the anchor date) is materialized immediately as a pending entry;
+ * the daily cron generates every later one.
+ */
+export const upsertRecurringSharedEntryRule = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+  const data = request.data as { householdId?: unknown; action?: unknown; ruleId?: unknown; rule?: unknown };
+  const householdId = typeof data.householdId === 'string' ? data.householdId.trim() : '';
+  const action = data.action;
+  if (!householdId) throw new HttpsError('invalid-argument', 'householdId is required.');
+  if (action !== 'create' && action !== 'edit' && action !== 'pause' && action !== 'resume' && action !== 'cancel') {
+    throw new HttpsError('invalid-argument', 'action must be create, edit, pause, resume or cancel.');
+  }
+  const author = await requireHouseholdMember(uid, householdId);
+  const db = getFirestore();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const nowMs = Date.now();
+  const summaryVerb: Record<typeof action, string> = {
+    create: 'scheduled', edit: 'updated', pause: 'paused', resume: 'resumed', cancel: 'cancelled',
+  };
+
+  if (action === 'create') {
+    const normalized = (() => {
+      const result = validateRecurringRuleInput(data.rule, uid);
+      if (!result.ok) throw new HttpsError('invalid-argument', result.error);
+      return result.value;
+    })();
+    const counterpartyUid = normalized.fromUid === uid ? normalized.toUid : normalized.fromUid;
+    const counterpartyProfile = await getMemberProfileInHousehold(counterpartyUid, householdId);
+    if (!counterpartyProfile) {
+      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this shared account.');
+    }
+    const activeSnap = await db
+      .collection(`households/${householdId}/recurringSharedEntryRules`)
+      .where('status', '==', 'active')
+      .count()
+      .get();
+    if (activeSnap.data().count >= MAX_ACTIVE_RULES_PER_HOUSEHOLD) {
+      throw new HttpsError('failed-precondition', 'This shared account already has the maximum number of active recurring entries.');
+    }
+    const ruleId = `rsr_${randomUUID()}`;
+    const rule: RecurringSharedEntryRule = {
+      id: ruleId,
+      householdId,
+      ...normalized,
+      status: 'active',
+      createdBy: uid,
+      occurrencesCreated: 0,
+      lastOccurrenceDate: null,
+      resumedDate: null,
+      createdAt: nowMs,
+      updatedAt: nowMs,
+    };
+    await db.doc(`households/${householdId}/recurringSharedEntryRules/${ruleId}`).set(rule);
+    if (normalized.anchorDate <= todayIso) {
+      await materializeOccurrence(db, rule, normalized.anchorDate, author.displayName || 'User', counterpartyProfile.displayName || 'User');
+    }
+    await writeAudit(
+      householdId,
+      author,
+      'recurring_rule_updated',
+      `${author.displayName || 'User'} scheduled a recurring ${kindLabel(normalized.kind)}: ${normalized.amount} ${normalized.currency} (${normalized.typeLabel})`,
+      { ruleId, action, frequency: normalized.frequency, anchorDate: normalized.anchorDate },
+      `rsr_audit_${ruleId}_${nowMs}`,
+    );
+    await notifyUser(
+      householdId,
+      counterpartyUid,
+      'Recurring entry scheduled',
+      `${author.displayName || 'User'}: ${normalized.amount} ${normalized.currency} · ${normalized.typeLabel} — confirm to update the balance`,
+      '/shared-balance',
+    );
+    return { ruleId };
+  }
+
+  // edit | pause | resume | cancel — author only, on an existing rule.
+  const ruleId = typeof data.ruleId === 'string' ? data.ruleId.trim() : '';
+  if (!ruleId) throw new HttpsError('invalid-argument', 'ruleId is required.');
+  const ruleRef = db.doc(`households/${householdId}/recurringSharedEntryRules/${ruleId}`);
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ruleRef);
+    if (!snapshot.exists) throw new HttpsError('not-found', 'Recurring entry not found.');
+    const rule = snapshot.data() as RecurringSharedEntryRule;
+    if (rule.createdBy !== uid) {
+      throw new HttpsError('permission-denied', 'Only the author can change a recurring entry.');
+    }
+    if (rule.status === 'cancelled') {
+      throw new HttpsError('failed-precondition', 'A cancelled recurring entry cannot be changed.');
+    }
+    if (action === 'edit') {
+      const normalized = (() => {
+        const result = validateRecurringRuleInput(data.rule, uid);
+        if (!result.ok) throw new HttpsError('invalid-argument', result.error);
+        return result.value;
+      })();
+      transaction.update(ruleRef, { ...normalized, updatedAt: nowMs });
+    } else if (action === 'pause') {
+      transaction.update(ruleRef, { status: 'paused', updatedAt: nowMs });
+    } else if (action === 'resume') {
+      if (rule.status !== 'paused') {
+        throw new HttpsError('failed-precondition', 'Only a paused recurring entry can be resumed.');
+      }
+      // Occurrences during the pause window are never backfilled.
+      transaction.update(ruleRef, { status: 'active', resumedDate: todayIso, updatedAt: nowMs });
+    } else {
+      transaction.update(ruleRef, { status: 'cancelled', updatedAt: nowMs });
+    }
+  });
+  await writeAudit(
+    householdId,
+    author,
+    'recurring_rule_updated',
+    `${author.displayName || 'User'} ${summaryVerb[action]} a recurring entry`,
+    { ruleId, action },
+    `rsr_audit_${ruleId}_${nowMs}`,
+  );
+  return { ruleId };
 });

@@ -25,4 +25,6 @@ export {
   proposeSharedBalanceEntry,
   decideSharedBalanceEntry,
   updateMemberAccessLevel,
+  upsertRecurringSharedEntryRule,
 } from './features/shared-balance/sharedBalance.js';
+export { recurringSharedEntriesCron } from './features/shared-balance/recurringSharedEntriesCron.js';
