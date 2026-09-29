@@ -24,6 +24,7 @@ import {
   SearchIcon,
   NotesIcon,
   PaymentsIcon,
+  SwitchAccountIcon,
 } from '@/components/AppIcon';
 
 type NavChild = { label: string; path: string };
@@ -49,6 +50,7 @@ const menuItems: NavItem[] = [
     children: [
       { label: 'All transactions', path: '/transactions' },
       { label: 'Approvals', path: '/pending' },
+      { label: 'Shared accounts', path: '/shared-accounts' },
       { label: 'Shared balance', path: '/shared-balance' },
       { label: 'Expenses', path: '/transactions?type=expense' },
       { label: 'Income', path: '/transactions?type=income' },
@@ -76,10 +78,11 @@ const menuItems: NavItem[] = [
   },
 ];
 
-// Shared-balance-only members can only see the shared balance, their
+// Shared-balance-only members can only see the shared accounts, their
 // notifications, and the shared account page — everything else is blocked by
 // the security rules anyway, so showing it would only lead to errors.
 const sharedBalanceOnlyMenu: NavItem[] = [
+  { label: 'Shared accounts', path: '/shared-accounts', icon: SwitchAccountIcon },
   { label: 'Shared balance', path: '/shared-balance', icon: ReceiptLongIcon },
   {
     label: 'Shared account',

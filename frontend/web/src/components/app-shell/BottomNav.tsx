@@ -4,6 +4,7 @@ import { NotesIcon } from '@/components/AppIcon';
 import { ReceiptLongIcon } from '@/components/AppIcon';
 import { AddIcon } from '@/components/AppIcon';
 import { HourglassEmptyIcon } from '@/components/AppIcon';
+import { SwitchAccountIcon } from '@/components/AppIcon';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
@@ -28,7 +29,7 @@ const RIGHT_ITEMS: NavItem[] = [
 
 // Shared-balance-only members are blocked from everything else by the rules.
 const SCOPED_LEFT_ITEMS: NavItem[] = [
-  { label: 'Shared balance', path: '/shared-balance', icon: <ReceiptLongIcon /> },
+  { label: 'Shared accounts', path: '/shared-accounts', icon: <SwitchAccountIcon /> },
 ];
 const SCOPED_RIGHT_ITEMS: NavItem[] = [
   { label: 'Shared account', path: '/household', icon: <DashboardIcon /> },

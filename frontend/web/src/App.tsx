@@ -23,6 +23,7 @@ const AuditLog = lazy(() => import('@/features/activity/AuditLog').then(m => ({ 
 const PendingTransactions = lazy(() => import('@/features/pending-transactions/PendingTransactions').then(m => ({ default: m.PendingTransactions })));
 const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ default: m.AiAssistant })));
 const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBalancePage').then(m => ({ default: m.SharedBalancePage })));
+const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SharedAccountsPage').then(m => ({ default: m.SharedAccountsPage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
 
 
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="cycles" element={<BudgetCycles />} />
               <Route path="transactions" element={<TransactionHistory />} />
               <Route path="pending" element={<PendingTransactions />} />
+              <Route path="shared-accounts" element={<SharedAccountsPage />} />
               <Route path="shared-balance" element={<SharedBalancePage />} />
               <Route path="activity" element={<AuditLog />} />
               <Route path="accounts" element={<Accounts />} />

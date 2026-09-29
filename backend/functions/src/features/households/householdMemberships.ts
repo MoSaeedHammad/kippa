@@ -46,12 +46,16 @@ export const createHousehold = onCall(async (req) => {
 
   const batch = db.batch();
   batch.set(db.doc(`households/${householdId}/householdInfo/info`), household);
-  // Merge so we don't clobber displayName/email/createdAt/photoURL on the user doc.
+  // Merge so we don't clobber displayName/email/createdAt/photoURL on the user
+  // doc, and UNION householdIds — creating another shared account must never
+  // erase membership in the existing ones. The new account becomes active.
+  const userSnap = await db.doc(`users/${uid}`).get();
+  const existingIds = (userSnap.data()?.householdIds as string[] | undefined) ?? [];
   batch.set(
     db.doc(`users/${uid}`),
     {
       householdId,
-      householdIds: [householdId],
+      householdIds: existingIds.includes(householdId) ? existingIds : [...existingIds, householdId],
       role: 'owner',
     } as Pick<UserProfile, 'householdId' | 'householdIds' | 'role'>,
     { merge: true },
