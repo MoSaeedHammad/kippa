@@ -16,6 +16,7 @@ import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { SwapHorizIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
 import { computeSharedBalance } from '@/libs/sharedBalance';
+import { availableYears, filterEntriesByPeriod, type EntryPeriodFilter } from '@/libs/entryHistoryFilter';
 import { useAppContext } from '@/hooks/useAppContext';
 import {
   useDecideSharedBalanceEntryMutation,
@@ -24,8 +25,11 @@ import {
   useSharedBalanceEntries,
   useSharedBalanceMembers,
 } from './hooks/useSharedBalance';
-import { AddSharedBalanceEntryDialog } from './components/AddSharedBalanceEntryDialog';
+import { useUpsertRecurringRuleMutation } from './hooks/useRecurringRules';
+import { AddSharedBalanceEntryDialog, type AddSharedBalanceEntryInput } from './components/AddSharedBalanceEntryDialog';
 import { SharedBalanceEntryItem } from './components/SharedBalanceEntryItem';
+import { EntryHistoryFilter } from './components/EntryHistoryFilter';
+import { RecurringRulesCard } from './components/RecurringRulesCard';
 
 export function SharedBalancePage() {
   const { householdId, userProfile, userHouseholds } = useAppContext();
@@ -38,15 +42,23 @@ export function SharedBalancePage() {
   const proposeMutation = useProposeSharedBalanceEntryMutation();
   const decideMutation = useDecideSharedBalanceEntryMutation();
   const editMutation = useEditSharedBalanceEntryMutation();
+  const upsertRuleMutation = useUpsertRecurringRuleMutation(householdId);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SharedBalanceEntry | null>(null);
+  const [periodFilter, setPeriodFilter] = useState<EntryPeriodFilter>({
+    year: new Date().getUTCFullYear(),
+    month: 'all',
+  });
 
   const balance = computeSharedBalance(entries, viewerUid);
   const pendingForViewer = entries.filter(
     (entry) => entry.status === 'pending' && entry.createdBy !== viewerUid,
   ).length;
-  const busy = proposeMutation.isPending || decideMutation.isPending || editMutation.isPending;
+  const years = availableYears(entries);
+  const visibleEntries = filterEntriesByPeriod(entries, periodFilter);
+  const isFiltering = visibleEntries.length !== entries.length;
+  const busy = proposeMutation.isPending || decideMutation.isPending || editMutation.isPending || upsertRuleMutation.isPending;
 
   const otherName = members.find((member) => member.uid !== viewerUid)?.displayName;
   const balanceCaption = balance > 0
@@ -61,10 +73,29 @@ export function SharedBalancePage() {
     setEditingEntry(null);
   };
 
-  const handlePropose = async (input: Omit<Parameters<typeof proposeMutation.mutateAsync>[0], 'householdId'>) => {
+  const handlePropose = async (input: AddSharedBalanceEntryInput) => {
     try {
-      await proposeMutation.mutateAsync({ householdId, ...input });
-      enqueueSnackbar('Entry sent for approval', { variant: 'success' });
+      if (input.repeat !== 'none') {
+        await upsertRuleMutation.mutateAsync({
+          action: 'create',
+          rule: {
+            kind: input.kind,
+            direction: input.direction,
+            counterpartyUid: input.counterpartyUid,
+            amount: input.amount,
+            currency: input.currency,
+            typeLabel: input.typeLabel,
+            note: input.note,
+            frequency: input.repeat,
+            anchorDate: input.date,
+          },
+        });
+        enqueueSnackbar('Recurring entry scheduled — the first occurrence is waiting for approval', { variant: 'success' });
+      } else {
+        const { repeat: _repeat, ...entryInput } = input;
+        await proposeMutation.mutateAsync({ householdId, ...entryInput });
+        enqueueSnackbar('Entry sent for approval', { variant: 'success' });
+      }
       setDialogOpen(false);
     } catch (error) {
       enqueueSnackbar(error instanceof Error ? error.message : 'Could not add this entry', { variant: 'error' });
@@ -144,28 +175,43 @@ export function SharedBalancePage() {
           description="Add an IOU, split or repayment — the other member approves it before it changes the balance."
         />
       ) : (
-        <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
-          <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-            <Typography variant="cardTitle">Entries</Typography>
-            <Typography variant="cardSubtitle" color="text.secondary">
-              Newest first — pending entries sit on top
-            </Typography>
-          </Box>
-          <Divider />
-          {entries.map((entry) => (
-            <SharedBalanceEntryItem
-              key={`${entry.id}_r${entry.revision}`}
-              entry={entry}
-              viewerUid={viewerUid}
-              busy={busy}
-              onApprove={(item) => decide(item, 'approve')}
-              onReject={(item) => decide(item, 'reject')}
-              onCancel={(item) => decide(item, 'cancel')}
-              onEdit={(item) => { setEditingEntry(item); setDialogOpen(true); }}
-            />
-          ))}
-        </Card>
+        <Stack spacing={1.5}>
+          <EntryHistoryFilter years={years} value={periodFilter} onChange={setPeriodFilter} />
+          <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
+            <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
+              <Typography variant="cardTitle">Entries</Typography>
+              <Typography variant="cardSubtitle" color="text.secondary">
+                {isFiltering
+                  ? `Showing ${visibleEntries.length} of ${entries.length} — balance always counts everything`
+                  : 'Newest first — pending entries sit on top'}
+              </Typography>
+            </Box>
+            <Divider />
+            {visibleEntries.length === 0 ? (
+              <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 3 }}>
+                <Typography variant="cardSubtitle" color="text.secondary">
+                  No entries in this period.
+                </Typography>
+              </Box>
+            ) : (
+              visibleEntries.map((entry) => (
+                <SharedBalanceEntryItem
+                  key={`${entry.id}_r${entry.revision}`}
+                  entry={entry}
+                  viewerUid={viewerUid}
+                  busy={busy}
+                  onApprove={(item) => decide(item, 'approve')}
+                  onReject={(item) => decide(item, 'reject')}
+                  onCancel={(item) => decide(item, 'cancel')}
+                  onEdit={(item) => { setEditingEntry(item); setDialogOpen(true); }}
+                />
+              ))
+            )}
+          </Card>
+        </Stack>
       )}
+
+      <RecurringRulesCard householdId={householdId} viewerUid={viewerUid} />
 
       <AddSharedBalanceEntryDialog
         open={dialogOpen}

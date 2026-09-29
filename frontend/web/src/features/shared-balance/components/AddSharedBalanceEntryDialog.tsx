@@ -9,8 +9,22 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import type { HouseholdMember, SharedBalanceEntry, SharedBalanceEntryKind } from '@kippa/domain';
+import type { HouseholdMember, RecurringFrequency, SharedBalanceEntry, SharedBalanceEntryKind } from '@kippa/domain';
 import { SHARED_BALANCE_TYPE_LABELS } from '@/libs/sharedBalance';
+
+export type AddEntryRepeat = 'none' | RecurringFrequency;
+
+export type AddSharedBalanceEntryInput = {
+  kind: SharedBalanceEntryKind;
+  direction: 'caller_paid' | 'counterparty_paid';
+  counterpartyUid: string;
+  amount: number;
+  currency: string;
+  typeLabel: string;
+  note: string | null;
+  date: string;
+  repeat: AddEntryRepeat;
+};
 
 type Props = {
   open: boolean;
@@ -21,16 +35,7 @@ type Props = {
   viewerUid: string;
   defaultCurrency: string;
   onClose: () => void;
-  onSubmit: (input: {
-    kind: SharedBalanceEntryKind;
-    direction: 'caller_paid' | 'counterparty_paid';
-    counterpartyUid: string;
-    amount: number;
-    currency: string;
-    typeLabel: string;
-    note: string | null;
-    date: string;
-  }) => Promise<void>;
+  onSubmit: (input: AddSharedBalanceEntryInput) => Promise<void>;
   onEditSubmit: (input: { amount: number; typeLabel: string; note: string | null; date: string }) => Promise<void>;
 };
 
@@ -68,6 +73,7 @@ export function AddSharedBalanceEntryDialog({
   const [typeLabel, setTypeLabel] = useState<string>('Cash');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(todayIso);
+  const [repeat, setRepeat] = useState<AddEntryRepeat>('none');
 
   const otherMembers = members.filter((member) => member.uid !== viewerUid);
   const amountNumber = Number(amount);
@@ -95,6 +101,7 @@ export function AddSharedBalanceEntryDialog({
       typeLabel: typeLabel.trim(),
       note: note.trim() || null,
       date,
+      repeat,
     });
   };
 
@@ -174,6 +181,23 @@ export function AddSharedBalanceEntryDialog({
             onChange={(e) => setDate(e.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
+          {!editing && (
+            <TextField
+              select
+              fullWidth
+              label="Repeat"
+              value={repeat}
+              onChange={(e) => setRepeat(e.target.value as AddEntryRepeat)}
+              helperText={repeat === 'none'
+                ? undefined
+                : 'Each occurrence lands as a pending entry — the other member confirms it before it counts.'}
+            >
+              <MenuItem value="none">Doesn't repeat</MenuItem>
+              <MenuItem value="weekly">Weekly</MenuItem>
+              <MenuItem value="monthly">Monthly</MenuItem>
+              <MenuItem value="yearly">Yearly</MenuItem>
+            </TextField>
+          )}
           <TextField
             fullWidth
             label="Note (optional)"

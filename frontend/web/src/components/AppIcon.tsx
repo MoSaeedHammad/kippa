@@ -4,8 +4,9 @@ import {
   Add, AddSquare, ArrowLeft, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
   Bank, Briefcase, Calendar, Card, CardPos, Category, Chart, CloseCircle, CloudRemove,
   Convert, Copy, Discover, Edit2, Export, Eye, EyeSlash, Filter, Home2, InfoCircle, Key,
-  Logout, Minus, Moon, Note, Notification, NotificationBing, People, Profile2User, Receipt,
-  SearchNormal1, Setting2, ShoppingCart, Sun, TickCircle, TickSquare, Timer1, Trash,
+  Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle, People,
+  Play, Profile2User, Receipt, SearchNormal1, Setting2, ShoppingCart, Sun, TickCircle,
+  TickSquare, Timer1, Trash,
 } from 'iconsax-react';
 
 type IconsaxVariant = 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
@@ -98,8 +99,10 @@ export const LogoutIcon = createAppIcon(Logout);
 export const NotesIcon = createAppIcon(Note);
 export const NotificationsIcon = createAppIcon(Notification);
 export const NotificationsActiveIcon = createAppIcon(NotificationBing);
+export const PauseIcon = createAppIcon(PauseCircle);
 export const PaymentsIcon = createAppIcon(CardPos);
 export const PieChartIcon = createAppIcon(Chart);
+export const PlayIcon = createAppIcon(Play);
 export const ReceiptLongIcon = createAppIcon(Receipt);
 export const RemoveIcon = createAppIcon(Minus);
 export const SavingsIcon = createAppIcon(Bank);
