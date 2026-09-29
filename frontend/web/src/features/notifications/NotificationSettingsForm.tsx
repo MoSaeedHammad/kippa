@@ -14,7 +14,7 @@ import { NotificationSettings } from '@kippa/domain';
 import { useNotifications } from '@/notifications/useNotifications';
 import { IosInstallBanner } from '@/notifications/IosInstallBanner';
 import { PageHeader } from '@/features/shared/components/PageHeader';
-import { CalendarMonthIcon, CreditCardIcon, GroupAddIcon, NotificationsActiveIcon } from '@/components/AppIcon';
+import { CalendarMonthIcon, CreditCardIcon, GroupAddIcon, NotificationsActiveIcon, SyncAltIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 
 interface NotificationSettingsFormProps {
@@ -89,6 +89,12 @@ export function NotificationSettingsForm({
       title: 'Join requests',
       description: 'Stay informed when a member requests access or a decision is made.',
       Icon: GroupAddIcon,
+    },
+    {
+      key: 'recurringEntriesEnabled' as const,
+      title: 'Recurring entry confirmations',
+      description: 'Ask me to confirm each recurring shared entry before it counts.',
+      Icon: SyncAltIcon,
     },
   ];
 

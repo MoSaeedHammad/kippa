@@ -47,6 +47,7 @@ export function Notifications() {
     categoryWarningEnabled: true,
     cardExpiryWarningEnabled: true,
     joinRequestEnabled: true,
+    recurringEntriesEnabled: true,
   };
 
   return (
