@@ -92,8 +92,17 @@ export function SharedBalancePage() {
         });
         enqueueSnackbar('Recurring entry scheduled — the first occurrence is waiting for approval', { variant: 'success' });
       } else {
-        const { repeat: _repeat, ...entryInput } = input;
-        await proposeMutation.mutateAsync({ householdId, ...entryInput });
+        await proposeMutation.mutateAsync({
+          householdId,
+          kind: input.kind,
+          direction: input.direction,
+          counterpartyUid: input.counterpartyUid,
+          amount: input.amount,
+          currency: input.currency,
+          typeLabel: input.typeLabel,
+          note: input.note,
+          date: input.date,
+        });
         enqueueSnackbar('Entry sent for approval', { variant: 'success' });
       }
       setDialogOpen(false);
