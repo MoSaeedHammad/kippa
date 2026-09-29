@@ -10,7 +10,8 @@ service cloud.firestore {
     function isHouseholdMember(householdId) {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.householdId == householdId;
+        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.householdId == householdId
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('householdIds', []).hasAny([householdId]));
     }
 
     // Access level of the caller in the given household, as set by the owner
@@ -104,6 +105,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Recurring shared-balance rules: any member reads (shared-balance-only
+      // members manage their own rules); every write goes through callables.
+      match /recurringSharedEntryRules/{ruleId} {
+        allow read: if isHouseholdMember(householdId);
+        allow write: if false;
+      }
+
       // Any member (any access level) registers push tokens and own settings,
       // otherwise shared-balance-only members could never be notified.
       match /fcmTokens/{tokenId} {
@@ -118,11 +126,13 @@ service cloud.firestore {
       // Default: full members can read/write household data. Shared-balance
       // only members are excluded because accounts, transactions, cards,
       // statements and the audit log all reveal private financial details.
-      // (pendingFinancialMessages, sharedBalanceEntries, fcmTokens,
-      // notificationSettings, aiConversations and aiMemories are matched above.)
+      // (pendingFinancialMessages, sharedBalanceEntries,
+      // recurringSharedEntryRules, fcmTokens, notificationSettings,
+      // aiConversations and aiMemories are matched above.)
       match /{collectionName}/{documentId} {
         allow read, write: if collectionName != 'pendingFinancialMessages'
           && collectionName != 'sharedBalanceEntries'
+          && collectionName != 'recurringSharedEntryRules'
           && collectionName != 'fcmTokens'
           && collectionName != 'notificationSettings'
           && collectionName != 'aiConversations'
