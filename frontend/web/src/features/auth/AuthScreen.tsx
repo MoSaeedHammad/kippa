@@ -66,14 +66,14 @@ export function AuthScreen() {
   const handleCreateHousehold = async () => {
     if (!userProfile) return;
     if (!householdName.trim()) {
-      enqueueSnackbar('Please enter a shared account name', { variant: 'warning' });
+      enqueueSnackbar('Please enter a space name', { variant: 'warning' });
       return;
     }
     setLoading(true);
     try {
       await createHousehold(householdName.trim());
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create shared account', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to create space', { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export function AuthScreen() {
     setLoading(true);
     try {
       await requestToJoinHousehold(householdIdToJoin.trim(), levelFromLink ?? undefined);
-      enqueueSnackbar('Request sent — the shared account owner will review it.', { variant: 'success' });
+      enqueueSnackbar('Request sent — the space owner will review it.', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
     } finally {
@@ -151,7 +151,7 @@ export function AuthScreen() {
                   px: 2
                 }}
               >
-                Welcome back, <strong>{userProfile.displayName}</strong>! To get started, you need to create a new shared account or join an existing shared one.
+                Welcome back, <strong>{userProfile.displayName}</strong>! To get started, you need to create a new space or join an existing one.
               </Typography>
             </Box>
 
@@ -196,7 +196,7 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Create a New Shared Account
+                    Create a New Space
                   </Typography>
                   
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
@@ -206,7 +206,7 @@ export function AuthScreen() {
                   <Stack spacing={2} sx={{ mt: 'auto' }}>
                     <TextField
                       fullWidth
-                      label="Shared account name"
+                      label="Space name"
                       placeholder="e.g. My Cozy Home"
                       value={householdName}
                       onChange={e => setHouseholdName(e.target.value)}
@@ -227,7 +227,7 @@ export function AuthScreen() {
                       onClick={handleCreateHousehold}
                       loading={loading}
                     >
-                      Create Shared Account
+                      Create Space
                     </Button>
                   </Stack>
                 </CardContent>
@@ -268,7 +268,7 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Join an Existing Shared Account
+                    Join an Existing Space
                   </Typography>
                   
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
@@ -299,7 +299,7 @@ export function AuthScreen() {
                       onClick={handleJoinHousehold}
                       loading={loading}
                     >
-                      Join Shared Account
+                      Join Space
                     </Button>
                   </Stack>
                 </CardContent>
@@ -356,7 +356,7 @@ export function AuthScreen() {
             Track your spending effortlessly
           </Typography>
           <Typography sx={{ mt: 2.5, mb: 4.5, color: alpha(theme.palette.primary.contrastText, 0.78), fontSize: { xs: 15, sm: 17 }, lineHeight: 1.55, maxWidth: 420 }}>
-            Manage your shared account finances, follow every expense, and keep your goals in sight.
+            Manage your space finances, follow every expense, and keep your goals in sight.
           </Typography>
 
           <Box sx={{ width: '100%' }}>

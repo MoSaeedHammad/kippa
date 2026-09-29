@@ -68,7 +68,7 @@ export function SharedAccountsPage() {
       }
       navigate('/shared-balance');
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not open this shared account', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : 'Could not open this space', { variant: 'error' });
     } finally {
       setSwitchingId(null);
     }
@@ -79,13 +79,13 @@ export function SharedAccountsPage() {
     setCreating(true);
     try {
       await createHousehold(newName.trim());
-      enqueueSnackbar('Shared account created', { variant: 'success' });
+      enqueueSnackbar('Space created', { variant: 'success' });
       setDialogOpen(false);
       setNewName('');
       // The new account becomes the active one server-side.
       navigate('/shared-balance');
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not create the shared account', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : 'Could not create the space', { variant: 'error' });
     } finally {
       setCreating(false);
     }
@@ -94,11 +94,11 @@ export function SharedAccountsPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Shared accounts"
+        title="Spaces"
         subtitle="Every shared space you belong to — each keeps its own balance, history and approvals."
         action={
           <Button variant="contained" startIcon={<AddIcon fontSize="small" />} onClick={() => setDialogOpen(true)}>
-            New shared account
+            New space
           </Button>
         }
       />
@@ -110,7 +110,7 @@ export function SharedAccountsPage() {
       ) : summaries.length === 0 ? (
         <EmptyLayout
           icon={<SwitchAccountIcon sx={{ fontSize: 28 }} />}
-          title="No shared accounts yet"
+          title="No spaces yet"
           description="Create one per shared space — with a partner, a flatmate, a family member. Each stays fully isolated."
         />
       ) : (
@@ -161,7 +161,7 @@ export function SharedAccountsPage() {
       )}
 
       <Dialog open={dialogOpen} onClose={() => !creating && setDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>New shared account</DialogTitle>
+        <DialogTitle>New space</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -171,7 +171,7 @@ export function SharedAccountsPage() {
             placeholder="e.g. Home, Flat 12, Side project"
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            helperText="Each shared account is fully isolated — its own members, balance and history."
+            helperText="Each space is fully isolated — its own members, balance and history."
           />
         </DialogContent>
         <DialogActions>

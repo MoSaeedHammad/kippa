@@ -166,7 +166,7 @@ export const proposeSharedBalanceEntry = onCall(async (request) => {
 
   const counterpartyProfile = await getMemberProfileInHousehold(normalized.toUid === uid ? normalized.fromUid : normalized.toUid, householdId);
   if (!counterpartyProfile) {
-    throw new HttpsError('failed-precondition', 'The counterparty must be a member of this shared account.');
+    throw new HttpsError('failed-precondition', 'The counterparty must be a member of this space.');
   }
 
   const db = getFirestore();
@@ -346,7 +346,7 @@ export const decideSharedBalanceEntry = onCall(async (request) => {
 
     // approve — mirror into the main ledger.
     const hhSnapshot = await transaction.get(db.doc(`households/${householdId}/householdInfo/info`));
-    if (!hhSnapshot.exists) throw new HttpsError('failed-precondition', 'Shared account not found.');
+    if (!hhSnapshot.exists) throw new HttpsError('failed-precondition', 'Space not found.');
     const household = hhSnapshot.data() as Household;
     const revision = entry.revision;
     const mirrorTransactionId = `mirror_${entryId}_r${revision}`;
@@ -421,7 +421,7 @@ export const updateMemberAccessLevel = onCall(async (request) => {
 
   const db = getFirestore();
   const hhSnapshot = await db.doc(`households/${householdId}/householdInfo/info`).get();
-  if (!hhSnapshot.exists) throw new HttpsError('not-found', 'Shared account not found.');
+  if (!hhSnapshot.exists) throw new HttpsError('not-found', 'Space not found.');
   const household = hhSnapshot.data() as Household;
   if (household.createdBy !== uid) {
     throw new HttpsError('permission-denied', 'Only the owner can change access levels.');
@@ -430,7 +430,7 @@ export const updateMemberAccessLevel = onCall(async (request) => {
     throw new HttpsError('failed-precondition', 'The owner always has full access.');
   }
   const member = await getMemberProfileInHousehold(memberUid, householdId);
-  if (!member) throw new HttpsError('not-found', 'That member is not part of this shared account.');
+  if (!member) throw new HttpsError('not-found', 'That member is not part of this space.');
 
   await db.doc(`users/${memberUid}`).set(
     { [`memberships.${householdId}`]: { accessLevel } },
@@ -449,7 +449,7 @@ export const updateMemberAccessLevel = onCall(async (request) => {
     memberUid,
     'Access level updated',
     accessLevel === 'full'
-      ? 'You now have full access to the shared account.'
+      ? 'You now have full access to the space.'
       : 'You now see the shared balance only.',
     '/household',
   );
@@ -522,7 +522,7 @@ export const upsertRecurringSharedEntryRule = onCall(async (request) => {
     const counterpartyUid = normalized.fromUid === uid ? normalized.toUid : normalized.fromUid;
     const counterpartyProfile = await getMemberProfileInHousehold(counterpartyUid, householdId);
     if (!counterpartyProfile) {
-      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this shared account.');
+      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this space.');
     }
     const activeSnap = await db
       .collection(`households/${householdId}/recurringSharedEntryRules`)
@@ -530,7 +530,7 @@ export const upsertRecurringSharedEntryRule = onCall(async (request) => {
       .count()
       .get();
     if (activeSnap.data().count >= MAX_ACTIVE_RULES_PER_HOUSEHOLD) {
-      throw new HttpsError('failed-precondition', 'This shared account already has the maximum number of active recurring entries.');
+      throw new HttpsError('failed-precondition', 'This space already has the maximum number of active recurring entries.');
     }
     const ruleId = `rsr_${randomUUID()}`;
     const rule: RecurringSharedEntryRule = {

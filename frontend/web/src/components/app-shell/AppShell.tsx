@@ -20,7 +20,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/shared-balance': 'Shared balance',
   '/activity': 'Activity Log',
   '/accounts': 'Bank Accounts',
-  '/household': 'Shared account',
+  '/household': 'My space',
   '/categories': 'Categories',
   '/notifications': 'Notifications',
   '/ai': 'Kip',

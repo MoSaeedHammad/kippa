@@ -44,7 +44,7 @@ describe('AI tool validation boundary', () => {
     const definition = defineAiTool({
       description: 'test', inputSchema: z.object({}).strict(), risk: 'read' as const, execute: async () => ({}),
     });
-    await expect(executeValidatedTool(definition, {}, { householdId: '', userId: '' })).rejects.toThrow('Authenticated household context');
+    await expect(executeValidatedTool(definition, {}, { householdId: '', userId: '' })).rejects.toThrow('Authenticated space context');
   });
 });
 

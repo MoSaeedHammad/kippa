@@ -139,7 +139,7 @@ export function TransactionHistory() {
               Transaction History
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              View, search, and manage your shared account transactions.
+              View, search, and manage your space transactions.
             </Typography>
           </Box>
         </Box>

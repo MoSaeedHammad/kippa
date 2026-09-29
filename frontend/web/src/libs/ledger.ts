@@ -153,12 +153,12 @@ export const ledgerLib = {
     try {
       const data = await dbLib.getDoc(householdId, 'householdInfo', 'info');
       if (data) {
-        return (data as Household).name || 'My Household';
+        return (data as Household).name || 'My space';
       }
     } catch {
       // ignore
     }
-    return 'My Household';
+    return 'My space';
   },
 
   async getHouseholdInfo(householdId: string): Promise<Household | null> {
@@ -175,11 +175,11 @@ export const ledgerLib = {
     baseCurrency: CurrencyCode
   ): Promise<void> {
     const info = await this.getHouseholdInfo(householdId);
-    if (!info) throw new Error('Household not found');
+    if (!info) throw new Error('Space not found');
     await dbLib.setDoc(householdId, 'householdInfo', 'info', { ...info, baseCurrency });
   },
 
-  async ensureHouseholdExists(householdId: string, userId: string, name: string = 'My Household'): Promise<string> {
+  async ensureHouseholdExists(householdId: string, userId: string, name: string = 'My space'): Promise<string> {
     try {
       const data = await dbLib.getDoc(householdId, 'householdInfo', 'info');
       if (!data) {

@@ -23,7 +23,7 @@ export const AI_PROVIDER: AiProviderName = explicitProvider === 'glm' || explici
     : 'gemini';
 
 export const AI_MODEL = AI_PROVIDER === 'glm'
-  ? envValue('VITE_GLM_MODEL') || 'glm-4.6'
+  ? envValue('VITE_GLM_MODEL') || 'glm-5.3'
   : GEMINI_MODEL;
 
 function requireApiKey(provider: AiProviderName): string {

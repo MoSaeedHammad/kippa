@@ -75,9 +75,9 @@ export function Household() {
     setActionLoading(true);
     try {
       await switchHousehold(id);
-      enqueueSnackbar('Switched shared account successfully!', { variant: 'success' });
+      enqueueSnackbar('Switched space successfully!', { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to switch shared account.', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to switch space.', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -85,7 +85,7 @@ export function Household() {
 
   const handleCreateHousehold = async () => {
     if (!newHouseholdName.trim()) {
-      enqueueSnackbar('Please enter a shared account name', { variant: 'warning' });
+      enqueueSnackbar('Please enter a space name', { variant: 'warning' });
       return;
     }
     setActionLoading(true);
@@ -94,7 +94,7 @@ export function Household() {
       setNewHouseholdName('');
       enqueueSnackbar(`Shared account "${newHh.name}" created and set as active!`, { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create shared account', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to create space', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -108,7 +108,7 @@ export function Household() {
     setActionLoading(true);
     try {
       await requestToJoinHousehold(householdIdToJoin.trim());
-      enqueueSnackbar('Request sent — the shared account owner will review it.', { variant: 'success' });
+      enqueueSnackbar('Request sent — the space owner will review it.', { variant: 'success' });
     } catch (err: any) {
       enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
     } finally {
@@ -161,10 +161,10 @@ export function Household() {
     setActionLoading(true);
     try {
       await leaveHousehold(householdToLeave.id);
-      enqueueSnackbar(`Successfully left shared account "${householdToLeave.name}"`, { variant: 'success' });
+      enqueueSnackbar(`Successfully left space "${householdToLeave.name}"`, { variant: 'success' });
       handleCloseLeaveConfirm();
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to leave shared account.', { variant: 'error' });
+      enqueueSnackbar(err.message || 'Failed to leave space.', { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -195,8 +195,8 @@ export function Household() {
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="Shared account"
-          subtitle="Manage members, shared access, and the financial spaces you belong to."
+          title="My space"
+          subtitle="Manage members, shared access, and the spaces you belong to."
         />
 
         <Grid container spacing={3} alignItems="stretch">

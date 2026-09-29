@@ -16,13 +16,13 @@ export function YourHouseholdsCard({ activeId, busy, households, loading, onLeav
   return (
     <Card>
       <CardContent>
-        <CardHeading icon={<HomeIcon variant="Bulk" />} title="Your households" subtitle={`${households.length} financial ${households.length === 1 ? 'space' : 'spaces'} available`} />
+        <CardHeading icon={<HomeIcon variant="Bulk" />} title="Your spaces" subtitle={`${households.length} ${households.length === 1 ? 'space' : 'spaces'} available`} />
       </CardContent>
       <Divider />
       {(loading || busy) ? (
         <Box display="flex" justifyContent="center" alignItems="center" p={4}><CircularProgress size={30} /></Box>
       ) : households.length === 0 ? (
-        <Box p={3} textAlign="center"><Typography variant="body2" color="text.secondary">No households found. Please create or request to join one below.</Typography></Box>
+        <Box p={3} textAlign="center"><Typography variant="body2" color="text.secondary">No spaces found. Please create or request to join one below.</Typography></Box>
       ) : (
         <List disablePadding>
           {households.map((household, index) => {
@@ -32,8 +32,8 @@ export function YourHouseholdsCard({ activeId, busy, households, loading, onLeav
                 {index > 0 && <Divider />}
                 <ListItem sx={{ px: 2.5, py: 1.5 }} secondaryAction={active ? <Chip label="Active" color="primary" size="small" /> : (
                   <Stack direction="row" spacing={0.5}>
-                    <Tooltip title="Switch to this shared account"><IconButton color="primary" onClick={() => onSwitch(household.id)}><SwitchAccountIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Leave this shared account"><IconButton color="error" onClick={() => onLeave(household)}><LogoutIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Switch to this space"><IconButton color="primary" onClick={() => onSwitch(household.id)}><SwitchAccountIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Leave this space"><IconButton color="error" onClick={() => onLeave(household)}><LogoutIcon fontSize="small" /></IconButton></Tooltip>
                   </Stack>
                 )}>
                   <ListItemText primary={household.name} secondary={`ID: ${household.id.slice(0, 8)}... • Currency: ${household.baseCurrency}`} />

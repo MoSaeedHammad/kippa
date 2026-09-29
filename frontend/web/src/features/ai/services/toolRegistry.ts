@@ -45,7 +45,7 @@ export async function executeValidatedTool(
     throw new Error(`Invalid tool input: ${z.prettifyError(parsed.error)}`);
   }
   if (!context.householdId || !context.userId) {
-    throw new Error('Authenticated household context is required.');
+    throw new Error('Authenticated space context is required.');
   }
   if (definition.risk !== 'read' && definition.risk !== 'memory') {
     throw new Error('This action requires the confirmed-action pipeline.');
@@ -70,6 +70,6 @@ export async function executeConfirmedTool(
   const parsedResult = definition.inputSchema.safeParse(rawInput);
   if (!parsedResult.success) throw new Error(`Invalid tool input: ${z.prettifyError(parsedResult.error)}`);
   const parsed = parsedResult.data;
-  if (!context.householdId || !context.userId) throw new Error('Authenticated household context is required.');
+  if (!context.householdId || !context.userId) throw new Error('Authenticated space context is required.');
   return definition.execute(parsed, context);
 }

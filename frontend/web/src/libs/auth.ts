@@ -195,11 +195,11 @@ export const authLib = {
 
     const householdIds = profile.householdIds || [];
     if (!householdIds.includes(householdId)) {
-      throw new Error('You are not a member of this shared account');
+      throw new Error('You are not a member of this space');
     }
 
     const hh = await dbLib.getDoc(householdId, 'householdInfo', 'info');
-    if (!hh) throw new Error('Household not found');
+    if (!hh) throw new Error('Space not found');
 
     const role = hh.createdBy === userId ? 'owner' : 'member';
     const updatedProfile: UserProfile = {

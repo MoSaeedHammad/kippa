@@ -139,7 +139,7 @@ export function SharedBalancePage() {
     <Stack spacing={3}>
       <PageHeader
         title="Shared balance"
-        subtitle="IOUs, splits and repayments between you and another member. Nothing counts until the other side approves."
+        subtitle="IOUs, splits and repayments between you and another member of this space. Nothing counts until the other side approves."
         action={
           <Button
             variant="contained"

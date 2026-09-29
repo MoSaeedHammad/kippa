@@ -29,10 +29,10 @@ const RIGHT_ITEMS: NavItem[] = [
 
 // Shared-balance-only members are blocked from everything else by the rules.
 const SCOPED_LEFT_ITEMS: NavItem[] = [
-  { label: 'Shared accounts', path: '/shared-accounts', icon: <SwitchAccountIcon /> },
+  { label: 'Spaces', path: '/shared-accounts', icon: <SwitchAccountIcon /> },
 ];
 const SCOPED_RIGHT_ITEMS: NavItem[] = [
-  { label: 'Shared account', path: '/household', icon: <DashboardIcon /> },
+  { label: 'My space', path: '/household', icon: <DashboardIcon /> },
 ];
 
 export function BottomNav() {

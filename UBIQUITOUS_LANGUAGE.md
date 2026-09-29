@@ -6,14 +6,17 @@ Glossary of record for all **user-facing text** in Kippa (nav labels, pages, but
 
 | Term             | Definition                                                                 | Aliases to avoid                     |
 | ---------------- | -------------------------------------------------------------------------- | ------------------------------------ |
-| **Shared account** | The shared workspace holding all accounts, transactions, and settings     | Household, workspace, joint account  |
-| **Member**       | A person with access to the shared account                                 | Household member, joint holder, user |
-| **Owner**        | The member who created the shared account and approves join requests       | Admin                                |
-| **Access level** | What a member may see in the shared account: **Full** or **Shared balance only** | Permission, role, scope       |
-| **Full member**  | A member whose access level is Full; sees everything in the shared account | Admin (unqualified)                  |
+| **Space**        | The shared workspace holding all accounts, transactions, and settings. Each is fully isolated with its own balance and history; a user may belong to several (see the Spaces hub) | Household, shared account, workspace, joint account |
+| **Member**       | A person with access to a space                                            | Household member, joint holder, user |
+| **Owner**        | The member who created the space and approves join requests                | Admin                                |
+| **Access level** | What a member may see in a space: **Full** or **Shared balance only**      | Permission, role, scope              |
+| **Full member**  | A member whose access level is Full; sees everything in the space          | Admin (unqualified)                  |
 | **Shared-balance member** | A member whose access level is Shared balance only; sees only the shared balance, its entries, and members | Limited member, viewer, guest |
 | **Invite link**  | The link a member shares so another person can request to join; it may suggest an access level, which the owner sets at approval | Household Invite ID, invite code |
 | **Join request** | A request to become a member, awaiting the owner's decision on access level | Access request                      |
+
+> Terminology history: "Household" → "Shared account" (2026-08) → **"Space"** (2026-09-29).
+> Internal identifiers (`householdId`, `households/…` collections, the `/household` route) intentionally keep the legacy name.
 
 ## Money & accounts
 

@@ -505,7 +505,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     }
     tagCounterpartyProfile = await getMemberProfileInHousehold(sharedBalanceTag.counterpartyUid, householdId);
     if (!tagCounterpartyProfile) {
-      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this shared account.');
+      throw new HttpsError('failed-precondition', 'The counterparty must be a member of this space.');
     }
   }
 

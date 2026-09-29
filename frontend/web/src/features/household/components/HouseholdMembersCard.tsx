@@ -22,9 +22,9 @@ export function HouseholdMembersCard({ busy, loading, members, onDecide, onAcces
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Stack spacing={2}>
-          <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Members" subtitle={`${members.length} people connected to this shared account`} />
+          <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Members" subtitle={`${members.length} people connected to this space`} />
           {members.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">{loading ? 'Loading members…' : 'No other members yet. Invite someone or approve a join request to share this shared account.'}</Typography>
+            <Typography variant="body2" color="text.secondary">{loading ? 'Loading members…' : 'No other members yet. Invite someone or approve a join request to share this space.'}</Typography>
           ) : (
             <List disablePadding>
               {members.map((member, index) => (

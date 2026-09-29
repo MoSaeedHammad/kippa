@@ -43,7 +43,7 @@ export function TopBar({
   }, []);
 
   const currentHousehold = userHouseholds.find(hh => hh.id === householdId);
-  const householdName = currentHousehold ? currentHousehold.name : 'Personal Household';
+  const householdName = currentHousehold ? currentHousehold.name : 'My space';
 
   return (
     <>

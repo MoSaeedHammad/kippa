@@ -31,7 +31,7 @@ export const createHousehold = onCall(async (req) => {
   const name = data?.name?.trim();
   const baseCurrency = data?.baseCurrency?.trim() || 'USD';
   if (!name) {
-    throw new HttpsError('invalid-argument', 'Household name is required.');
+    throw new HttpsError('invalid-argument', 'Space name is required.');
   }
 
   const householdId = crypto.randomUUID();
@@ -82,7 +82,7 @@ export const requestToJoinHousehold = onCall(async (req) => {
 
   const hhSnap = await db.doc(`households/${householdId}/householdInfo/info`).get();
   if (!hhSnap.exists) {
-    throw new HttpsError('not-found', 'Household ID not found.');
+    throw new HttpsError('not-found', 'Space ID not found.');
   }
   const household = hhSnap.data() as Household;
   const ownerUid = household.createdBy;
@@ -93,7 +93,7 @@ export const requestToJoinHousehold = onCall(async (req) => {
   if (user?.householdIds?.includes(householdId)) {
     throw new HttpsError(
       'failed-precondition',
-      'You are already a member of this household.',
+      'You are already a member of this space.',
     );
   }
 
@@ -149,13 +149,13 @@ export const decideJoinRequest = onCall(async (req) => {
   // Verify caller is the household owner
   const hhSnap = await db.doc(`households/${householdId}/householdInfo/info`).get();
   if (!hhSnap.exists) {
-    throw new HttpsError('not-found', 'Household not found.');
+    throw new HttpsError('not-found', 'Space not found.');
   }
   const household = hhSnap.data() as Household;
   if (household.createdBy !== callerUid) {
     throw new HttpsError(
       'permission-denied',
-      'Only the household owner can decide join requests.',
+      'Only the space owner can decide join requests.',
     );
   }
 
@@ -230,7 +230,7 @@ export const listHouseholdMembers = onCall(async (req) => {
   const callerSnap = await db.doc(`users/${callerUid}`).get();
   const caller = callerSnap.data() as Partial<UserProfile> | undefined;
   if (!caller?.householdIds?.includes(householdId)) {
-    throw new HttpsError('permission-denied', 'You are not a member of this household.');
+    throw new HttpsError('permission-denied', 'You are not a member of this space.');
   }
 
   const membersSnap = await db
@@ -273,7 +273,7 @@ export const leaveHousehold = onCall(async (req) => {
     throw new HttpsError('not-found', 'User profile not found.');
   }
   if (!user.householdIds?.includes(householdId)) {
-    throw new HttpsError('failed-precondition', 'You are not a member of this household.');
+    throw new HttpsError('failed-precondition', 'You are not a member of this space.');
   }
 
   const remaining = user.householdIds.filter((id) => id !== householdId);
@@ -326,7 +326,7 @@ async function maybeNotifyOwner(
       buildMessagePayload({
         type: 'household_join',
         title: 'Join request',
-        body: `${requesterName} requested to join your household`,
+        body: `${requesterName} requested to join your space`,
         householdId,
         deepLink: '/household',
       }),

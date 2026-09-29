@@ -156,7 +156,7 @@ export function ProfileMenu({
             display: 'block',
           }}
         >
-          Current Household
+          Current space
         </Typography>
 
         <Stack
@@ -206,7 +206,7 @@ export function ProfileMenu({
         </Stack>
       </Box>
 
-      {/* Quick Switch Households */}
+      {/* Quick Switch spaces */}
       {userHouseholds.length > 1 && (
         <>
           <Typography
@@ -223,7 +223,7 @@ export function ProfileMenu({
               display: 'block',
             }}
           >
-            Switch Household
+            Switch space
           </Typography>
           {userHouseholds.map((hh) => {
             if (hh.id === householdId) return null;
@@ -235,7 +235,7 @@ export function ProfileMenu({
                   try {
                     await switchHousehold(hh.id);
                   } catch (err) {
-                    console.error('Failed to switch household:', err);
+                    console.error('Failed to switch space:', err);
                   }
                 }}
                 sx={menuItemStyle}

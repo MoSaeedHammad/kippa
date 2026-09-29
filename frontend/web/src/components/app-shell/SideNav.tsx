@@ -50,7 +50,7 @@ const menuItems: NavItem[] = [
     children: [
       { label: 'All transactions', path: '/transactions' },
       { label: 'Approvals', path: '/pending' },
-      { label: 'Shared accounts', path: '/shared-accounts' },
+      { label: 'Spaces', path: '/shared-accounts' },
       { label: 'Shared balance', path: '/shared-balance' },
       { label: 'Expenses', path: '/transactions?type=expense' },
       { label: 'Income', path: '/transactions?type=income' },
@@ -67,7 +67,7 @@ const menuItems: NavItem[] = [
     ],
   },
   {
-    label: 'Shared account',
+    label: 'My space',
     path: '/household',
     icon: HomeIcon,
     children: [
@@ -82,10 +82,10 @@ const menuItems: NavItem[] = [
 // notifications, and the shared account page — everything else is blocked by
 // the security rules anyway, so showing it would only lead to errors.
 const sharedBalanceOnlyMenu: NavItem[] = [
-  { label: 'Shared accounts', path: '/shared-accounts', icon: SwitchAccountIcon },
+  { label: 'Spaces', path: '/shared-accounts', icon: SwitchAccountIcon },
   { label: 'Shared balance', path: '/shared-balance', icon: ReceiptLongIcon },
   {
-    label: 'Shared account',
+    label: 'My space',
     path: '/household',
     icon: HomeIcon,
     children: [

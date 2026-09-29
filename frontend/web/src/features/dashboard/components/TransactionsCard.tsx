@@ -64,7 +64,7 @@ export function TransactionsCard() {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            <DashboardCardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="Recent Transactions" subtitle="Latest household activity" trailing={<Stack direction="row" spacing={1} alignItems="center">
+            <DashboardCardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="Recent Transactions" subtitle="Latest space activity" trailing={<Stack direction="row" spacing={1} alignItems="center">
                 <Chip size="small" label={`${Math.min(transactions.length, 8)} recent`} sx={{ bgcolor: 'action.hover', color: 'primary.main' }} />
                 <IconButton aria-label="View all transactions" onClick={() => navigate('/transactions')} size="small" sx={{ width: 36, height: 36, minWidth: 36 }}>
                   <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(180deg)' }} />

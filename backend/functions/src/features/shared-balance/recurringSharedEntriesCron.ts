@@ -54,7 +54,7 @@ async function processRule(
         rule.householdId,
         rule.createdBy,
         'Recurring entry paused',
-        `"${rule.typeLabel}" was paused because the other member is no longer in this shared account.`,
+        `"${rule.typeLabel}" was paused because the other member is no longer in this space.`,
         '/shared-balance',
       );
     }

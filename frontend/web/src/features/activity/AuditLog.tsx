@@ -100,7 +100,7 @@ const ACTION_GROUPS: { label: string; actions: AuditAction[] }[] = [
   { label: 'Statements', actions: ['cycle_created', 'cycle_status_changed'] },
   { label: 'Allocations', actions: ['allocation_saved', 'allocations_batch_saved', 'expected_income_saved'] },
   { label: 'Reconciliation', actions: ['reconciliation_created'] },
-  { label: 'Shared account', actions: ['household_joined', 'household_left'] },
+  { label: 'Spaces', actions: ['household_joined', 'household_left'] },
   { label: 'Settings', actions: ['notification_settings_updated'] },
 ];
 
@@ -242,7 +242,7 @@ export function AuditLog() {
       <Stack spacing={3}>
         <PageHeader
           title="Activity Log"
-          subtitle="A real-time timeline of everything happening in your shared account"
+          subtitle="A real-time timeline of everything happening in your space"
         />
 
         {isLoading ? (
@@ -266,7 +266,7 @@ export function AuditLog() {
             <EmptyLayout
               icon={<HistoryIcon />}
               title="No activity yet"
-              description="Actions you and your shared account take—logging expenses, creating cycles, and updating accounts—will appear here in real time."
+              description="Actions you and your space take—logging expenses, creating cycles, and updating accounts—will appear here in real time."
             />
           </Card>
         ) : (

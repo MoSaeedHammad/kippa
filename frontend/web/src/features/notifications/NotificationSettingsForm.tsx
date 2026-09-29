@@ -170,7 +170,7 @@ export function NotificationSettingsForm({
                       </Typography>
                       <Typography sx={{ mt: 0.5, fontSize: 12, lineHeight: 1.55, color: 'text.secondary' }}>
                         {notifStatus === 'enabled'
-                          ? 'Kippa can send reminders and household updates to this device.'
+                          ? 'Kippa can send reminders and space updates to this device.'
                           : notifStatus === 'permission-denied'
                             ? 'Allow notifications in your browser or device settings, then reopen Kippa.'
                             : notifStatus === 'unsupported'

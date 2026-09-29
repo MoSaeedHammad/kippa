@@ -82,7 +82,7 @@ const FULL_SECTIONS = [
   {
     title: 'Shared account',
     items: [
-      { label: 'Shared account', icon: <HomeIcon fontSize="small" />, path: '/household' },
+      { label: 'My space', icon: <HomeIcon fontSize="small" />, path: '/household' },
       { label: 'Activity Log', icon: <HistoryIcon fontSize="small" />, path: '/activity' },
     ],
   },
@@ -106,7 +106,7 @@ const SCOPED_SECTIONS = [
   {
     title: 'Shared account',
     items: [
-      { label: 'Shared account', icon: <HomeIcon fontSize="small" />, path: '/household' },
+      { label: 'My space', icon: <HomeIcon fontSize="small" />, path: '/household' },
     ],
   },
   {

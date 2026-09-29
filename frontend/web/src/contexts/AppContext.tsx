@@ -35,7 +35,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Ensure active household exists in Firestore
   useEffect(() => {
     if (userProfile?.householdId && userProfile?.uid) {
-      ledgerLib.ensureHouseholdExists(userProfile.householdId, userProfile.uid, 'My Household');
+      ledgerLib.ensureHouseholdExists(userProfile.householdId, userProfile.uid, 'My space');
     }
   }, [userProfile?.householdId, userProfile?.uid]);
 

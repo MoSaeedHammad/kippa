@@ -31,7 +31,7 @@ export async function requireHouseholdMember(uid: string, householdId: string): 
   const profile = await getUserProfile(uid);
   const memberships = profile?.householdIds ?? (profile?.householdId ? [profile.householdId] : []);
   if (!profile || !memberships.includes(householdId)) {
-    throw new HttpsError('permission-denied', 'You are not a member of this shared account.');
+    throw new HttpsError('permission-denied', 'You are not a member of this space.');
   }
   return profile;
 }

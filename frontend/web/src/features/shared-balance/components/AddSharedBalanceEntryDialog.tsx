@@ -146,7 +146,7 @@ export function AddSharedBalanceEntryDialog({
               label="With member"
               value={counterpartyUid}
               onChange={(e) => setCounterpartyUid(e.target.value)}
-              helperText={otherMembers.length === 0 ? 'No other member in this shared account yet.' : undefined}
+              helperText={otherMembers.length === 0 ? 'No other member in this space yet.' : undefined}
             >
               {otherMembers.map((member) => (
                 <MenuItem key={member.uid} value={member.uid}>{member.displayName}</MenuItem>
