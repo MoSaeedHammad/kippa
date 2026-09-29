@@ -158,6 +158,37 @@ export type FinanceTransaction = {
 
 export type SharedBalanceEntryKind = 'iou' | 'split' | 'repayment';
 
+export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * A repeating shared-balance entry rule. Each due occurrence is materialized
+ * by the daily cron as a PENDING SharedBalanceEntry (author = rule creator);
+ * the counterparty confirms it via the normal approval flow.
+ */
+export type RecurringSharedEntryRule = {
+  id: string;
+  householdId: string;
+  kind: SharedBalanceEntryKind;
+  fromUid: string;
+  toUid: string;
+  amount: number;
+  currency: CurrencyCode;
+  typeLabel: string;
+  note?: string | null;
+  frequency: RecurringFrequency;
+  anchorDate: string;            // YYYY-MM-DD, first occurrence date
+  endDate?: string | null;       // inclusive; null = never
+  maxOccurrences?: number | null;
+  status: 'active' | 'paused' | 'cancelled';
+  createdBy: string;
+  occurrencesCreated: number;
+  lastOccurrenceDate?: string | null;
+  /** Set on resume; occurrences before it are never backfilled. */
+  resumedDate?: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
 /**
  * A between-two-members entry on the shared balance. `fromUid` provided the
  * money/value; `toUid` owes `fromUid` `amount`. A repayment flows the other
@@ -186,6 +217,8 @@ export type SharedBalanceEntry = {
   /** Set when the entry was created from a bank-message approval tag. */
   sourceTransactionId?: string | null;
   sourcePendingId?: string | null;
+  /** Set when the entry was materialized from a recurring rule. */
+  recurringRuleId?: string | null;
   /** Snapshot display names so shared-balance-only members need no users/ reads. */
   fromDisplayName: string;
   toDisplayName: string;
@@ -319,6 +352,8 @@ export type NotificationSettings = {
   categoryWarningEnabled: boolean;
   cardExpiryWarningEnabled: boolean;
   joinRequestEnabled: boolean;
+  /** Confirmations for recurring shared-balance occurrences. Absent = enabled. */
+  recurringEntriesEnabled: boolean;
 };
 
 export type AuditAction =
