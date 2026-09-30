@@ -1,1 +1,52 @@
-{}
+{
+  "page": {
+    "title": "Reminders & Alerts",
+    "subtitle": "Choose what deserves your attention and how Kippa should reach you."
+  },
+  "alertPrefs": {
+    "title": "Alert preferences",
+    "subtitle": "Only enable the updates that help you act.",
+    "save": "Save preferences"
+  },
+  "preferences": {
+    "dailyReminder": {
+      "title": "Daily logging reminder",
+      "description": "A gentle prompt to keep your daily records complete."
+    },
+    "categoryWarning": {
+      "title": "Budget warning alerts",
+      "description": "Get notified when spending approaches a category limit."
+    },
+    "cardExpiryWarning": {
+      "title": "Card expiry reminders",
+      "description": "Receive an alert before one of your linked cards expires."
+    },
+    "joinRequest": {
+      "title": "Join requests",
+      "description": "Stay informed when a member requests access or a decision is made."
+    },
+    "recurringEntries": {
+      "title": "Recurring entry confirmations",
+      "description": "Ask me to confirm each recurring shared entry before it counts."
+    }
+  },
+  "push": {
+    "title": "Push delivery",
+    "subtitle": "Device-level notification status",
+    "statusEnabled": "Notifications are enabled",
+    "statusBlocked": "Notifications are blocked",
+    "statusUnsupported": "Push is unavailable here",
+    "statusDisabled": "Notifications are not enabled",
+    "helpEnabled": "Kippa can send reminders and space updates to this device.",
+    "helpBlocked": "Allow notifications in your browser or device settings, then reopen Kippa.",
+    "helpUnsupported": "On iPhone, add Kippa to your Home Screen on iOS 16.4 or later.",
+    "helpDisabled": "Enable push delivery to receive reminders outside the app.",
+    "disableOnDevice": "Disable on this device",
+    "enable": "Enable notifications"
+  },
+  "toasts": {
+    "settingsUpdated": "Notification settings updated!",
+    "enabled": "Notifications enabled!",
+    "disabled": "Notifications disabled"
+  }
+}

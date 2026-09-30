@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -16,6 +17,7 @@ import { IosInstallBanner } from '@/notifications/IosInstallBanner';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { CalendarMonthIcon, CreditCardIcon, GroupAddIcon, NotificationsActiveIcon, SyncAltIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
+import type notificationsEn from '@/i18n/locales/en/notifications.json';
 
 interface NotificationSettingsFormProps {
   dbSettings: NotificationSettings;
@@ -32,6 +34,7 @@ export function NotificationSettingsForm({
   householdId
 }: NotificationSettingsFormProps) {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('notifications');
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>(dbSettings);
   const { status: notifStatus, requestPermission, disable } = useNotifications(householdId);
 
@@ -39,7 +42,7 @@ export function NotificationSettingsForm({
 
   const handleSaveNotifications = async () => {
     await onSave(notifSettings);
-    enqueueSnackbar('Notification settings updated!', { variant: 'success' });
+    enqueueSnackbar(t('toasts.settingsUpdated'), { variant: 'success' });
   };
 
   const handleEnableNotifications = async () => {
@@ -48,7 +51,7 @@ export function NotificationSettingsForm({
       // MUST be a user gesture (button click) — iOS Safari requires this.
       await requestPermission();
       if (Notification.permission === 'granted') {
-        enqueueSnackbar('Notifications enabled!', { variant: 'success' });
+        enqueueSnackbar(t('toasts.enabled'), { variant: 'success' });
       }
     } finally {
       setPermissionActionLoading(false);
@@ -59,41 +62,37 @@ export function NotificationSettingsForm({
     setPermissionActionLoading(true);
     try {
       await disable();
-      enqueueSnackbar('Notifications disabled', { variant: 'info' });
+      enqueueSnackbar(t('toasts.disabled'), { variant: 'info' });
     } finally {
       setPermissionActionLoading(false);
     }
   };
 
-  const preferences = [
+  type PreferenceTitleKey = keyof typeof notificationsEn['preferences'];
+  const preferences: { key: keyof NotificationSettings; prefKey: PreferenceTitleKey; Icon: React.ComponentType<{ sx?: object }> }[] = [
     {
-      key: 'dailyReminderEnabled' as const,
-      title: 'Daily logging reminder',
-      description: 'A gentle prompt to keep your daily records complete.',
+      key: 'dailyReminderEnabled',
+      prefKey: 'dailyReminder',
       Icon: CalendarMonthIcon,
     },
     {
-      key: 'categoryWarningEnabled' as const,
-      title: 'Budget warning alerts',
-      description: 'Get notified when spending approaches a category limit.',
+      key: 'categoryWarningEnabled',
+      prefKey: 'categoryWarning',
       Icon: NotificationsActiveIcon,
     },
     {
-      key: 'cardExpiryWarningEnabled' as const,
-      title: 'Card expiry reminders',
-      description: 'Receive an alert before one of your linked cards expires.',
+      key: 'cardExpiryWarningEnabled',
+      prefKey: 'cardExpiryWarning',
       Icon: CreditCardIcon,
     },
     {
-      key: 'joinRequestEnabled' as const,
-      title: 'Join requests',
-      description: 'Stay informed when a member requests access or a decision is made.',
+      key: 'joinRequestEnabled',
+      prefKey: 'joinRequest',
       Icon: GroupAddIcon,
     },
     {
-      key: 'recurringEntriesEnabled' as const,
-      title: 'Recurring entry confirmations',
-      description: 'Ask me to confirm each recurring shared entry before it counts.',
+      key: 'recurringEntriesEnabled',
+      prefKey: 'recurringEntries',
       Icon: SyncAltIcon,
     },
   ];
@@ -102,8 +101,8 @@ export function NotificationSettingsForm({
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="Reminders & Alerts"
-          subtitle="Choose what deserves your attention and how Kippa should reach you."
+          title={t('page.title')}
+          subtitle={t('page.subtitle')}
         />
 
         {/* Push notification enablement — status + action.
@@ -115,28 +114,28 @@ export function NotificationSettingsForm({
           <Card>
             <CardContent>
               <Stack spacing={2.5}>
-                <CardHeading icon={<NotificationsActiveIcon variant="Bulk" />} title="Alert preferences" subtitle="Only enable the updates that help you act." />
+                <CardHeading icon={<NotificationsActiveIcon variant="Bulk" />} title={t('alertPrefs.title')} subtitle={t('alertPrefs.subtitle')} />
                 <Stack divider={<Box sx={{ height: '1px', bgcolor: 'divider' }} />}>
-                  {preferences.map(({ key, title, description, Icon }) => (
+                  {preferences.map(({ key, prefKey, Icon }) => (
                     <Stack key={key} direction="row" spacing={1.5} alignItems="center" sx={{ py: 1.5 }}>
                       <Box sx={{ width: 40, height: 40, borderRadius: 2.5, bgcolor: 'action.hover', color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Icon sx={{ fontSize: 20 }} />
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>{title}</Typography>
-                        <Typography sx={{ mt: 0.25, fontSize: 12, lineHeight: 1.5, color: 'text.secondary' }}>{description}</Typography>
+                        <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>{t(`preferences.${prefKey}.title`)}</Typography>
+                        <Typography sx={{ mt: 0.25, fontSize: 12, lineHeight: 1.5, color: 'text.secondary' }}>{t(`preferences.${prefKey}.description`)}</Typography>
                       </Box>
                       <Switch
                         checked={notifSettings[key]}
                         onChange={event => setNotifSettings({ ...notifSettings, [key]: event.target.checked })}
-                        slotProps={{ input: { 'aria-label': title } }}
+                        slotProps={{ input: { 'aria-label': t(`preferences.${prefKey}.title`) } }}
                       />
                     </Stack>
                   ))}
                 </Stack>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button variant="contained" onClick={handleSaveNotifications} loading={isSaving} sx={{ minWidth: { xs: '100%', sm: 190 } }}>
-                    Save preferences
+                    {t('alertPrefs.save')}
                   </Button>
                 </Box>
               </Stack>
@@ -151,8 +150,8 @@ export function NotificationSettingsForm({
                     <NotificationsActiveIcon />
                   </Box>
                   <Box>
-                    <Typography sx={{ fontSize: 16, fontWeight: 800, color: 'text.primary' }}>Push delivery</Typography>
-                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>Device-level notification status</Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 800, color: 'text.primary' }}>{t('push.title')}</Typography>
+                    <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{t('push.subtitle')}</Typography>
                   </Box>
                 </Stack>
 
@@ -166,16 +165,16 @@ export function NotificationSettingsForm({
                   <>
                     <Box sx={{ p: 2, borderRadius: 3, bgcolor: 'surfaceContainerLow' }}>
                       <Typography sx={{ fontSize: 14, fontWeight: 700, color: 'text.primary' }}>
-                        {notifStatus === 'enabled' ? 'Notifications are enabled' : notifStatus === 'permission-denied' ? 'Notifications are blocked' : notifStatus === 'unsupported' ? 'Push is unavailable here' : 'Notifications are not enabled'}
+                        {notifStatus === 'enabled' ? t('push.statusEnabled') : notifStatus === 'permission-denied' ? t('push.statusBlocked') : notifStatus === 'unsupported' ? t('push.statusUnsupported') : t('push.statusDisabled')}
                       </Typography>
                       <Typography sx={{ mt: 0.5, fontSize: 12, lineHeight: 1.55, color: 'text.secondary' }}>
                         {notifStatus === 'enabled'
-                          ? 'Kippa can send reminders and space updates to this device.'
+                          ? t('push.helpEnabled')
                           : notifStatus === 'permission-denied'
-                            ? 'Allow notifications in your browser or device settings, then reopen Kippa.'
+                            ? t('push.helpBlocked')
                             : notifStatus === 'unsupported'
-                              ? 'On iPhone, add Kippa to your Home Screen on iOS 16.4 or later.'
-                              : 'Enable push delivery to receive reminders outside the app.'}
+                              ? t('push.helpUnsupported')
+                              : t('push.helpDisabled')}
                       </Typography>
                     </Box>
                     {(notifStatus === 'pending' || notifStatus === 'enabled') && (
@@ -186,7 +185,7 @@ export function NotificationSettingsForm({
                         loading={permissionActionLoading}
                         fullWidth
                       >
-                        {notifStatus === 'enabled' ? 'Disable on this device' : 'Enable notifications'}
+                        {notifStatus === 'enabled' ? t('push.disableOnDevice') : t('push.enable')}
                       </Button>
                     )}
                   </>
