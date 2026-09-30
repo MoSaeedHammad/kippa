@@ -1,7 +1,9 @@
 import { Card, CardContent, Skeleton } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 
 export function AnalyticsPlaceholder({ loading }: { loading: boolean }) {
+  const { t } = useTranslation('budgetCycles');
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
@@ -12,8 +14,8 @@ export function AnalyticsPlaceholder({ loading }: { loading: boolean }) {
           </>
         ) : (
           <EmptyLayout
-            title="No analytics data yet"
-            description="Once you have at least one completed statement with transactions, trends and insights will appear here."
+            title={t('analyticsPlaceholder.title')}
+            description={t('analyticsPlaceholder.description')}
           />
         )}
       </CardContent>

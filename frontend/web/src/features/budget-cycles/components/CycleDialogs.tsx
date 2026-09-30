@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Checkbox,
@@ -12,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import type budgetCyclesEn from '@/i18n/locales/en/budgetCycles.json';
 
 export type NewCycleValues = {
   name: string;
@@ -30,6 +32,7 @@ type CreateCycleDialogProps = {
 const today = () => new Date().toISOString().split('T')[0];
 
 export function CreateCycleDialog({ busy, onClose, onCreate, open }: CreateCycleDialogProps) {
+  const { t } = useTranslation('budgetCycles');
   const [values, setValues] = useState<NewCycleValues>({ name: '', startDate: today(), endDate: '', status: 'open' });
   const [nameError, setNameError] = useState(false);
 
@@ -51,35 +54,35 @@ export function CreateCycleDialog({ busy, onClose, onCreate, open }: CreateCycle
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Create Statement</DialogTitle>
+      <DialogTitle>{t('createDialog.title')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
           <TextField
             fullWidth
-            label="Cycle Name"
-            placeholder="e.g. July 2026"
+            label={t('createDialog.nameLabel')}
+            placeholder={t('createDialog.namePlaceholder')}
             value={values.name}
             onChange={(event) => update('name', event.target.value)}
             error={nameError}
-            helperText={nameError ? 'A cycle name is required.' : undefined}
+            helperText={nameError ? t('createDialog.nameRequired') : undefined}
           />
           <Grid container spacing={2}>
             <Grid size={6}>
-              <TextField fullWidth type="date" label="Start Date" value={values.startDate} onChange={(event) => update('startDate', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+              <TextField fullWidth type="date" label={t('createDialog.startDate')} value={values.startDate} onChange={(event) => update('startDate', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
             <Grid size={6}>
-              <TextField fullWidth type="date" label="Target End Date" value={values.endDate} onChange={(event) => update('endDate', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+              <TextField fullWidth type="date" label={t('createDialog.endDate')} value={values.endDate} onChange={(event) => update('endDate', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
             </Grid>
           </Grid>
           <FormControlLabel
             control={<Checkbox checked={values.status === 'open'} onChange={(event) => update('status', event.target.checked ? 'open' : 'planned')} />}
-            label="Set as active immediately (will close current active cycle)"
+            label={t('createDialog.setActiveNow')}
           />
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleCreate} variant="contained" loading={busy}>Create</Button>
+        <Button onClick={onClose}>{t('createDialog.cancel')}</Button>
+        <Button onClick={handleCreate} variant="contained" loading={busy}>{t('createDialog.create')}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -92,40 +95,39 @@ type CloseCycleDialogProps = {
   open: boolean;
 };
 
-const CONFIRMATIONS = [
-  'I have reconciled and verified all bank balances for this month.',
-  'All USD transactions and exchanges have been logged.',
-  'I understand this locks the cycle and moves leftovers forward.',
-] as const;
+type ConfirmationKey = keyof typeof budgetCyclesEn['closeDialog']['confirmations'];
+
+const CONFIRMATION_KEYS: ConfirmationKey[] = ['bankBalances', 'usdLogged', 'locks'];
 
 export function CloseCycleDialog({ busy, onClose, onConfirm, open }: CloseCycleDialogProps) {
-  const [confirmed, setConfirmed] = useState(() => CONFIRMATIONS.map(() => false));
+  const { t } = useTranslation('budgetCycles');
+  const [confirmed, setConfirmed] = useState(() => CONFIRMATION_KEYS.map(() => false));
   const canConfirm = confirmed.every(Boolean);
 
   const handleConfirm = async () => {
-    if (canConfirm && await onConfirm()) setConfirmed(CONFIRMATIONS.map(() => false));
+    if (canConfirm && await onConfirm()) setConfirmed(CONFIRMATION_KEYS.map(() => false));
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle color="error">Close Statement</DialogTitle>
+      <DialogTitle color="error">{t('closeDialog.title')}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Closing the active cycle compiles balances, carries forward leftovers and locks edits. Confirm items below:
+          {t('closeDialog.intro')}
         </Typography>
         <Stack spacing={2.5}>
-          {CONFIRMATIONS.map((label, index) => (
+          {CONFIRMATION_KEYS.map((key, index) => (
             <FormControlLabel
-              key={label}
+              key={key}
               control={<Checkbox checked={confirmed[index]} onChange={(event) => setConfirmed((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.checked : value))} />}
-              label={label}
+              label={t(`closeDialog.confirmations.${key}`)}
             />
           ))}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleConfirm} disabled={!canConfirm} loading={busy} variant="contained" color="error">Confirm &amp; Close</Button>
+        <Button onClick={onClose}>{t('closeDialog.cancel')}</Button>
+        <Button onClick={handleConfirm} disabled={!canConfirm} loading={busy} variant="contained" color="error">{t('closeDialog.confirm')}</Button>
       </DialogActions>
     </Dialog>
   );

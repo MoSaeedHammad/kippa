@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -49,6 +50,7 @@ export function BudgetAllocationsConfig({
   onTotalBudgetChange
 }: BudgetAllocationsConfigProps) {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('budgetCycles');
   const { maskDigits, privacyMode } = usePrivacyMask();
   const baseCurrency = useHouseholdBaseCurrency();
   const expenseCategories = categories.filter(c => c.type === 'expense');
@@ -141,20 +143,20 @@ export function BudgetAllocationsConfig({
       cycleId: activeCycle.id,
       allocations: payload
     });
-    enqueueSnackbar('Allocations saved!', { variant: 'success' });
+    enqueueSnackbar(t('allocations.savedToast'), { variant: 'success' });
     if (onSave) onSave();
   }, [rows, activeCycle.id, householdId, saveAllocationsBatchMutation, enqueueSnackbar, onSave, baseCurrency]);
 
   const handleCopyPreviousAllocations = async () => {
     const closedCycle = cycles.find(c => c.status === 'closed');
     if (!closedCycle) {
-      enqueueSnackbar('No previous cycle allocations found to copy.', { variant: 'warning' });
+      enqueueSnackbar(t('allocations.noPreviousToast'), { variant: 'warning' });
       return;
     }
 
     const prevAllocations = await cyclesLib.getBudgetAllocations(householdId, closedCycle.id);
     if (prevAllocations.length === 0) {
-      enqueueSnackbar('Previous cycle had no allocations configured.', { variant: 'warning' });
+      enqueueSnackbar(t('allocations.previousEmptyToast'), { variant: 'warning' });
       return;
     }
 
@@ -167,7 +169,7 @@ export function BudgetAllocationsConfig({
   };
 
   const getCategoryName = (catId: string) => {
-    return categories.find(c => c.id === catId)?.name || 'Unknown';
+    return categories.find(c => c.id === catId)?.name || t('allocations.unknownCategory');
   };
 
   const totalBudget = rows.reduce((sum, r) => sum + (parseFloat(r.plannedAmount) || 0), 0);
@@ -198,14 +200,14 @@ export function BudgetAllocationsConfig({
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
         <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '15px' }}>
-          Category Budgets ({baseCurrency})
+          {t('allocations.categoryBudgets', { currency: baseCurrency })}
         </Typography>
         <Button 
           variant="text" 
           startIcon={<ContentCopyIcon />}
           onClick={handleCopyPreviousAllocations}
         >
-          Copy previous
+          {t('allocations.copyPrevious')}
         </Button>
       </Box>
 
@@ -223,10 +225,10 @@ export function BudgetAllocationsConfig({
       <Box sx={{ mt: 2.5, pt: 2.25, borderTop: 1, borderColor: 'divider' }}>
         <Stack spacing={0.25} sx={{ mb: 1.25 }}>
           <Typography sx={{ color: 'text.primary', fontSize: 14, fontWeight: 700 }}>
-            Add to cycle
+            {t('allocations.addToCycle')}
           </Typography>
           <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>
-            Choose an existing category or create a new one.
+            {t('allocations.addToCycleHelp')}
           </Typography>
         </Stack>
 
@@ -249,9 +251,9 @@ export function BudgetAllocationsConfig({
                 }}
               />
           ))}
-          <Tooltip title="Create a new category">
+          <Tooltip title={t('allocations.createCategoryTooltip')}>
             <IconButton
-              aria-label="Create a new category"
+              aria-label={t('allocations.createCategoryTooltip')}
               onClick={categoryDialog.openAdd}
               sx={{
                 width: 36,
@@ -274,17 +276,17 @@ export function BudgetAllocationsConfig({
       {!saveRef && <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2.5, pt: 2 }}>
         <Box>
           <Typography variant="body2" color="text.secondary">
-            Total Budget
+            {t('allocations.totalBudget')}
           </Typography>
           <Typography variant="body1" sx={{ fontWeight: 700, fontSize: '16px' }}>
             <Money amount={totalBudget} code={baseCurrency} />
           </Typography>
         </Box>
-        <Button variant="contained" onClick={handleSaveAllocations} loading={saveAllocationsBatchMutation.isPending}>Save</Button>
+        <Button variant="contained" onClick={handleSaveAllocations} loading={saveAllocationsBatchMutation.isPending}>{t('allocations.save')}</Button>
       </Box>}
 
-      <CategoryNameDialog open={categoryDialog.mode === 'rename'} title="Rename Category" confirmLabel="Save" value={categoryDialog.value} loading={updateCategoryMutation.isPending} onChange={categoryDialog.setValue} onClose={categoryDialog.close} onConfirm={handleSaveRename} />
-      <CategoryNameDialog open={categoryDialog.mode === 'add'} title="Add New Category" confirmLabel="Create & Add" value={categoryDialog.value} placeholder="e.g. Entertainment" loading={createCategoryMutation.isPending} onChange={categoryDialog.setValue} onClose={categoryDialog.close} onConfirm={handleCreateNewCategory} />
+      <CategoryNameDialog open={categoryDialog.mode === 'rename'} title={t('allocations.renameTitle')} confirmLabel={t('allocations.saveConfirm')} value={categoryDialog.value} loading={updateCategoryMutation.isPending} onChange={categoryDialog.setValue} onClose={categoryDialog.close} onConfirm={handleSaveRename} />
+      <CategoryNameDialog open={categoryDialog.mode === 'add'} title={t('allocations.addTitle')} confirmLabel={t('allocations.createAndAdd')} value={categoryDialog.value} placeholder={t('allocations.namePlaceholder')} loading={createCategoryMutation.isPending} onChange={categoryDialog.setValue} onClose={categoryDialog.close} onConfirm={handleCreateNewCategory} />
     </Box>
   );
 }

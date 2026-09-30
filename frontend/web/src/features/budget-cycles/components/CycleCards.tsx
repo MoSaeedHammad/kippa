@@ -1,4 +1,5 @@
 import { alpha, Box, Button, Card, Chip, LinearProgress, Paper, Stack, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { BudgetCycle, CurrencyCode } from '@kippa/domain';
 import { CalendarTodayIcon, CheckCircleOutlineIcon, EditIcon, EventIcon, ExpandLessIcon, TimerIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
@@ -13,11 +14,12 @@ type ActiveCycleCardProps = {
 };
 
 export function ActiveCycleCard({ cycle, daysInfo, onCloseCycle, isEditingBudget, onToggleBudget }: ActiveCycleCardProps) {
+  const { t } = useTranslation('budgetCycles');
   return (
     <Card sx={{ width: '100%', p: 3, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 180 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Chip
-          label="ACTIVE"
+          label={t('activeCard.active')}
           size="small"
           icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />}
           sx={{ fontWeight: 700, fontSize: 10, height: 24, borderRadius: 0.75, bgcolor: (theme) => alpha(theme.palette.success.main, 0.08), color: 'success.main', alignSelf: 'flex-start', mb: 1.5, '& .MuiChip-icon': { display: 'block', ml: 1, mr: -0.5 } }}
@@ -28,7 +30,7 @@ export function ActiveCycleCard({ cycle, daysInfo, onCloseCycle, isEditingBudget
             <Box display="flex" alignItems="center" gap={0.75} sx={{ mt: 0.5 }}>
               <EventIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
               <Typography variant="body2" color="text.secondary">
-                {formatCycleDate(cycle.startDate)}{cycle.endDate ? ` — ${formatCycleDate(cycle.endDate)}` : ' — Ongoing'}
+                {formatCycleDate(cycle.startDate)}{cycle.endDate ? ` — ${formatCycleDate(cycle.endDate)}` : ` ${t('activeCard.ongoing')}`}
               </Typography>
             </Box>
           </Box>
@@ -36,22 +38,22 @@ export function ActiveCycleCard({ cycle, daysInfo, onCloseCycle, isEditingBudget
         {daysInfo.progress !== null ? (
           <Box sx={{ mt: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-              <Typography variant="body2" color="text.secondary">Day {daysInfo.elapsed} of {daysInfo.total} days total</Typography>
-              <Typography variant="body2">{daysInfo.progress}% Elapsed</Typography>
+              <Typography variant="body2" color="text.secondary">{t('activeCard.dayOf', { elapsed: daysInfo.elapsed, total: daysInfo.total })}</Typography>
+              <Typography variant="body2">{t('activeCard.elapsed', { count: daysInfo.progress })}</Typography>
             </Box>
             <LinearProgress variant="determinate" value={daysInfo.progress} color={daysInfo.progress > 85 ? 'warning' : 'primary'} />
           </Box>
         ) : (
           <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
             <TimerIcon color="primary" sx={{ fontSize: 16 }} />
-            <Typography variant="body2">Day {daysInfo.elapsed + 1} — No end date set</Typography>
+            <Typography variant="body2">{t('activeCard.dayNoEnd', { count: daysInfo.elapsed + 1 })}</Typography>
           </Box>
         )}
         <Stack direction={{ xs: 'column', sm: 'row', lg: 'column', xl: 'row' }} alignItems="flex-start" spacing={1.5} sx={{ mt: 3.5 }}>
           <Button variant="contained" startIcon={isEditingBudget ? <ExpandLessIcon /> : <EditIcon />} onClick={onToggleBudget}>
-            {isEditingBudget ? 'Hide Budget' : 'Edit Budget'}
+            {isEditingBudget ? t('activeCard.hideBudget') : t('activeCard.editBudget')}
           </Button>
-          <Button variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={onCloseCycle}>Close Cycle</Button>
+          <Button variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={onCloseCycle}>{t('activeCard.closeCycle')}</Button>
         </Stack>
       </Box>
     </Card>
@@ -72,6 +74,7 @@ type CycleHistoryCardProps = {
 };
 
 export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, stats }: CycleHistoryCardProps) {
+  const { t } = useTranslation('budgetCycles');
   const theme = useTheme();
   const statusColor = cycle.status === 'open' ? theme.palette.success.main : cycle.status === 'planned' ? theme.palette.primary.main : theme.palette.text.secondary;
   const statusBg = alpha(statusColor, cycle.status === 'closed' ? 0.12 : 0.08);
@@ -101,20 +104,20 @@ export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, stats }: Cy
       {stats && (stats.plannedBudget != null || stats.actualExpense != null) && (
         <Box sx={{ mt: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 1.5, px: 1 }}>
           {[
-            { label: 'Planned', height: plannedHeight, value: stats.plannedBudget, color: alpha(theme.palette.primary.main, mode === 'dark' ? 0.45 : 0.4), pct: null as number | null },
-            { label: 'Spent', height: spentHeight, value: stats.actualExpense, color: overBudget ? theme.palette.error.main : theme.palette.secondary.main, pct: utilization },
+            { labelKey: 'planned' as const, height: plannedHeight, value: stats.plannedBudget, color: alpha(theme.palette.primary.main, mode === 'dark' ? 0.45 : 0.4), pct: null as number | null },
+            { labelKey: 'spent' as const, height: spentHeight, value: stats.actualExpense, color: overBudget ? theme.palette.error.main : theme.palette.secondary.main, pct: utilization },
           ].map(bar => (
-            <Box key={bar.label} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, flex: '1 1 0', maxWidth: 80 }}>
+            <Box key={bar.labelKey} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, flex: '1 1 0', maxWidth: 80 }}>
               <Box sx={{ width: '100%', height: 72, position: 'relative', borderRadius: '14px 14px 10px 10px', overflow: 'hidden', backgroundImage: `repeating-linear-gradient(135deg, transparent 0 9px, ${alpha(theme.palette.primary.main, mode === 'dark' ? 0.12 : 0.07)} 9px 11px)`, bgcolor: alpha(theme.palette.primary.main, mode === 'dark' ? 0.16 : 0.075) }}>
                 <Box sx={{ position: 'absolute', insetInline: 0, bottom: 0, height: `${bar.height}%`, bgcolor: bar.color, borderRadius: '12px 12px 8px 8px', transition: 'height 200ms ease' }} />
               </Box>
-              <Typography variant="fieldHint" color="text.secondary" sx={{ textAlign: 'center' }}>{bar.label}</Typography>
+              <Typography variant="fieldHint" color="text.secondary" sx={{ textAlign: 'center' }}>{t(`historyCard.${bar.labelKey}`)}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', textAlign: 'center', lineHeight: 1 }} noWrap>
                 {bar.value != null ? <Money amount={bar.value} code={stats.baseCurrency} /> : '—'}
               </Typography>
               {bar.pct != null && (
                 <Typography variant="fieldHint" sx={{ fontWeight: 700, textAlign: 'center', color: overBudget ? 'error.main' : 'text.secondary' }} noWrap>
-                  {bar.pct}% of plan
+                  {t('historyCard.percentOfPlan', { count: bar.pct })}
                 </Typography>
               )}
             </Box>
@@ -123,7 +126,7 @@ export function CycleHistoryCard({ cycle, isEditing, onToggleBudget, stats }: Cy
       )}
 
       <Button variant="outlined" startIcon={isEditing ? <ExpandLessIcon /> : <EditIcon />} onClick={onToggleBudget} sx={{ mt: 2, alignSelf: 'flex-end', minWidth: 138 }}>
-        {isEditing ? 'Hide Budget' : 'Edit Budget'}
+        {isEditing ? t('activeCard.hideBudget') : t('activeCard.editBudget')}
       </Button>
     </Card>
   );

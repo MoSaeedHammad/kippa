@@ -1,4 +1,5 @@
 import { IconButton, List, ListItem, ListItemText, Stack, TextField } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { DeleteOutlineIcon, EditIcon } from '@/components/AppIcon';
 
 export interface AllocationRow {
@@ -17,6 +18,7 @@ interface AllocationRowsProps {
 }
 
 export function AllocationRows({ rows, privacyMode, maskDigits, getCategoryName, onAmountChange, onRename, onRemove }: AllocationRowsProps) {
+  const { t } = useTranslation('budgetCycles');
   return (
     <List disablePadding>
       {rows.map((row) => {
@@ -36,10 +38,10 @@ export function AllocationRows({ rows, privacyMode, maskDigits, getCategoryName,
                   slotProps={{ input: { disableUnderline: true }, htmlInput: { min: 0, style: { textAlign: 'right', fontWeight: 700, padding: '10px 12px' } } }}
                 />
                 <Stack className="allocation-actions" direction="row" spacing={0.25} sx={{ opacity: { xs: 1, md: 0 } }}>
-                  <IconButton aria-label={`Rename ${categoryName}`} size="small" onClick={() => onRename(row.categoryId)} sx={{ width: 30, height: 30 }}>
+                  <IconButton aria-label={t('allocations.renameAria', { name: categoryName })} size="small" onClick={() => onRename(row.categoryId)} sx={{ width: 30, height: 30 }}>
                     <EditIcon fontSize="small" />
                   </IconButton>
-                  <IconButton aria-label={`Remove ${categoryName}`} size="small" onClick={() => onRemove(row.categoryId)} color="error" sx={{ width: 30, height: 30 }}>
+                  <IconButton aria-label={t('allocations.removeAria', { name: categoryName })} size="small" onClick={() => onRemove(row.categoryId)} color="error" sx={{ width: 30, height: 30 }}>
                     <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
                 </Stack>

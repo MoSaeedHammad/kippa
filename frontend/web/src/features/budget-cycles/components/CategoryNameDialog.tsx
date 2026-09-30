@@ -1,4 +1,5 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryNameDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ export function CategoryNameDialog({
   onClose,
   onConfirm,
 }: CategoryNameDialogProps) {
+  const { t } = useTranslation('budgetCycles');
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>{title}</DialogTitle>
@@ -30,7 +32,7 @@ export function CategoryNameDialog({
         <TextField
           autoFocus
           fullWidth
-          label="Category Name"
+          label={t('allocations.nameLabel')}
           placeholder={placeholder}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -38,7 +40,7 @@ export function CategoryNameDialog({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} color="inherit">Cancel</Button>
+        <Button onClick={onClose} color="inherit">{t('allocations.cancel')}</Button>
         <Button onClick={onConfirm} variant="contained" disabled={!value.trim()} loading={loading}>
           {confirmLabel}
         </Button>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   Box, 
   Card, 
   CardContent, 
@@ -34,6 +35,7 @@ import { CardHeading } from '@/features/shared/components/CardHeading';
 import { AnalyticsPlaceholder } from './components/AnalyticsPlaceholder';
 
 export function CycleAnalytics() {
+  const { t } = useTranslation('budgetCycles');
   const { householdId } = useAppContext();
   const theme = useTheme();
   
@@ -99,7 +101,7 @@ export function CycleAnalytics() {
         <Box sx={{ mb: 1 }}>
           <CardHeading
             icon={<BarChartIcon variant="Bulk" />}
-            title="Cycle Analytics & Trends"
+            title={t('analytics.title')}
             trailing={
               <Tabs
                 value={activeTab}
@@ -114,8 +116,8 @@ export function CycleAnalytics() {
                   },
                 }}
               >
-                <Tab label="Cash Flow" id="analytics-tab-0" />
-                <Tab label="Category Trends" id="analytics-tab-1" />
+                <Tab label={t('analytics.cashFlowTab')} id="analytics-tab-0" />
+                <Tab label={t('analytics.categoryTrendsTab')} id="analytics-tab-1" />
               </Tabs>
             }
           />
@@ -133,24 +135,24 @@ export function CycleAnalytics() {
               sx={{ minHeight: 44, mb: 0.5 }}
             >
               {[
-                { label: 'Spent', color: theme.palette.secondary.main },
-                { label: 'Retained', color: theme.palette.primary.dark },
-                { label: 'Plan space', color: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.1) },
+                { labelKey: 'spent' as const, color: theme.palette.secondary.main },
+                { labelKey: 'retained' as const, color: theme.palette.primary.dark },
+                { labelKey: 'planSpace' as const, color: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.1) },
               ].map(item => (
-                <Stack key={item.label} direction="row" spacing={0.75} alignItems="center">
+                <Stack key={item.labelKey} direction="row" spacing={0.75} alignItems="center">
                   <Box sx={{ width: 10, height: 10, borderRadius: '3px', bgcolor: item.color }} />
-                  <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{item.label}</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{t(`analytics.${item.labelKey}`)}</Typography>
                 </Stack>
               ))}
               <Typography variant="body2" sx={{ color: 'text.secondary', ml: { sm: 'auto' } }}>
-                Actual cash flow by cycle
+                {t('analytics.cashFlowCaption')}
               </Typography>
             </Stack>
 
             <Box sx={{ width: '100%', overflowX: 'auto', pb: 0.5 }}>
               <Box
                 role="img"
-                aria-label={`Cash flow by statement in ${baseCurrency}`}
+                aria-label={t('analytics.cashFlowAria', { currency: baseCurrency })}
                 sx={{
                   height: { xs: 300, sm: 360 },
                   minWidth: Math.max(620, cycleData.length * 92),
@@ -197,7 +199,7 @@ export function CycleAnalytics() {
                     >
                       <Box
                         tabIndex={0}
-                        aria-label={`${cycle.name}: income ${cycle.actualIncome.toLocaleString()} ${baseCurrency}, spent ${cycle.actualExpense.toLocaleString()} ${baseCurrency}`}
+                        aria-label={t('analytics.barAria', { name: cycle.name, income: cycle.actualIncome.toLocaleString(), spent: cycle.actualExpense.toLocaleString(), currency: baseCurrency })}
                         sx={{
                           width: '100%',
                           height: `${capacityHeight}%`,
@@ -257,7 +259,7 @@ export function CycleAnalytics() {
                           boxShadow: 3,
                         }}
                       >
-                        <Typography sx={{ color: 'inherit', fontSize: '10px', opacity: 0.72 }}>Income</Typography>
+                        <Typography sx={{ color: 'inherit', fontSize: '10px', opacity: 0.72 }}>{t('analytics.income')}</Typography>
                         <Typography sx={{ color: 'inherit', fontSize: '14px', fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}>
                           {cycle.actualIncome.toLocaleString()} {baseCurrency}
                         </Typography>
@@ -296,11 +298,11 @@ export function CycleAnalytics() {
           <Box>
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
               <FormControl sx={{ width: 180 }}>
-                <InputLabel id="trend-cat-select-label">Category</InputLabel>
+                <InputLabel id="trend-cat-select-label">{t('analytics.category')}</InputLabel>
                 <Select
                   labelId="trend-cat-select-label"
                   value={selectedCategoryId}
-                  label="Category"
+                  label={t('analytics.category')}
                   onChange={e => setSelectedCategoryId(e.target.value)}
                   sx={{ borderRadius: '8px' }}
                 >
@@ -322,8 +324,8 @@ export function CycleAnalytics() {
                   }]}
                   series={[
                     { 
-                      data: categoryTrends.map(t => t.spent), 
-                      label: 'Spent', 
+                      data: categoryTrends.map(t => t.spent),
+                      label: t('analytics.spentSeries'),
                       color: theme.palette.primary.main,
                       area: true,
                       curve: 'catmullRom',

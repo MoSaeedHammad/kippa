@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Container,
@@ -39,6 +40,7 @@ import { calculateCycleData } from '@/libs/budgetAnalytics';
 // ── Main Component ───────────────────────────────────────────────────────
 
 export function BudgetCycles() {
+  const { t } = useTranslation('budgetCycles');
   const { householdId } = useAppContext();
   const { enqueueSnackbar } = useSnackbar();
   const baseCurrency = useHouseholdBaseCurrency();
@@ -129,10 +131,10 @@ export function BudgetCycles() {
       });
 
       setOpenCreateDialog(false);
-      enqueueSnackbar('Statement created.', { variant: 'success' });
+      enqueueSnackbar(t('toasts.created'), { variant: 'success' });
       return true;
     } catch (err: any) {
-      enqueueSnackbar(err?.message || 'Failed to create statement.', { variant: 'error' });
+      enqueueSnackbar(err?.message || t('toasts.createFailed'), { variant: 'error' });
       return false;
     }
   };
@@ -144,7 +146,7 @@ export function BudgetCycles() {
       setOpenCloseDialog(false);
       return true;
     } catch (err: any) {
-      enqueueSnackbar(err?.message || 'Failed to close statement.', { variant: 'error' });
+      enqueueSnackbar(err?.message || t('toasts.closeFailed'), { variant: 'error' });
       return false;
     }
   };
@@ -177,10 +179,10 @@ export function BudgetCycles() {
       <Stack spacing={3}>
         {/* Page Header */}
         <PageHeader
-          title="Statements"
+          title={t('page.title')}
           subtitle={activeCycle
-            ? `Active: ${activeCycle.name}`
-            : 'No active cycle'
+            ? t('page.subtitleActive', { name: activeCycle.name })
+            : t('page.subtitleNone')
           }
           action={
             <IconButton
@@ -212,9 +214,9 @@ export function BudgetCycles() {
               />
             ) : (
               <EmptyLayout
-                title="No active statement"
-                description="Create a new cycle to start allocating budgets and tracking expenses."
-                action={<Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenCreateDialog(true)}>New Cycle</Button>}
+                title={t('empty.noActiveTitle')}
+                description={t('empty.noActiveDescription')}
+                action={<Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenCreateDialog(true)}>{t('empty.newCycle')}</Button>}
               />
             )}
           </Grid>
@@ -227,7 +229,7 @@ export function BudgetCycles() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <HistoryIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
             <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '15px' }}>
-              Previous Cycles
+              {t('page.previousCycles')}
             </Typography>
           </Box>
 
@@ -245,8 +247,8 @@ export function BudgetCycles() {
             </Box>
           ) : (
             <EmptyLayout
-              title="No previous cycles found"
-              description="Closed statements will be listed here."
+              title={t('empty.noHistoryTitle')}
+              description={t('empty.noHistoryDescription')}
             />
           )}
         </Box>

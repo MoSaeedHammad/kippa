@@ -1,1 +1,103 @@
-{}
+{
+  "page": {
+    "title": "الكشوفات",
+    "subtitleActive": "النشط: {{name}}",
+    "subtitleNone": "لا توجد دورة نشطة",
+    "previousCycles": "الدورات السابقة"
+  },
+  "empty": {
+    "noActiveTitle": "لا يوجد كشف حساب نشط",
+    "noActiveDescription": "أنشئ دورة جديدة لبدء تخصيص الميزانيات وتتبع المصروفات.",
+    "newCycle": "دورة جديدة",
+    "noHistoryTitle": "لا توجد دورات سابقة",
+    "noHistoryDescription": "ستُدرج الكشوفات المغلقة هنا."
+  },
+  "toasts": {
+    "created": "تم إنشاء كشف الحساب.",
+    "createFailed": "فشل إنشاء كشف الحساب.",
+    "closeFailed": "فشل إغلاق كشف الحساب."
+  },
+  "createDialog": {
+    "title": "إنشاء كشف حساب",
+    "nameLabel": "اسم الدورة",
+    "namePlaceholder": "مثال: يوليو 2026",
+    "nameRequired": "اسم الدورة مطلوب.",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء المستهدف",
+    "setActiveNow": "تعيين كنشط فورًا (سيغلق الدورة النشطة الحالية)",
+    "cancel": "إلغاء",
+    "create": "إنشاء"
+  },
+  "closeDialog": {
+    "title": "إغلاق كشف الحساب",
+    "intro": "إغلاق الدورة النشطة يجمع الأرصدة ويحوّل البواقي للأمام ويقفل التعديل. أكّد البنود أدناه:",
+    "confirmations": {
+      "bankBalances": "طلبتُ وتحققتُ من جميع أرصدة البنوك لهذا الشهر.",
+      "usdLogged": "تم تسجيل جميع معاملات وأسعار صرف الدولار.",
+      "locks": "أفهم أن هذا يقفل الدورة وينقل البواقي للأمام."
+    },
+    "cancel": "إلغاء",
+    "confirm": "تأكيد وإغلاق"
+  },
+  "activeCard": {
+    "active": "نشط",
+    "ongoing": "— مستمرة",
+    "dayOf": "اليوم {{elapsed}} من {{total}} يومًا إجمالًا",
+    "elapsed": "{{count}}% مضى",
+    "dayNoEnd": "اليوم {{count}} — لا يوجد تاريخ انتهاء",
+    "hideBudget": "إخفاء الميزانية",
+    "editBudget": "تعديل الميزانية",
+    "closeCycle": "إغلاق الدورة"
+  },
+  "historyCard": {
+    "planned": "المخطط",
+    "spent": "المصروف",
+    "percentOfPlan": "{{count}}% من الخطة"
+  },
+  "allocationDialog": {
+    "configureFor": "إعداد الميزانية لـ",
+    "totalBudget": "الميزانية الإجمالية",
+    "cancel": "إلغاء",
+    "save": "حفظ"
+  },
+  "allocations": {
+    "savedToast": "تم حفظ التخصيصات!",
+    "noPreviousToast": "لا توجد تخصيصات دورة سابقة لنسخها.",
+    "previousEmptyToast": "الدورة السابقة لا تحتوي على تخصيصات مُهيأة.",
+    "unknownCategory": "غير معروف",
+    "categoryBudgets": "ميزانيات الفئات ({{currency}})",
+    "copyPrevious": "نسخ السابق",
+    "addToCycle": "إضافة إلى الدورة",
+    "addToCycleHelp": "اختر فئة موجودة أو أنشئ فئة جديدة.",
+    "createCategoryTooltip": "إنشاء فئة جديدة",
+    "totalBudget": "الميزانية الإجمالية",
+    "save": "حفظ",
+    "renameTitle": "إعادة تسمية الفئة",
+    "addTitle": "إضافة فئة جديدة",
+    "saveConfirm": "حفظ",
+    "createAndAdd": "إنشاء وإضافة",
+    "nameLabel": "اسم الفئة",
+    "cancel": "إلغاء",
+    "namePlaceholder": "مثال: الترفيه",
+    "renameAria": "إعادة تسمية {{name}}",
+    "removeAria": "إزالة {{name}}"
+  },
+  "analytics": {
+    "title": "تحليلات الدورة والتوجهات",
+    "cashFlowTab": "التدفق النقدي",
+    "categoryTrendsTab": "توجهات الفئات",
+    "spent": "المصروف",
+    "retained": "المحتجز",
+    "planSpace": "حيز الخطة",
+    "cashFlowCaption": "التدفق النقدي الفعلي حسب الدورة",
+    "cashFlowAria": "التدفق النقدي حسب كشف الحساب بعملة {{currency}}",
+    "barAria": "{{name}}: الإيرادات {{income}} {{currency}}، المصروف {{spent}} {{currency}}",
+    "income": "الإيرادات",
+    "category": "الفئة",
+    "spentSeries": "المصروف"
+  },
+  "analyticsPlaceholder": {
+    "title": "لا توجد بيانات تحليلات بعد",
+    "description": "بمجرد توفر كشف حساب مكتمل واحد على الأقل مع معاملات، ستظهر التوجهات والرؤى هنا."
+  }
+}

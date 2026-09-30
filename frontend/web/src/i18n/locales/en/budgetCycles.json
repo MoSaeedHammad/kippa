@@ -1,1 +1,103 @@
-{}
+{
+  "page": {
+    "title": "Statements",
+    "subtitleActive": "Active: {{name}}",
+    "subtitleNone": "No active cycle",
+    "previousCycles": "Previous Cycles"
+  },
+  "empty": {
+    "noActiveTitle": "No active statement",
+    "noActiveDescription": "Create a new cycle to start allocating budgets and tracking expenses.",
+    "newCycle": "New Cycle",
+    "noHistoryTitle": "No previous cycles found",
+    "noHistoryDescription": "Closed statements will be listed here."
+  },
+  "toasts": {
+    "created": "Statement created.",
+    "createFailed": "Failed to create statement.",
+    "closeFailed": "Failed to close statement."
+  },
+  "createDialog": {
+    "title": "Create Statement",
+    "nameLabel": "Cycle Name",
+    "namePlaceholder": "e.g. July 2026",
+    "nameRequired": "A cycle name is required.",
+    "startDate": "Start Date",
+    "endDate": "Target End Date",
+    "setActiveNow": "Set as active immediately (will close current active cycle)",
+    "cancel": "Cancel",
+    "create": "Create"
+  },
+  "closeDialog": {
+    "title": "Close Statement",
+    "intro": "Closing the active cycle compiles balances, carries forward leftovers and locks edits. Confirm items below:",
+    "confirmations": {
+      "bankBalances": "I have reconciled and verified all bank balances for this month.",
+      "usdLogged": "All USD transactions and exchanges have been logged.",
+      "locks": "I understand this locks the cycle and moves leftovers forward."
+    },
+    "cancel": "Cancel",
+    "confirm": "Confirm & Close"
+  },
+  "activeCard": {
+    "active": "ACTIVE",
+    "ongoing": "— Ongoing",
+    "dayOf": "Day {{elapsed}} of {{total}} days total",
+    "elapsed": "{{count}}% Elapsed",
+    "dayNoEnd": "Day {{count}} — No end date set",
+    "hideBudget": "Hide Budget",
+    "editBudget": "Edit Budget",
+    "closeCycle": "Close Cycle"
+  },
+  "historyCard": {
+    "planned": "Planned",
+    "spent": "Spent",
+    "percentOfPlan": "{{count}}% of plan"
+  },
+  "allocationDialog": {
+    "configureFor": "Configure Budget for",
+    "totalBudget": "Total Budget",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "allocations": {
+    "savedToast": "Allocations saved!",
+    "noPreviousToast": "No previous cycle allocations found to copy.",
+    "previousEmptyToast": "Previous cycle had no allocations configured.",
+    "unknownCategory": "Unknown",
+    "categoryBudgets": "Category Budgets ({{currency}})",
+    "copyPrevious": "Copy previous",
+    "addToCycle": "Add to cycle",
+    "addToCycleHelp": "Choose an existing category or create a new one.",
+    "createCategoryTooltip": "Create a new category",
+    "totalBudget": "Total Budget",
+    "save": "Save",
+    "renameTitle": "Rename Category",
+    "addTitle": "Add New Category",
+    "saveConfirm": "Save",
+    "createAndAdd": "Create & Add",
+    "nameLabel": "Category Name",
+    "cancel": "Cancel",
+    "namePlaceholder": "e.g. Entertainment",
+    "renameAria": "Rename {{name}}",
+    "removeAria": "Remove {{name}}"
+  },
+  "analytics": {
+    "title": "Cycle Analytics & Trends",
+    "cashFlowTab": "Cash Flow",
+    "categoryTrendsTab": "Category Trends",
+    "spent": "Spent",
+    "retained": "Retained",
+    "planSpace": "Plan space",
+    "cashFlowCaption": "Actual cash flow by cycle",
+    "cashFlowAria": "Cash flow by statement in {{currency}}",
+    "barAria": "{{name}}: income {{income}} {{currency}}, spent {{spent}} {{currency}}",
+    "income": "Income",
+    "category": "Category",
+    "spentSeries": "Spent"
+  },
+  "analyticsPlaceholder": {
+    "title": "No analytics data yet",
+    "description": "Once you have at least one completed statement with transactions, trends and insights will appear here."
+  }
+}
