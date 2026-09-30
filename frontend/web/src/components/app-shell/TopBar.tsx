@@ -79,8 +79,11 @@ export function TopBar({
           </Stack>
 
 
-          {/* Right: Activity Bell, Quick Nav & Profile */}
-          <Stack direction="row" spacing={1} alignItems="center">
+          {/* Right: Activity Bell, Quick Nav & Profile. marginInlineStart:auto
+              keeps this cluster at the flex end even when the brand stack is
+              hidden on desktop — otherwise space-between pushes it to the
+              start (left in English, against the sidebar). */}
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ marginInlineStart: 'auto' }}>
             <Stack sx={{ display: { xs: 'flex', md: 'none' } }}><ActivityBell onClick={() => navigate('/activity')} /></Stack>
             <Tooltip title={t('topBar.navigate')}>
               <IconButton

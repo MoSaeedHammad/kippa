@@ -204,14 +204,15 @@ export function SideNav() {
       sx={{
         display: { xs: 'none', md: 'flex' },
         position: 'fixed',
-        inset: '0 auto 0 0',
+        insetBlock: 0,
+        insetInlineStart: 0,
         zIndex: 1200,
         width: 264,
         px: 2,
         py: 2.25,
         flexDirection: 'column',
         bgcolor: 'background.paper',
-        borderRight: '1px solid',
+        borderInlineEnd: '1px solid',
         borderColor: 'divider',
       }}
     >
