@@ -24,5 +24,9 @@
     "expense": "Expense",
     "income": "Income",
     "create": "Create Category"
+  },
+  "type": {
+    "income": "Income",
+    "expense": "Expense"
   }
 }

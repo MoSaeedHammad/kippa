@@ -63,7 +63,7 @@ export function Categories() {
               subtitle={t('groups.configured', { count: items.length })}
               trailing={
                 <Typography sx={{ color: type === 'income' ? 'success.main' : 'text.secondary', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {type}
+                  {t(`type.${type}`)}
                 </Typography>
               }
             />
