@@ -22,3 +22,10 @@
 | Reconciliation | المطابقة | |
 | Statement | كشف حساب | plural "Statements" = الكشوفات |
 | Category | فئة | plural "Categories" = الفئات |
+| Invite ID | معرف الدعوة | matches appShell profileMenu |
+| Shared account | الحساب المشترك | |
+| Join | الانضمام | "Join space" = الانضمام إلى الفضاء |
+| Sign in | تسجيل الدخول | |
+| Sign out | تسجيل الخروج | matches appShell profileMenu |
+| Expense | مصروف | plural "Expenses" = المصروفات |
+| Space name | اسم الفضاء | |

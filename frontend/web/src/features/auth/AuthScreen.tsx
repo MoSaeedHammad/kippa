@@ -22,6 +22,7 @@ import { InfoOutlinedIcon } from '@/components/AppIcon';
 import { KeyIcon } from '@/components/AppIcon';
 import { isFirebaseReady } from '@/libs/auth';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useTranslation } from 'react-i18next';
 import { versionLabel } from '@/version';
 import type { AccessLevel } from '@kippa/domain';
 
@@ -34,6 +35,7 @@ function readInviteParams(): { inviteId: string; level: AccessLevel | null } {
 
 export function AuthScreen() {
   const theme = useTheme();
+  const { t } = useTranslation('auth');
   const logoSrc = '/icons/logo_green_transparent.png';
   const { enqueueSnackbar } = useSnackbar();
   const {
@@ -57,7 +59,7 @@ export function AuthScreen() {
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Google Authentication failed', { variant: 'error' });
+      enqueueSnackbar(err.message || t('errors.googleSignIn'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -66,14 +68,14 @@ export function AuthScreen() {
   const handleCreateHousehold = async () => {
     if (!userProfile) return;
     if (!householdName.trim()) {
-      enqueueSnackbar('Please enter a space name', { variant: 'warning' });
+      enqueueSnackbar(t('errors.spaceNameRequired'), { variant: 'warning' });
       return;
     }
     setLoading(true);
     try {
       await createHousehold(householdName.trim());
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create space', { variant: 'error' });
+      enqueueSnackbar(err.message || t('errors.createSpace'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -82,15 +84,15 @@ export function AuthScreen() {
   const handleJoinHousehold = async () => {
     if (!userProfile) return;
     if (!householdIdToJoin.trim()) {
-      enqueueSnackbar('Please enter a valid Invite ID', { variant: 'warning' });
+      enqueueSnackbar(t('errors.inviteIdRequired'), { variant: 'warning' });
       return;
     }
     setLoading(true);
     try {
       await requestToJoinHousehold(householdIdToJoin.trim(), levelFromLink ?? undefined);
-      enqueueSnackbar('Request sent — the space owner will review it.', { variant: 'success' });
+      enqueueSnackbar(t('join.requestSent'), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('errors.joinRequest'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -105,8 +107,7 @@ export function AuthScreen() {
       <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
         <Container maxWidth="sm">
           <Alert severity="error" sx={{ borderRadius: 3 }}>
-            Firebase is not configured. Copy <strong>.env.example</strong> to <strong>.env</strong> and set your{' '}
-            <strong>VITE_FIREBASE_*</strong> credentials.
+            {t('dev.firebaseNotConfigured')}
           </Alert>
         </Container>
       </Box>
@@ -140,18 +141,19 @@ export function AuthScreen() {
                   mb: 1.5
                 }}
               >
-                Set Up Your Shared Account
+                {t('setup.heading')}
               </Typography>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  color: 'text.secondary', 
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'text.secondary',
                   fontSize: { xs: '14px', sm: '16px' },
                   lineHeight: 1.6,
                   px: 2
                 }}
               >
-                Welcome back, <strong>{userProfile.displayName}</strong>! To get started, you need to create a new space or join an existing one.
+                {t('setup.welcomeBack')} <strong>{userProfile.displayName}</strong>
+                {t('setup.getStarted')}
               </Typography>
             </Box>
 
@@ -196,18 +198,18 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Create a New Space
+                    {t('create.heading')}
                   </Typography>
-                  
+
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
-                    Establish a brand new shared ledger workspace. As the creator, you'll be the owner and can invite other members with an invite link anytime.
+                    {t('create.description')}
                   </Typography>
 
                   <Stack spacing={2} sx={{ mt: 'auto' }}>
                     <TextField
                       fullWidth
-                      label="Space name"
-                      placeholder="e.g. My Cozy Home"
+                      label={t('create.spaceNameLabel')}
+                      placeholder={t('create.spaceNamePlaceholder')}
                       value={householdName}
                       onChange={e => setHouseholdName(e.target.value)}
                       disabled={loading}
@@ -227,7 +229,7 @@ export function AuthScreen() {
                       onClick={handleCreateHousehold}
                       loading={loading}
                     >
-                      Create Space
+                      {t('create.submit')}
                     </Button>
                   </Stack>
                 </CardContent>
@@ -268,18 +270,18 @@ export function AuthScreen() {
                   </Box>
 
                   <Typography variant="h3" sx={{ fontSize: '1.25rem', fontWeight: 700, mb: 1.5 }}>
-                    Join an Existing Space
+                    {t('join.heading')}
                   </Typography>
-                  
+
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6, flexGrow: 1 }}>
-                    Connect to an existing workspace created by someone else. You will need their Invite ID to instantly sync up and share budget ledger logs.
+                    {t('join.description')}
                   </Typography>
 
                   <Stack spacing={2} sx={{ mt: 'auto' }}>
                     <TextField
                       fullWidth
-                      label="Invite ID"
-                      placeholder="Paste the Invite ID from your invite link"
+                      label={t('join.inviteIdLabel')}
+                      placeholder={t('join.inviteIdPlaceholder')}
                       value={householdIdToJoin}
                       onChange={e => setHouseholdIdToJoin(e.target.value)}
                       disabled={loading}
@@ -299,7 +301,7 @@ export function AuthScreen() {
                       onClick={handleJoinHousehold}
                       loading={loading}
                     >
-                      Join Space
+                      {t('join.submit')}
                     </Button>
                   </Stack>
                 </CardContent>
@@ -312,7 +314,7 @@ export function AuthScreen() {
               icon={<InfoOutlinedIcon fontSize="small" />}
               sx={{ width: '100%' }}
             >
-              <strong>Tip:</strong> You can find your Invite ID inside the user profile menu at the top-right corner of the application once logged in.
+              <strong>{t('tip.label')}</strong> {t('tip.body')}
             </Alert>
 
             {/* Logout / Switch User */}
@@ -322,7 +324,7 @@ export function AuthScreen() {
               onClick={handleLogout} 
               startIcon={<LogoutIcon fontSize="small" />}
             >
-              Sign out / Change Account
+              {t('signOutOrChange')}
             </Button>
           </Stack>
         </Container>
@@ -346,17 +348,17 @@ export function AuthScreen() {
       <Box sx={{ width: '100%', maxWidth: 470, minHeight: { xs: '100dvh', sm: 720 }, py: { xs: 5, sm: 7 }, display: 'flex', flexDirection: 'column' }}>
         <Stack direction="row" spacing={1.25} alignItems="center">
           <Box sx={{ width: 42, height: 42, borderRadius: 2.5, bgcolor: alpha(theme.palette.primary.contrastText, 0.96), display: 'grid', placeItems: 'center' }}>
-            <img src={logoSrc} alt="Kippa Logo" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            <img src={logoSrc} alt={t('logoAlt')} style={{ width: 26, height: 26, objectFit: 'contain' }} />
           </Box>
           <Typography sx={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.05em', color: 'primary.contrastText' }}>Kippa</Typography>
         </Stack>
 
         <Box sx={{ mt: 'auto', mb: { xs: 5, sm: 2 } }}>
           <Typography sx={{ fontSize: { xs: '3rem', sm: '4rem' }, lineHeight: 1.05, fontWeight: 500, letterSpacing: '-0.065em', maxWidth: 430, textWrap: 'balance', color: 'primary.contrastText' }}>
-            Track your spending effortlessly
+            {t('hero.title')}
           </Typography>
           <Typography sx={{ mt: 2.5, mb: 4.5, color: alpha(theme.palette.primary.contrastText, 0.78), fontSize: { xs: 15, sm: 17 }, lineHeight: 1.55, maxWidth: 420 }}>
-            Manage your space finances, follow every expense, and keep your goals in sight.
+            {t('hero.subtitle')}
           </Typography>
 
           <Box sx={{ width: '100%' }}>
@@ -383,13 +385,13 @@ export function AuthScreen() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
                 </svg>
                 <Typography variant="body1" sx={{ fontWeight: 700, color: 'inherit', fontSize: '15px' }}>
-                  Get started with Google
+                  {t('hero.googleCta')}
                 </Typography>
               </Stack>
             </Button>
           </Box>
           <Typography sx={{ mt: 2.5, textAlign: 'center', color: alpha(theme.palette.primary.contrastText, 0.72), fontSize: 13 }}>
-            Secure sign-in · Your financial data stays private
+            {t('hero.privacyNote')}
           </Typography>
           <Typography sx={{ mt: 1, textAlign: 'center', color: alpha(theme.palette.primary.contrastText, 0.55), fontSize: 11 }}>
             {versionLabel}
