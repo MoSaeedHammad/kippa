@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
   Box,
@@ -48,6 +49,7 @@ function useSharedAccountSummaries(enabled: boolean) {
 }
 
 export function SharedAccountsPage() {
+  const { t } = useTranslation('sharedAccounts');
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { userHouseholds, householdId, userProfile, isLoadingHouseholds, switchHousehold, createHousehold } = useAppContext();
@@ -68,7 +70,7 @@ export function SharedAccountsPage() {
       }
       navigate('/shared-balance');
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not open this space', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.couldNotOpen'), { variant: 'error' });
     } finally {
       setSwitchingId(null);
     }
@@ -79,13 +81,13 @@ export function SharedAccountsPage() {
     setCreating(true);
     try {
       await createHousehold(newName.trim());
-      enqueueSnackbar('Space created', { variant: 'success' });
+      enqueueSnackbar(t('toasts.spaceCreated'), { variant: 'success' });
       setDialogOpen(false);
       setNewName('');
       // The new account becomes the active one server-side.
       navigate('/shared-balance');
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not create the space', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.couldNotCreate'), { variant: 'error' });
     } finally {
       setCreating(false);
     }
@@ -94,11 +96,11 @@ export function SharedAccountsPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Spaces"
-        subtitle="Every shared space you belong to — each keeps its own balance, history and approvals."
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
         action={
           <Button variant="contained" startIcon={<AddIcon fontSize="small" />} onClick={() => setDialogOpen(true)}>
-            New space
+            {t('page.newSpace')}
           </Button>
         }
       />
@@ -110,18 +112,18 @@ export function SharedAccountsPage() {
       ) : summaries.length === 0 ? (
         <EmptyLayout
           icon={<SwitchAccountIcon sx={{ fontSize: 28 }} />}
-          title="No spaces yet"
-          description="Create one per shared space — with a partner, a flatmate, a family member. Each stays fully isolated."
+          title={t('empty.title')}
+          description={t('empty.description')}
         />
       ) : (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
           {summaries.map((summary) => {
-            const otherName = summary.members.find((member) => member.uid !== viewerUid)?.displayName ?? 'The other member';
+            const otherName = summary.members.find((member) => member.uid !== viewerUid)?.displayName ?? t('card.otherMemberFallback');
             const balanceCaption = summary.balance > 0
-              ? `${otherName} owes you`
+              ? t('card.owesYou', { name: otherName })
               : summary.balance < 0
-                ? `You owe ${otherName}`
-                : 'All settled up';
+                ? t('card.youOwe', { name: otherName })
+                : t('card.allSettled');
             const memberNames = summary.members.map((member) => member.displayName).slice(0, 3).join(', ');
             return (
               <Card
@@ -134,10 +136,10 @@ export function SharedAccountsPage() {
                     <SwapHorizIcon color="primary" />
                     <Typography variant="cardTitle" noWrap>{summary.household.name}</Typography>
                   </Stack>
-                  {summary.household.id === householdId && <Chip label="Active" color="primary" size="small" />}
+                  {summary.household.id === householdId && <Chip label={t('card.active')} color="primary" size="small" />}
                 </Stack>
                 <Typography variant="cardSubtitle" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {memberNames || 'Only you — invite a member from Members & settings'}
+                  {memberNames || t('card.onlyYou')}
                 </Typography>
                 <Stack direction="row" alignItems="flex-end" justifyContent="space-between" spacing={1} sx={{ mt: 1.5 }}>
                   <Box>
@@ -148,7 +150,7 @@ export function SharedAccountsPage() {
                   </Box>
                   {summary.pendingForMe > 0 && (
                     <Chip
-                      label={`${summary.pendingForMe} waiting for your approval`}
+                      label={t('pendingBadge', { count: summary.pendingForMe })}
                       color="secondary"
                       size="small"
                     />
@@ -161,23 +163,23 @@ export function SharedAccountsPage() {
       )}
 
       <Dialog open={dialogOpen} onClose={() => !creating && setDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>New space</DialogTitle>
+        <DialogTitle>{t('createDialog.title')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             fullWidth
             margin="normal"
-            label="Name"
-            placeholder="e.g. Home, Flat 12, Side project"
+            label={t('createDialog.name')}
+            placeholder={t('createDialog.namePlaceholder')}
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            helperText="Each space is fully isolated — its own members, balance and history."
+            helperText={t('createDialog.helper')}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} disabled={creating}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)} disabled={creating}>{t('createDialog.cancel')}</Button>
           <Button variant="contained" onClick={handleCreate} loading={creating} disabled={!newName.trim()}>
-            Create
+            {t('createDialog.create')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,1 +1,38 @@
-{}
+{
+  "page": {
+    "title": "Spaces",
+    "subtitle": "Every shared space you belong to — each keeps its own balance, history and approvals.",
+    "newSpace": "New space"
+  },
+  "empty": {
+    "title": "No spaces yet",
+    "description": "Create one per shared space — with a partner, a flatmate, a family member. Each stays fully isolated."
+  },
+  "card": {
+    "owesYou": "{{name}} owes you",
+    "youOwe": "You owe {{name}}",
+    "allSettled": "All settled up",
+    "otherMemberFallback": "The other member",
+    "active": "Active",
+    "onlyYou": "Only you — invite a member from Members & settings"
+  },
+  "pendingBadge_zero": "{{count}} waiting for your approval",
+  "pendingBadge_one": "{{count}} waiting for your approval",
+  "pendingBadge_two": "{{count}} waiting for your approval",
+  "pendingBadge_few": "{{count}} waiting for your approval",
+  "pendingBadge_many": "{{count}} waiting for your approval",
+  "pendingBadge_other": "{{count}} waiting for your approval",
+  "toasts": {
+    "spaceCreated": "Space created",
+    "couldNotOpen": "Could not open this space",
+    "couldNotCreate": "Could not create the space"
+  },
+  "createDialog": {
+    "title": "New space",
+    "name": "Name",
+    "namePlaceholder": "e.g. Home, Flat 12, Side project",
+    "helper": "Each space is fully isolated — its own members, balance and history.",
+    "cancel": "Cancel",
+    "create": "Create"
+  }
+}

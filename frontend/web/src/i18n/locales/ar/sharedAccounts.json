@@ -1,1 +1,38 @@
-{}
+{
+  "page": {
+    "title": "الفضاءات",
+    "subtitle": "كل فضاء مشترك تنتمي إليه — لكل منها رصيده وسجلّه وموافقاته.",
+    "newSpace": "فضاء جديد"
+  },
+  "empty": {
+    "title": "لا توجد فضاءات بعد",
+    "description": "أنشئ فضاءً لكل مساحة مشتركة — مع شريك أو زميل سكن أو أحد أفراد العائلة. يبقى كل منها معزولًا تمامًا."
+  },
+  "card": {
+    "owesYou": "{{name}} يدين لك",
+    "youOwe": "أنت مدين لـ {{name}}",
+    "allSettled": "تم التسوية بالكامل",
+    "otherMemberFallback": "العضو الآخر",
+    "active": "نشط",
+    "onlyYou": "أنت وحدك — دعُ عضوًا من الأعضاء والإعدادات"
+  },
+  "pendingBadge_zero": "{{count}} تنتظر موافقتك",
+  "pendingBadge_one": "{{count}} تنتظر موافقتك",
+  "pendingBadge_two": "{{count}} تنتظر موافقتك",
+  "pendingBadge_few": "{{count}} تنتظر موافقتك",
+  "pendingBadge_many": "{{count}} تنتظر موافقتك",
+  "pendingBadge_other": "{{count}} تنتظر موافقتك",
+  "toasts": {
+    "spaceCreated": "تم إنشاء الفضاء",
+    "couldNotOpen": "تعذر فتح هذا الفضاء",
+    "couldNotCreate": "تعذر إنشاء الفضاء"
+  },
+  "createDialog": {
+    "title": "فضاء جديد",
+    "name": "الاسم",
+    "namePlaceholder": "مثال: المنزل، شقة 12، مشروع جانبي",
+    "helper": "كل فضاء معزول تمامًا — أعضاؤه ورصيده وسجلّه خاصون به.",
+    "cancel": "إلغاء",
+    "create": "إنشاء"
+  }
+}
