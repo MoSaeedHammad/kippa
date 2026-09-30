@@ -29,3 +29,13 @@
 | Sign out | تسجيل الخروج | matches appShell profileMenu |
 | Expense | مصروف | plural "Expenses" = المصروفات |
 | Space name | اسم الفضاء | |
+| Balance | الرصيد | "My balance" = رصيدي; "Total balance" = الرصيد الإجمالي |
+| Budget | الميزانية | "Budget Breakdown" = تفصيل الميزانية |
+| Loan | القرض | plural "Loans" = القروض; installment/payment = قسط (plural أقساط) |
+| Cycle | الدورة | budget cycle; NOTE: UBIQUITOUS_LANGUAGE.md prescribes "Statement" (كشف حساب) for user-facing copy — dashboard source still says "cycle"; renaming is a product decision |
+| Remaining | المتبقي | |
+| Spent | المصروف | |
+| Account | الحساب | plural "Accounts" = الحسابات; "My Accounts" = حساباتي |
+| Income | الإيرادات | income entry = إدخال إيرادات |
+| Transfer | التحويل | |
+| Paid | مدفوع / تم دفع | Due = مستحق |

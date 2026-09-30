@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Stack, IconButton } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { EditIcon } from '@/components/AppIcon';
 import { DeleteIcon } from '@/components/AppIcon';
 import { FinanceTransaction, Category, LedgerLine, Account } from '@kippa/domain';
@@ -26,6 +27,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
   onVoid,
 }) => {
   const baseCurrency = useHouseholdBaseCurrency();
+  const { t } = useTranslation('dashboard');
   const cat = categories.find((c) => c.id === tx.categoryId);
 
   // Find amount and accounts from ledgerLines
@@ -53,7 +55,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
           return (
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '13.5px', color: 'text.primary' }}>
-                {tx.description || 'Transfer'}
+                {tx.description || t('items.transfer')}
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mt: 0.25, fontWeight: 'medium' }}>
                 {maskDigits(`${fromAmt} ${fromLine?.currency}`)} ➔ {maskDigits(`${toAmt} ${toLine?.currency}`)}
@@ -62,7 +64,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
                 {tx.date} • {formatShortTime(tx.createdAt)}
               </Typography>
               <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: '13.5px', whiteSpace: 'nowrap', mt: 0.5 }}>
-                Transfer Completed
+                {t('items.transferCompleted')}
               </Typography>
             </Box>
           );
@@ -70,10 +72,10 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
         return (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '13.5px', color: 'text.primary' }}>
-              {tx.description || 'Transfer'}
+              {tx.description || t('items.transfer')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mt: 0.25, fontWeight: 'medium' }}>
-              {fromAcc?.name || 'Wallet'} ➔ {toAcc?.name || 'Bank'}
+              {fromAcc?.name || t('items.wallet')} ➔ {toAcc?.name || t('items.bank')}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '10px', mt: 0.25, opacity: 0.8 }}>
               {tx.date} • {formatShortTime(tx.createdAt)}
@@ -89,7 +91,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
         return (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '13.5px', color: 'text.primary' }}>
-              Reconciliation
+              {t('items.reconciliation')}
             </Typography>
             {tx.description && (
               <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mt: 0.25, wordBreak: 'break-word' }}>
@@ -110,7 +112,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
         return (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '13.5px', color: 'text.primary' }}>
-              {cat?.name || 'Income'}
+              {cat?.name || t('items.income')}
             </Typography>
             {tx.description && (
               <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mt: 0.25, wordBreak: 'break-word' }}>
@@ -132,7 +134,7 @@ export const TransactionsListItem: React.FC<TransactionsListItemProps> = ({
         return (
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '13.5px', color: 'text.primary' }}>
-              {cat?.name || 'Expense'}
+              {cat?.name || t('items.expense')}
             </Typography>
             {tx.description && (
               <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', mt: 0.25, wordBreak: 'break-word' }}>

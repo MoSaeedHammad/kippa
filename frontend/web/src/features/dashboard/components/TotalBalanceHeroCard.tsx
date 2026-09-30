@@ -1,4 +1,5 @@
 import { Box, Card, CardContent, Chip, Skeleton, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import {
   useAccounts,
   useTransactions,
@@ -14,12 +15,13 @@ import { computeDashboard } from '@/libs/selectors';
 import { Money } from '@/components/Money';
 import { useAppContext } from '@/hooks/useAppContext';
 import { InfoTooltip } from '@/features/shared/components/InfoTooltip';
-import { metricExplanations } from '@/features/shared/constants/metricExplanations';
+import { metricExplanationKeys } from '@/features/shared/constants/metricExplanations';
 import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalanceTooltip';
 import { AccountBalanceIcon } from '@/components/AppIcon';
 import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function TotalBalanceHeroCard() {
+  const { t } = useTranslation('dashboard');
   const { householdId } = useAppContext();
   const { data: accounts, isLoading: accountsLoading } = useAccounts(householdId);
   const { data: transactions, isLoading: txsLoading } = useTransactions(householdId);
@@ -70,14 +72,14 @@ export function TotalBalanceHeroCard() {
     <Card sx={{ height: 375 }}>
       <CardContent sx={{ height: '100%' }}>
         <Stack sx={{ minHeight: 260 }}>
-          <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title="My balance" trailing={<Chip label="All accounts" />} />
+          <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title={t('hero.balanceTitle')} trailing={<Chip label={t('hero.allAccounts')} />} />
 
           <Box sx={{ mt: 3 }}>
             <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>
               <Box component="span">
               <InfoTooltip
-                label={<span>Total balance</span>}
-                text={metricExplanations.totalBaseEquivalent}
+                label={<span>{t('hero.totalBalance')}</span>}
+                text={t(`metrics.${metricExplanationKeys.totalBaseEquivalent}`)}
               />
               </Box>
           </Typography>
@@ -87,7 +89,7 @@ export function TotalBalanceHeroCard() {
           </Box>
           
           <Box sx={{ mt: 'auto', pt: 2 }}>
-            <Typography sx={{ color: 'text.secondary', fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.75 }}>Accounts</Typography>
+            <Typography sx={{ color: 'text.secondary', fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.75 }}>{t('hero.accountsLabel')}</Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 0.75 }}>
               {accounts.map(account => {
                 const balance = balanceFor(account.id);

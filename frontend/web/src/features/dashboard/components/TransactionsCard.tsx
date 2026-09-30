@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -26,6 +27,7 @@ import { ArrowBackIcon, ReceiptLongIcon } from '@/components/AppIcon';
 import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function TransactionsCard() {
+  const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { householdId } = useAppContext();
@@ -38,12 +40,12 @@ export function TransactionsCard() {
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
 
   const handleVoidTransaction = async (txId: string) => {
-    if (window.confirm('Are you sure you want to void this transaction? This updates derived balances immediately.')) {
+    if (window.confirm(t('transactions.voidConfirm'))) {
       try {
         await voidMutation.mutateAsync({ householdId, transactionId: txId });
-        enqueueSnackbar('Transaction voided successfully.', { variant: 'success' });
+        enqueueSnackbar(t('transactions.voidSuccess'), { variant: 'success' });
       } catch (err: any) {
-        enqueueSnackbar(err.message || 'Failed to void transaction', { variant: 'error' });
+        enqueueSnackbar(err.message || t('transactions.voidError'), { variant: 'error' });
       }
     }
   };
@@ -64,15 +66,15 @@ export function TransactionsCard() {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            <DashboardCardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="Recent Transactions" subtitle="Latest space activity" trailing={<Stack direction="row" spacing={1} alignItems="center">
-                <Chip size="small" label={`${Math.min(transactions.length, 8)} recent`} sx={{ bgcolor: 'action.hover', color: 'primary.main' }} />
-                <IconButton aria-label="View all transactions" onClick={() => navigate('/transactions')} size="small" sx={{ width: 36, height: 36, minWidth: 36 }}>
+            <DashboardCardHeading icon={<ReceiptLongIcon variant="Bulk" />} title={t('transactions.title')} subtitle={t('transactions.subtitle')} trailing={<Stack direction="row" spacing={1} alignItems="center">
+                <Chip size="small" label={t('transactions.recentCount', { count: Math.min(transactions.length, 8) })} sx={{ bgcolor: 'action.hover', color: 'primary.main' }} />
+                <IconButton aria-label={t('transactions.viewAllAria')} onClick={() => navigate('/transactions')} size="small" sx={{ width: 36, height: 36, minWidth: 36 }}>
                   <ArrowBackIcon sx={{ fontSize: 18, transform: 'rotate(180deg)' }} />
                 </IconButton>
               </Stack>} />
 
             {transactions.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>No recent activity recorded.</Typography>
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>{t('transactions.empty')}</Typography>
             ) : (
               <Stack spacing={1}>
                 {transactions.slice(0, 8).map(tx => (

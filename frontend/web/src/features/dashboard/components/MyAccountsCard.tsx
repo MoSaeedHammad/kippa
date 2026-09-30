@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Box, Card, CardContent, Chip, Divider, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { AccountBalanceIcon } from '@/components/AppIcon';
 import { SavingsIcon } from '@/components/AppIcon';
 import { PaymentsIcon } from '@/components/AppIcon';
@@ -24,6 +25,7 @@ import { calculateAccountBalances } from '@/libs/financeCalculations';
 import { DashboardCardHeading } from './DashboardCardHeading';
 
 export function MyAccountsCard() {
+  const { t } = useTranslation('dashboard');
   const { householdId } = useAppContext();
   const { data: accounts, isLoading: accountsLoading } = useAccounts(householdId);
   const { data: transactions, isLoading: txsLoading } = useTransactions(householdId);
@@ -86,10 +88,10 @@ export function MyAccountsCard() {
       <Card>
         <CardContent>
           <Stack spacing={2.5}>
-            <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title="My Accounts" subtitle="Cash, banks and linked cards" trailing={<Chip label={`${visibleAccounts.length} accounts`} />} />
+            <DashboardCardHeading icon={<AccountBalanceIcon variant="Bulk" />} title={t('accounts.title')} subtitle={t('accounts.subtitle')} trailing={<Chip label={t('accounts.count', { count: visibleAccounts.length })} />} />
 
             {visibleAccounts.length === 0 ? (
-              <EmptyLayout title="No accounts yet" description="Add an account to start tracking your balances." />
+              <EmptyLayout title={t('accounts.emptyTitle')} description={t('accounts.emptyDescription')} />
             ) : (
               <Stack divider={<Divider />}>
                 {visibleAccounts.map(acc => {

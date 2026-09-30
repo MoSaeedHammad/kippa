@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useFinance';
 import { computeDashboard } from '@/libs/selectors';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useTranslation } from 'react-i18next';
 import { Money } from '@/components/Money';
 import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { BarChartIcon, PaymentsIcon, SavingsIcon } from '@/components/AppIcon';
@@ -23,6 +24,7 @@ import { CategoryPaceChart } from './CategoryPaceChart';
 const formatMaskedValue = (value: number, mask: (value: string) => string) => mask(Math.round(value).toLocaleString());
 
 export function BudgetBreakdownCard() {
+  const { t } = useTranslation('dashboard');
   const { householdId } = useAppContext();
   const theme = useTheme();
   const { maskNumber } = usePrivacyMask();
@@ -76,16 +78,16 @@ export function BudgetBreakdownCard() {
     <Card>
       <CardContent>
         <Stack spacing={3}>
-          <DashboardCardHeading icon={<CategoryIcon variant="Bulk" />} title="Budget Breakdown" subtitle="Planned versus actual spending by category" trailing={activeCycle ? <Chip label={activeCycle.name} /> : undefined} />
+          <DashboardCardHeading icon={<CategoryIcon variant="Bulk" />} title={t('breakdown.title')} subtitle={t('breakdown.subtitle')} trailing={activeCycle ? <Chip label={activeCycle.name} /> : undefined} />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             {[
-              { label: 'Planned budget', value: totalPlanned, valueColor: 'text.primary', accent: theme.palette.secondary.main, meta: `${data.categoryStatus.length} category allocations`, Icon: PaymentsIcon },
-              { label: 'Total spent', value: totalSpent, valueColor: totalSpent > totalPlanned ? 'error.main' : 'text.primary', accent: totalSpent > totalPlanned ? theme.palette.error.main : theme.palette.primary.main, meta: `${spentPercent}% of the cycle plan`, Icon: BarChartIcon },
-              { label: totalRemaining < 0 ? 'Over budget' : 'Remaining', value: Math.abs(totalRemaining), valueColor: totalRemaining < 0 ? 'error.main' : 'success.main', accent: totalRemaining < 0 ? theme.palette.error.main : theme.palette.success.main, meta: totalRemaining < 0 ? 'Requires budget attention' : 'Available to spend', Icon: SavingsIcon },
+              { id: 'planned', label: t('breakdown.plannedBudget'), value: totalPlanned, valueColor: 'text.primary', accent: theme.palette.secondary.main, meta: t('breakdown.allocationsMeta', { count: data.categoryStatus.length }), Icon: PaymentsIcon },
+              { id: 'spent', label: t('breakdown.totalSpent'), value: totalSpent, valueColor: totalSpent > totalPlanned ? 'error.main' : 'text.primary', accent: totalSpent > totalPlanned ? theme.palette.error.main : theme.palette.primary.main, meta: t('breakdown.spentPercentMeta', { percent: spentPercent }), Icon: BarChartIcon },
+              { id: 'remaining', label: totalRemaining < 0 ? t('breakdown.overBudget') : t('breakdown.remaining'), value: Math.abs(totalRemaining), valueColor: totalRemaining < 0 ? 'error.main' : 'success.main', accent: totalRemaining < 0 ? theme.palette.error.main : theme.palette.success.main, meta: totalRemaining < 0 ? t('breakdown.requiresAttention') : t('breakdown.availableToSpend'), Icon: SavingsIcon },
             ].map(metric => (
               <Box
-                key={metric.label}
+                key={metric.id}
                 sx={{
                   flex: 1,
                   minWidth: 0,
@@ -112,24 +114,24 @@ export function BudgetBreakdownCard() {
           </Stack>
 
           {data.loanCommitments.length > 0 && <Stack spacing={1.5}>
-            <Typography variant="sectionLabel">Fixed commitments</Typography>
+            <Typography variant="sectionLabel">{t('breakdown.fixedCommitments')}</Typography>
             {data.loanCommitments.map(commitment => <Stack key={commitment.loanId} direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={1}>
-              <Stack direction="row" alignItems="center" spacing={1}><PaymentsIcon color="primary" /><Box><Typography variant="body1">{commitment.loanName}</Typography><Typography variant="body2" color="text.secondary">Included in this cycle outside category spending</Typography></Box></Stack>
-              <Chip label={commitment.paid > 0 ? `Paid ${commitment.paid.toLocaleString()} ${baseCurrency}` : `Due ${commitment.planned.toLocaleString()} ${baseCurrency}`} color={commitment.paid >= commitment.planned ? 'success' : 'warning'} />
+              <Stack direction="row" alignItems="center" spacing={1}><PaymentsIcon color="primary" /><Box><Typography variant="body1">{commitment.loanName}</Typography><Typography variant="body2" color="text.secondary">{t('breakdown.includedInCycle')}</Typography></Box></Stack>
+              <Chip label={commitment.paid > 0 ? t('breakdown.paidAmount', { amount: commitment.paid.toLocaleString(), currency: baseCurrency }) : t('breakdown.dueAmount', { amount: commitment.planned.toLocaleString(), currency: baseCurrency })} color={commitment.paid >= commitment.planned ? 'success' : 'warning'} />
             </Stack>)}
           </Stack>}
 
           <CategoryPaceChart categories={data.categoryStatus} />
 
-          <Stack spacing={1.5} aria-label="Budget breakdown details">
+          <Stack spacing={1.5} aria-label={t('breakdown.detailsAria')}>
             <Box sx={{ display: { xs: 'none', md: 'grid' }, gridTemplateColumns: 'minmax(140px, 1.4fr) minmax(150px, 1fr) repeat(3, minmax(84px, .7fr))', gap: 2, px: 1 }}>
-              {['Category', 'Progress', 'Planned', 'Spent', 'Remaining'].map((label, index) => (
-                <Typography key={label} sx={{ fontSize: 10.5, lineHeight: '16px', fontWeight: 700, color: 'text.secondary', textAlign: index > 1 ? 'right' : 'left' }}>{label}</Typography>
+              {[t('breakdown.colCategory'), t('breakdown.colProgress'), t('breakdown.colPlanned'), t('breakdown.colSpent'), t('breakdown.colRemaining')].map((label, index) => (
+                <Typography key={index} sx={{ fontSize: 10.5, lineHeight: '16px', fontWeight: 700, color: 'text.secondary', textAlign: index > 1 ? 'right' : 'left' }}>{label}</Typography>
               ))}
             </Box>
 
             {data.categoryStatus.length === 0 ? (
-              <Typography align="center" sx={{ py: 4, color: 'text.secondary', fontSize: 12 }}>No budget allocations found for this cycle.</Typography>
+              <Typography align="center" sx={{ py: 4, color: 'text.secondary', fontSize: 12 }}>{t('breakdown.empty')}</Typography>
             ) : (
               data.categoryStatus.map((cat, idx) => {
                     const remaining = cat.planned - cat.spent;
@@ -158,11 +160,11 @@ export function BudgetBreakdownCard() {
                           </Stack>
                           <Box sx={{ display: { xs: 'grid', md: 'contents' }, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
                             {[
-                              { label: 'Planned', value: formatMaskedValue(cat.planned, maskNumber), color: 'text.primary' },
-                              { label: 'Spent', value: cat.spent > 0 ? formatMaskedValue(cat.spent, maskNumber) : '—', color: cat.spent > 0 ? 'text.primary' : 'text.disabled' },
-                              { label: 'Remaining', value: `${isOver ? '' : '+'}${formatMaskedValue(remaining, maskNumber)}`, color: isOver ? 'error.main' : remaining > 0 ? 'success.main' : 'text.secondary' },
-                            ].map(item => (
-                              <Box key={item.label} sx={{ minWidth: 0, textAlign: { xs: 'left', md: 'right' } }}>
+                              { label: t('breakdown.colPlanned'), value: formatMaskedValue(cat.planned, maskNumber), color: 'text.primary' },
+                              { label: t('breakdown.colSpent'), value: cat.spent > 0 ? formatMaskedValue(cat.spent, maskNumber) : '—', color: cat.spent > 0 ? 'text.primary' : 'text.disabled' },
+                              { label: t('breakdown.colRemaining'), value: `${isOver ? '' : '+'}${formatMaskedValue(remaining, maskNumber)}`, color: isOver ? 'error.main' : remaining > 0 ? 'success.main' : 'text.secondary' },
+                            ].map((item, index) => (
+                              <Box key={index} sx={{ minWidth: 0, textAlign: { xs: 'left', md: 'right' } }}>
                                 <Typography sx={{ display: { md: 'none' }, fontSize: 9.5, lineHeight: '14px', fontWeight: 600, color: 'text.secondary' }}>{item.label}</Typography>
                                 <Typography noWrap sx={{ fontSize: 11.5, lineHeight: '18px', fontWeight: 700, color: item.color, fontVariantNumeric: 'tabular-nums' }}>{item.value}</Typography>
                               </Box>

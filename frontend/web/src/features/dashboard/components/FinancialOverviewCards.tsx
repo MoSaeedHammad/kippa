@@ -1,4 +1,5 @@
 import { Box, Card, CardContent, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import { Money } from '@/components/Money';
 import { PaymentsIcon, WorkIcon } from '@/components/AppIcon';
@@ -21,6 +22,7 @@ import { computeDashboard } from '@/libs/selectors';
 import type { CurrencyCode } from '@kippa/domain';
 
 export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expense' }) {
+  const { t } = useTranslation('dashboard');
   const { householdId } = useAppContext();
   const theme = useTheme();
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts(householdId);
@@ -52,13 +54,13 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
         <CardContent sx={{ height: '100%' }}>
           <Stack sx={{ height: '100%' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <CardHeading icon={<WorkIcon variant="Bulk" />} title="My income" />
-              <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? 'Current cycle'}</Typography>
+              <CardHeading icon={<WorkIcon variant="Bulk" />} title={t('overview.incomeTitle')} />
+              <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? t('overview.currentCycle')}</Typography>
             </Stack>
 
             <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 7 }}>
               <Box>
-                <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>Total income</Typography>
+                <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>{t('overview.totalIncome')}</Typography>
                 <Typography sx={{ color: 'text.primary', fontSize: { xs: 32, lg: 38 }, fontWeight: 500, lineHeight: 1.1, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>
                   <Money amount={data.income.actual || data.income.expected} code={baseCurrency} />
                 </Typography>
@@ -71,12 +73,12 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
             </Stack>
 
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2.5 }}>
-              <MetricCapsule icon={<WorkIcon fontSize="small" />} label="Received" value={data.income.actual} currency={baseCurrency} positive />
+              <MetricCapsule icon={<WorkIcon fontSize="small" />} label={t('overview.received')} value={data.income.actual} currency={baseCurrency} positive />
             </Stack>
 
             <Box sx={{ mt: 'auto', pt: 3, pl: 1.5, borderLeft: '2px solid', borderColor: 'primary.main' }}>
-              <Typography sx={{ color: 'text.secondary', fontSize: 10.5 }}>Received this cycle</Typography>
-              <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 650 }}>{receivedIncomeCount} income {receivedIncomeCount === 1 ? 'entry' : 'entries'}</Typography>
+              <Typography sx={{ color: 'text.secondary', fontSize: 10.5 }}>{t('overview.receivedThisCycle')}</Typography>
+              <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 650 }}>{t('overview.incomeEntries', { count: receivedIncomeCount })}</Typography>
             </Box>
           </Stack>
         </CardContent>
@@ -86,20 +88,20 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
         <CardContent sx={{ height: '100%' }}>
           <Stack sx={{ height: '100%' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <CardHeading icon={<ReceiptLongIcon variant="Bulk" />} title="My expenses" />
-              <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? 'Current cycle'}</Typography>
+              <CardHeading icon={<ReceiptLongIcon variant="Bulk" />} title={t('overview.expenseTitle')} />
+              <Typography sx={{ color: 'text.secondary', fontSize: 11, fontWeight: 600 }}>{activeCycle?.name ?? t('overview.currentCycle')}</Typography>
             </Stack>
 
             <Box sx={{ mt: 3.5 }}>
-              <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>Total expense</Typography>
+                <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>{t('overview.totalExpense')}</Typography>
               <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>
                 <Money amount={data.spending.actual} code={baseCurrency} />
               </Typography>
             </Box>
 
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2 }}>
-              <MetricCapsule icon={<PaymentsIcon fontSize="small" />} label="Goal" value={data.spending.plannedBudget} currency={baseCurrency} />
-              <MetricCapsule icon={<WorkIcon fontSize="small" />} label="Remaining" value={Math.max(0, data.spending.plannedBudget - data.spending.actual)} currency={baseCurrency} positive />
+              <MetricCapsule icon={<PaymentsIcon fontSize="small" />} label={t('overview.goal')} value={data.spending.plannedBudget} currency={baseCurrency} />
+              <MetricCapsule icon={<WorkIcon fontSize="small" />} label={t('overview.remaining')} value={Math.max(0, data.spending.plannedBudget - data.spending.actual)} currency={baseCurrency} positive />
             </Stack>
 
             <Stack direction="row" justifyContent="space-between" sx={{ mt: 'auto', mb: 1 }}>
@@ -114,8 +116,8 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
               })}
             </Box>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1.5 }}>
-              <Typography sx={{ color: 'text.secondary', fontSize: 10.5 }}>{activeCycle?.name ?? 'Current cycle'}</Typography>
-              <Typography sx={{ color: meterPercent > 100 ? 'error.main' : 'text.primary', fontSize: 10.5, fontWeight: 650 }}>{meterPercent}% of budget used</Typography>
+              <Typography sx={{ color: 'text.secondary', fontSize: 10.5 }}>{activeCycle?.name ?? t('overview.currentCycle')}</Typography>
+              <Typography sx={{ color: meterPercent > 100 ? 'error.main' : 'text.primary', fontSize: 10.5, fontWeight: 650 }}>{t('overview.budgetUsed', { percent: meterPercent })}</Typography>
             </Stack>
           </Stack>
         </CardContent>

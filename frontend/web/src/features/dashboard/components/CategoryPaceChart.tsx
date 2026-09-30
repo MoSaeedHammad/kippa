@@ -1,9 +1,11 @@
 import { Box, Chip, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { DashboardData } from '@/libs/selectors';
 
 type CategoryPace = DashboardData['categoryStatus'][number];
 
 export function CategoryPaceChart({ categories }: { categories: CategoryPace[] }) {
+  const { t } = useTranslation('dashboard');
   const visible = [...categories]
     .filter(category => category.planned > 0 || category.spent > 0)
     .sort((a, b) => Math.max(b.planned, b.spent) - Math.max(a.planned, a.spent));
@@ -11,8 +13,8 @@ export function CategoryPaceChart({ categories }: { categories: CategoryPace[] }
 
   return <Stack spacing={2}>
     <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-      <Box><Typography variant="sectionLabel">Category pace</Typography><Typography variant="body2" color="text.secondary">Every category compared by percentage of its plan used.</Typography></Box>
-      <Chip label={`${visible.length} categories`} />
+      <Box><Typography variant="sectionLabel">{t('pace.title')}</Typography><Typography variant="body2" color="text.secondary">{t('pace.subtitle')}</Typography></Box>
+      <Chip label={t('pace.categoriesCount', { count: visible.length })} />
     </Stack>
     <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${visible.length}, minmax(0, 1fr))`, columnGap: { xs: 0.25, sm: 0.75, lg: 1.25 }, alignItems: 'end' }}>
       {visible.map(category => {
@@ -20,7 +22,7 @@ export function CategoryPaceChart({ categories }: { categories: CategoryPace[] }
           const fill = Math.max(category.spent > 0 ? 5 : 0, Math.min(100, percent));
           const over = percent > 100;
           return <Stack key={category.categoryId} spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
-            <Tooltip arrow placement="top" title={`${category.categoryName}: ${Math.round(percent)}% used · ${category.spent.toLocaleString()} spent of ${category.planned.toLocaleString()} planned`}>
+            <Tooltip arrow placement="top" title={t('pace.tooltip', { name: category.categoryName, percent: Math.round(percent), spent: category.spent.toLocaleString(), planned: category.planned.toLocaleString() })}>
               <Paper variant="categoryCapacity" sx={{ width: '100%', maxWidth: 46, height: { xs: 72, sm: 88 } }}>
                 <Paper variant={over ? 'categoryCapacityOver' : 'categoryCapacitySpent'} sx={{ height: `${fill}%` }} />
               </Paper>
