@@ -21,6 +21,7 @@ export {
   revokeMessageIngestionCredential,
   restoreDiscardedPendingFinancialMessage,
 } from './features/message-ingestion/messageIngestion.js';
+export { glmProxy } from './features/ai/glmProxy.js';
 export {
   proposeSharedBalanceEntry,
   decideSharedBalanceEntry,

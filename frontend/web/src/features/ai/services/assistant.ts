@@ -126,7 +126,7 @@ export async function streamAssistantReply(args: {
     throw new AiError('authentication', 'Kip is temporarily unavailable because its AI connection is not configured correctly.');
   }
   const activeProvider = runtimeConfig.provider;
-  const { model: chatModel } = createChatModel(runtimeConfig);
+  const { model: chatModel } = await createChatModel(runtimeConfig);
   const contextMessages = selectContextMessages(args.messages);
   const latestUserMessage = [...contextMessages].reverse().find(message => message.role === 'user');
   const memories = await aiMemoryService.relevant(args.householdId, args.userId, latestUserMessage?.content ?? '').catch(() => []);

@@ -79,21 +79,33 @@ export function loadAiRuntimeConfig(): Promise<AiRuntimeConfig | null> {
   return runtimeConfig;
 }
 
+/** Cloud Function that proxies GLM calls (z.ai has no CORS; the key stays server-side). */
+function glmProxyBaseUrl(): string {
+  const projectId = envValue('VITE_FIREBASE_PROJECT_ID');
+  return `https://us-central1-${projectId}.cloudfunctions.net/glmProxy`;
+}
+
 /**
- * Builds the chat model for the resolved config. GLM speaks the
- * OpenAI-compatible protocol; Gemini uses its first-party SDK.
+ * Builds the chat model for the resolved config. GLM requests go through the
+ * glmProxy Cloud Function and authenticate with the caller's Firebase ID
+ * token (the proxy verifies it and swaps in the real GLM key); Gemini uses
+ * its first-party SDK directly.
  */
-export function createChatModel(config: AiRuntimeConfig): { model: ReturnType<ReturnType<typeof createOpenAICompatible>['chatModel']>; provider: AiProviderName } {
+export async function createChatModel(config: AiRuntimeConfig) {
   if (config.provider === 'glm') {
+    const { auth } = await import('@/config/firebase');
+    const currentUser = auth?.currentUser;
+    if (!currentUser) throw new Error('Sign in required to use Kip.');
+    const idToken = await currentUser.getIdToken();
     const glm = createOpenAICompatible({
       name: 'glm',
-      apiKey: config.apiKey,
-      baseURL: config.baseUrl ?? ENV_GLM_BASE_URL,
+      apiKey: idToken,
+      baseURL: glmProxyBaseUrl(),
     });
-    return { model: glm.chatModel(config.model), provider: 'glm' };
+    return { model: glm.chatModel(config.model), provider: 'glm' as AiProviderName };
   }
   const google = createGoogleGenerativeAI({ apiKey: config.apiKey });
-  return { model: google(config.model), provider: 'gemini' };
+  return { model: google(config.model), provider: 'gemini' as AiProviderName };
 }
 
 /**
