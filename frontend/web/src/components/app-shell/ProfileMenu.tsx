@@ -20,8 +20,10 @@ import { CheckIcon } from '@/components/AppIcon';
 import { ContentCopyIcon } from '@/components/AppIcon';
 import { VisibilityIcon } from '@/components/AppIcon';
 import { VisibilityOffIcon } from '@/components/AppIcon';
+import { useTranslation } from 'react-i18next';
 import type { ThemeModePref } from '@/contexts/themeModeContext';
 import type { UserProfile, Household } from '@kippa/domain';
+import { useLanguage } from '@/hooks/useLanguage';
 import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { versionDetails, versionLabel } from '@/version';
 
@@ -76,6 +78,8 @@ export function ProfileMenu({
   logout,
 }: ProfileMenuProps) {
   const { privacyMode, setPrivacyMode } = usePrivacyMode();
+  const { t } = useTranslation('appShell');
+  const { language, setLanguage } = useLanguage();
 
   const handleClose = () => {
     onClose();
@@ -289,6 +293,39 @@ export function ProfileMenu({
           </MenuItem>
         );
       })}
+
+      <Divider sx={{ my: 1 }} />
+
+      {/* Language */}
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          fontSize: '0.65rem',
+          letterSpacing: '0.08em',
+          px: 2.5,
+          mt: 0.5,
+          mb: 0.5,
+          display: 'block',
+        }}
+      >
+        {t('profileMenu.language')}
+      </Typography>
+      {([
+        { value: 'en' as const, label: t('profileMenu.english') },
+        { value: 'ar' as const, label: t('profileMenu.arabic') },
+      ]).map(({ value, label }) => (
+        <MenuItem
+          key={value}
+          onClick={() => { setLanguage(value); handleClose(); }}
+          sx={{ ...menuItemStyle, py: 0.75 }}
+        >
+          <ListItemText primary={label} />
+          {language === value && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
+        </MenuItem>
+      ))}
 
       <Divider sx={{ my: 1 }} />
 

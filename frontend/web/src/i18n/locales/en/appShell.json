@@ -1,1 +1,7 @@
-{}
+{
+  "profileMenu": {
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  }
+}
