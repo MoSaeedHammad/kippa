@@ -1,7 +1,104 @@
 {
+  "documentTitle": "Kippa — {{page}}",
+  "pageTitles": {
+    "dashboard": "لوحة التحكم",
+    "addTransaction": "إضافة معاملة",
+    "reconciliation": "المطابقة",
+    "statements": "الكشوفات",
+    "transactions": "المعاملات",
+    "approvals": "الموافقات",
+    "sharedBalance": "الرصيد المشترك",
+    "activityLog": "سجل النشاط",
+    "bankAccounts": "الحسابات البنكية",
+    "mySpace": "فضائي",
+    "categories": "الفئات",
+    "notifications": "الإشعارات",
+    "kip": "Kip",
+    "loans": "القروض"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "kip": "Kip",
+    "askKip": "اسأل Kip",
+    "loans": "القروض",
+    "analytics": "التحليلات",
+    "statements": "الكشوفات",
+    "categories": "الفئات",
+    "transactions": "المعاملات",
+    "allTransactions": "كل المعاملات",
+    "approvals": "الموافقات",
+    "pending": "قيد الانتظار",
+    "spaces": "الفضاءات",
+    "sharedBalance": "الرصيد المشترك",
+    "expenses": "المصروفات",
+    "income": "الإيرادات",
+    "transfers": "التحويلات",
+    "accountsAndCards": "الحسابات والبطاقات",
+    "accountOverview": "نظرة عامة على الحسابات",
+    "reconciliation": "المطابقة",
+    "mySpace": "فضائي",
+    "membersAndSettings": "الأعضاء والإعدادات",
+    "notifications": "الإشعارات",
+    "activityHistory": "سجل النشاط",
+    "bankAccounts": "الحسابات البنكية",
+    "activityLog": "سجل النشاط",
+    "remindersAndAlerts": "التذكيرات والتنبيهات"
+  },
+  "sections": {
+    "money": "المال",
+    "planning": "التخطيط",
+    "sharedAccount": "الحساب المشترك",
+    "settings": "الإعدادات"
+  },
+  "bottomNav": {
+    "pendingAria_zero": "الموافقات، لا عناصر تتطلب انتباهك",
+    "pendingAria_one": "الموافقات، {{count}} عنصر يتطلب انتباهك",
+    "pendingAria_two": "الموافقات، عنصران يتطلبان انتباهك",
+    "pendingAria_few": "الموافقات، {{count}} عناصر تتطلب انتباهك",
+    "pendingAria_many": "الموافقات، {{count}} عنصرًا تتطلب انتباهك",
+    "pendingAria_other": "الموافقات، {{count}} عنصر يتطلب انتباهك"
+  },
+  "sideNav": {
+    "searchPlaceholder": "ابحث في التنقل",
+    "menu": "القائمة",
+    "collapse": "طي",
+    "expand": "توسيع",
+    "recordTitle": "سجّل شيئًا جديدًا",
+    "recordDescription": "أضف مصروفًا أو إيرادًا أو تحويلًا دون مغادرة تدفّقك.",
+    "quickEntry": "إدخال سريع"
+  },
+  "topBar": {
+    "navigate": "التنقل",
+    "navMenuAria": "قائمة التنقل",
+    "accountMenu": "قائمة الحساب",
+    "accountMenuAria": "قائمة الملف الشخصي",
+    "logoAlt": "شعار Kippa"
+  },
+  "offlineBanner": {
+    "message": "أنت غير متصل بالإنترنت — ستتم المزامنة عند عودة الاتصال"
+  },
+  "loadingScreen": {
+    "aria": "جارٍ تحميل Kippa",
+    "tagline": "دفتر البيت المالي"
+  },
   "profileMenu": {
     "language": "اللغة",
     "english": "English",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "defaultName": "مستخدم",
+    "noEmail": "لا يوجد بريد إلكتروني مرتبط",
+    "currentSpace": "الفضاء الحالي",
+    "spaceId": "المعرف: {{id}}…",
+    "noSpace": "لا يوجد",
+    "copyInviteId": "نسخ معرف الدعوة",
+    "switchSpace": "تبديل الفضاء",
+    "appearance": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "systemDefault": "افتراضي النظام",
+    "privacyMode": "وضع الخصوصية",
+    "privacyModeOn": "وضع الخصوصية مفعّل",
+    "hideBalances": "إخفاء الأرصدة",
+    "signOut": "تسجيل الخروج"
   }
 }

@@ -7,6 +7,9 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
+import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
 import { AccountBalanceIcon,
   SwapHorizIcon,
@@ -61,61 +64,64 @@ const sectionHeaderStyle = {
   display: 'block',
 };
 
-const FULL_SECTIONS = [
+type SectionKey = keyof appShellEn['sections'];
+type NavKey = keyof appShellEn['nav'];
+
+const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavKey; icon: ReactNode; path: string }> }> = [
   {
-    title: 'Money',
+    titleKey: 'money',
     items: [
-      { label: 'Bank Accounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
-      { label: 'Transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
-      { label: "Shared balance", icon: <SwapHorizIcon fontSize="small" />, path: "/shared-balance" },
-      { label: 'Categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
+      { labelKey: 'bankAccounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
+      { labelKey: 'transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
+      { labelKey: 'sharedBalance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
+      { labelKey: 'categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
     ],
   },
   {
-    title: 'Planning',
+    titleKey: 'planning',
     items: [
-      { label: 'Statements', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
-      { label: 'Loans', icon: <PaymentsIcon fontSize="small" />, path: '/loans' },
-      { label: 'Reconciliation', icon: <SyncAltIcon fontSize="small" />, path: '/reconciliation' },
+      { labelKey: 'statements', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
+      { labelKey: 'loans', icon: <PaymentsIcon fontSize="small" />, path: '/loans' },
+      { labelKey: 'reconciliation', icon: <SyncAltIcon fontSize="small" />, path: '/reconciliation' },
     ],
   },
   {
-    title: 'Shared account',
+    titleKey: 'sharedAccount',
     items: [
-      { label: 'My space', icon: <HomeIcon fontSize="small" />, path: '/household' },
-      { label: 'Activity Log', icon: <HistoryIcon fontSize="small" />, path: '/activity' },
+      { labelKey: 'mySpace', icon: <HomeIcon fontSize="small" />, path: '/household' },
+      { labelKey: 'activityLog', icon: <HistoryIcon fontSize="small" />, path: '/activity' },
     ],
   },
   {
-    title: 'Settings',
+    titleKey: 'settings',
     items: [
-      { label: 'Reminders & Alerts', icon: <NotificationsActiveIcon fontSize="small" />, path: '/notifications' },
+      { labelKey: 'remindersAndAlerts', icon: <NotificationsActiveIcon fontSize="small" />, path: '/notifications' },
     ],
   },
-] as const;
+];
 
 // Shared-balance-only members are blocked from accounts, transactions and
 // activity by the rules — surface only what they can actually use.
-const SCOPED_SECTIONS = [
+const SCOPED_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavKey; icon: ReactNode; path: string }> }> = [
   {
-    title: 'Money',
+    titleKey: 'money',
     items: [
-      { label: 'Shared balance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
+      { labelKey: 'sharedBalance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
     ],
   },
   {
-    title: 'Shared account',
+    titleKey: 'sharedAccount',
     items: [
-      { label: 'My space', icon: <HomeIcon fontSize="small" />, path: '/household' },
+      { labelKey: 'mySpace', icon: <HomeIcon fontSize="small" />, path: '/household' },
     ],
   },
   {
-    title: 'Settings',
+    titleKey: 'settings',
     items: [
-      { label: 'Reminders & Alerts', icon: <NotificationsActiveIcon fontSize="small" />, path: '/notifications' },
+      { labelKey: 'remindersAndAlerts', icon: <NotificationsActiveIcon fontSize="small" />, path: '/notifications' },
     ],
   },
-] as const;
+];
 
 /**
  * Quick navigation menu — anchored to the nav icon button in the TopBar.
@@ -124,6 +130,7 @@ const SCOPED_SECTIONS = [
  * Styled to match the profile menu: same paper, arrow, borders, sections.
  */
 export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
+  const { t } = useTranslation('appShell');
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { userProfile, householdId } = useAppContext();
@@ -176,10 +183,10 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
       anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
     >
       {sections.map((section, sIdx) => (
-        <div key={section.title}>
+        <div key={section.titleKey}>
           {sIdx > 0 && <Divider sx={{ my: 1 }} />}
           <Typography variant="body2" sx={sectionHeaderStyle}>
-            {section.title}
+            {t(`sections.${section.titleKey}`)}
           </Typography>
           {section.items.map((item) => {
             const isActive = pathname === item.path;
@@ -197,7 +204,7 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
                 }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
+                <ListItemText primary={t(item.labelKey)} />
               </MenuItem>
             );
           })}

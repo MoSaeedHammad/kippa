@@ -1,4 +1,5 @@
 import { Box, Card, CardActionArea, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { Account } from '@kippa/domain';
 import {
   AccountBalanceIcon,
@@ -35,6 +36,7 @@ export function AccountPicker({
   onSelect,
   selectedAccountId,
 }: AccountPickerProps) {
+  const { t } = useTranslation('shared');
   return (
     <Box sx={{ width: '100%' }}>
       <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
@@ -43,7 +45,7 @@ export function AccountPicker({
         </Typography>
         {!selectedAccountId && accounts.length > 0 && (
           <Typography variant="fieldHint" color="error">
-            Tap to select
+            {t('accountPicker.tapToSelect')}
           </Typography>
         )}
       </Box>

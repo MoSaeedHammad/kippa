@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { Box, CircularProgress, Container } from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { TopBar } from '@/components/app-shell/TopBar';
 import { BottomNav } from '@/components/app-shell/BottomNav';
@@ -10,36 +12,39 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useLoanReminders } from '@/features/loans/useLoanReminders';
 
-const PAGE_TITLES: Record<string, string> = {
-  '/': 'Dashboard',
-  '/entry': 'Add transaction',
-  '/reconciliation': 'Reconciliation',
-  '/cycles': 'Statements',
-  '/transactions': 'Transactions',
-  '/pending': 'Approvals',
-  '/shared-balance': 'Shared balance',
-  '/activity': 'Activity Log',
-  '/accounts': 'Bank Accounts',
-  '/household': 'My space',
-  '/categories': 'Categories',
-  '/notifications': 'Notifications',
-  '/ai': 'Kip',
-  '/loans': 'Loans',
+type PageTitleKey = keyof appShellEn['pageTitles'];
+
+const PAGE_TITLES: Record<string, PageTitleKey> = {
+  '/': 'dashboard',
+  '/entry': 'addTransaction',
+  '/reconciliation': 'reconciliation',
+  '/cycles': 'statements',
+  '/transactions': 'transactions',
+  '/pending': 'approvals',
+  '/shared-balance': 'sharedBalance',
+  '/activity': 'activityLog',
+  '/accounts': 'bankAccounts',
+  '/household': 'mySpace',
+  '/categories': 'categories',
+  '/notifications': 'notifications',
+  '/ai': 'kip',
+  '/loans': 'loans',
 };
 
 export function AppShell() {
+  const { t } = useTranslation('appShell');
   const { userProfile, householdId, userHouseholds, switchHousehold, logout } = useAppContext();
   const isOnline = useOnlineStatus();
   const { modePref, setModePref, resolvedMode } = useThemeMode();
   const { pathname } = useLocation();
 
   const logoSrc = resolvedMode === 'dark' ? '/icons/icon-dark.svg' : '/icons/icon.svg';
-  const pageTitle = PAGE_TITLES[pathname];
+  const pageTitleKey = PAGE_TITLES[pathname];
   useLoanReminders();
 
   return (
     <>
-      <title>{pageTitle ? `Kippa — ${pageTitle}` : 'Kippa'}</title>
+      <title>{pageTitleKey ? t('documentTitle', { page: t(`pageTitles.${pageTitleKey}`) }) : 'Kippa'}</title>
       <Box sx={{ position: 'relative', zIndex: 1, minHeight: '100dvh', pb: pathname === '/ai' ? 0 : { xs: 10, md: 0 }, bgcolor: 'transparent', overflowX: 'clip' }}>
         <OfflineBanner isOnline={isOnline} />
         <SideNav />

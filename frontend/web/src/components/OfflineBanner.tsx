@@ -1,4 +1,5 @@
 import { AppBar, Toolbar, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { CloudOffIcon } from '@/components/AppIcon';
 
 export interface OfflineBannerProps {
@@ -10,6 +11,7 @@ export interface OfflineBannerProps {
  * Auto-dismisses on reconnect (driven by the parent's `isOnline` prop).
  */
 export function OfflineBanner({ isOnline }: OfflineBannerProps) {
+  const { t } = useTranslation('appShell');
   if (isOnline) return null;
   return (
     <AppBar
@@ -21,7 +23,7 @@ export function OfflineBanner({ isOnline }: OfflineBannerProps) {
       <Toolbar variant="dense" sx={{ justifyContent: 'center', gap: 1, minHeight: '40px !important' }}>
         <CloudOffIcon fontSize="small" />
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          You're offline — changes will sync when reconnected
+          {t('offlineBanner.message')}
         </Typography>
       </Toolbar>
     </AppBar>

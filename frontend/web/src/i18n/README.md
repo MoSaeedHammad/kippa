@@ -16,3 +16,9 @@
 | Loading… | جارٍ التحميل… | |
 | Household | البيت المالي | check UBIQUITOUS_LANGUAGE.md per term; update this table as terms are decided |
 | Shared balance | الرصيد المشترك | |
+| Space | الفضاء | current term per UBIQUITOUS_LANGUAGE.md (plural: الفضاءات); "My space" = فضائي |
+| Approvals | الموافقات | |
+| Transactions | المعاملات | |
+| Reconciliation | المطابقة | |
+| Statement | كشف حساب | plural "Statements" = الكشوفات |
+| Category | فئة | plural "Categories" = الفئات |

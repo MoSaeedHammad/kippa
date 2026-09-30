@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Stack, Typography, IconButton, Tooltip, Avatar } from '@mui/material';
 import { ExploreIcon } from '@/components/AppIcon';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ActivityBell } from '@/features/activity/ActivityBell';
 import { ProfileMenu } from '@/components/app-shell/ProfileMenu';
 import { QuickNavMenu } from '@/components/app-shell/QuickNavMenu';
@@ -29,6 +30,7 @@ export function TopBar({
   switchHousehold,
   logout,
 }: TopBarProps) {
+  const { t } = useTranslation('appShell');
   const navigate = useNavigate();
   const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
   const isProfileMenuOpen = Boolean(profileAnchorEl);
@@ -43,7 +45,7 @@ export function TopBar({
   }, []);
 
   const currentHousehold = userHouseholds.find(hh => hh.id === householdId);
-  const householdName = currentHousehold ? currentHousehold.name : 'My space';
+  const householdName = currentHousehold ? currentHousehold.name : t('nav.mySpace');
 
   return (
     <>
@@ -70,7 +72,7 @@ export function TopBar({
             onClick={() => navigate('/')}
             sx={{ cursor: 'pointer', userSelect: 'none', display: { xs: 'flex', md: 'none' } }}
           >
-            <img src={logoSrc} alt="Kippa Logo" style={{ height: 32, width: 'auto' }} />
+            <img src={logoSrc} alt={t('topBar.logoAlt')} style={{ height: 32, width: 'auto' }} />
             <Typography variant="h3" sx={{ fontWeight: 'bold', letterSpacing: '0.05em', color: 'primary.main' }}>
               Kippa
             </Typography>
@@ -80,10 +82,10 @@ export function TopBar({
           {/* Right: Activity Bell, Quick Nav & Profile */}
           <Stack direction="row" spacing={1} alignItems="center">
             <Stack sx={{ display: { xs: 'flex', md: 'none' } }}><ActivityBell onClick={() => navigate('/activity')} /></Stack>
-            <Tooltip title="Navigate">
+            <Tooltip title={t('topBar.navigate')}>
               <IconButton
                 onClick={(e) => setNavAnchorEl(e.currentTarget)}
-                aria-label="navigation menu"
+                aria-label={t('topBar.navMenuAria')}
                 aria-controls="quick-nav-menu"
                 aria-haspopup="true"
                 sx={{ p: 0.5, width: 40, height: 40, border: '1px solid', borderColor: 'divider' }}
@@ -91,10 +93,10 @@ export function TopBar({
                 <ExploreIcon sx={{ color: 'primary.main' }} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Account Menu">
+            <Tooltip title={t('topBar.accountMenu')}>
               <IconButton
                 onClick={(e) => setProfileAnchorEl(e.currentTarget)}
-                aria-label="account profile menu"
+                aria-label={t('topBar.accountMenuAria')}
                 aria-controls="profile-menu"
                 aria-haspopup="true"
                 sx={{ p: 0.5, border: '1px solid', borderColor: 'divider', width: 40, height: 40 }}

@@ -134,10 +134,10 @@ export function ProfileMenu({
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body1" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {userProfile?.displayName || 'User'}
+              {userProfile?.displayName || t('profileMenu.defaultName')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all', fontSize: '0.75rem' }}>
-              {userProfile?.email || 'No email associated'}
+              {userProfile?.email || t('profileMenu.noEmail')}
             </Typography>
           </Box>
         </Stack>
@@ -160,7 +160,7 @@ export function ProfileMenu({
             display: 'block',
           }}
         >
-          Current space
+          {t('profileMenu.currentSpace')}
         </Typography>
 
         <Stack
@@ -183,11 +183,11 @@ export function ProfileMenu({
               {householdName}
             </Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.6875rem' }}>
-              ID: {householdId ? `${householdId.slice(0, 8)}...` : 'None'}
+              {householdId ? t('profileMenu.spaceId', { id: householdId.slice(0, 8) }) : t('profileMenu.noSpace')}
             </Typography>
           </Box>
           {householdId && (
-            <Tooltip title="Copy Invite ID">
+            <Tooltip title={t('profileMenu.copyInviteId')}>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -227,7 +227,7 @@ export function ProfileMenu({
               display: 'block',
             }}
           >
-            Switch space
+            {t('profileMenu.switchSpace')}
           </Typography>
           {userHouseholds.map((hh) => {
             if (hh.id === householdId) return null;
@@ -247,7 +247,7 @@ export function ProfileMenu({
                 <ListItemIcon>
                   <HomeIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={hh.name} secondary={`ID: ${hh.id.slice(0, 8)}...`} />
+                <ListItemText primary={hh.name} secondary={t('profileMenu.spaceId', { id: hh.id.slice(0, 8) })} />
               </MenuItem>
             );
           })}
@@ -271,12 +271,12 @@ export function ProfileMenu({
           display: 'block',
         }}
       >
-        Appearance
+        {t('profileMenu.appearance')}
       </Typography>
       {([
-        { value: 'light' as ThemeModePref, label: 'Light', Icon: LightModeIcon },
-        { value: 'dark' as ThemeModePref, label: 'Dark', Icon: DarkModeIcon },
-        { value: 'system' as ThemeModePref, label: 'System default', Icon: SettingsBrightnessIcon },
+        { value: 'light' as ThemeModePref, label: t('profileMenu.light'), Icon: LightModeIcon },
+        { value: 'dark' as ThemeModePref, label: t('profileMenu.dark'), Icon: DarkModeIcon },
+        { value: 'system' as ThemeModePref, label: t('profileMenu.systemDefault'), Icon: SettingsBrightnessIcon },
       ]).map(({ value, label, Icon }) => {
         const selected = modePref === value;
         return (
@@ -338,8 +338,8 @@ export function ProfileMenu({
           {privacyMode ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
         </ListItemIcon>
         <ListItemText
-          primary={privacyMode ? 'Privacy Mode On' : 'Privacy Mode'}
-          secondary="Hide balances"
+          primary={privacyMode ? t('profileMenu.privacyModeOn') : t('profileMenu.privacyMode')}
+          secondary={t('profileMenu.hideBalances')}
         />
         {privacyMode && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ml: 'auto' }} />}
       </MenuItem>
@@ -356,7 +356,7 @@ export function ProfileMenu({
         }}
       >
         <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-        <ListItemText primary="Sign Out" />
+        <ListItemText primary={t('profileMenu.signOut')} />
       </MenuItem>
       <Divider />
       <Box sx={{ px: 2, py: 1 }}>

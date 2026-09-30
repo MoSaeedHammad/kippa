@@ -1,7 +1,104 @@
 {
+  "documentTitle": "Kippa — {{page}}",
+  "pageTitles": {
+    "dashboard": "Dashboard",
+    "addTransaction": "Add transaction",
+    "reconciliation": "Reconciliation",
+    "statements": "Statements",
+    "transactions": "Transactions",
+    "approvals": "Approvals",
+    "sharedBalance": "Shared balance",
+    "activityLog": "Activity Log",
+    "bankAccounts": "Bank Accounts",
+    "mySpace": "My space",
+    "categories": "Categories",
+    "notifications": "Notifications",
+    "kip": "Kip",
+    "loans": "Loans"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "kip": "Kip",
+    "askKip": "Ask Kip",
+    "loans": "Loans",
+    "analytics": "Analytics",
+    "statements": "Statements",
+    "categories": "Categories",
+    "transactions": "Transactions",
+    "allTransactions": "All transactions",
+    "approvals": "Approvals",
+    "pending": "Pending",
+    "spaces": "Spaces",
+    "sharedBalance": "Shared balance",
+    "expenses": "Expenses",
+    "income": "Income",
+    "transfers": "Transfers",
+    "accountsAndCards": "Accounts & cards",
+    "accountOverview": "Account overview",
+    "reconciliation": "Reconciliation",
+    "mySpace": "My space",
+    "membersAndSettings": "Members & settings",
+    "notifications": "Notifications",
+    "activityHistory": "Activity history",
+    "bankAccounts": "Bank Accounts",
+    "activityLog": "Activity Log",
+    "remindersAndAlerts": "Reminders & Alerts"
+  },
+  "sections": {
+    "money": "Money",
+    "planning": "Planning",
+    "sharedAccount": "Shared account",
+    "settings": "Settings"
+  },
+  "bottomNav": {
+    "pendingAria_zero": "Approvals, {{count}} items require attention",
+    "pendingAria_one": "Approvals, {{count}} item requires attention",
+    "pendingAria_two": "Approvals, {{count}} items require attention",
+    "pendingAria_few": "Approvals, {{count}} items require attention",
+    "pendingAria_many": "Approvals, {{count}} items require attention",
+    "pendingAria_other": "Approvals, {{count}} items require attention"
+  },
+  "sideNav": {
+    "searchPlaceholder": "Search navigation",
+    "menu": "Menu",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "recordTitle": "Record something new",
+    "recordDescription": "Add an expense, income, or transfer without leaving your flow.",
+    "quickEntry": "Quick entry"
+  },
+  "topBar": {
+    "navigate": "Navigate",
+    "navMenuAria": "navigation menu",
+    "accountMenu": "Account Menu",
+    "accountMenuAria": "account profile menu",
+    "logoAlt": "Kippa Logo"
+  },
+  "offlineBanner": {
+    "message": "You're offline — changes will sync when reconnected"
+  },
+  "loadingScreen": {
+    "aria": "Loading Kippa",
+    "tagline": "Your household ledger"
+  },
   "profileMenu": {
     "language": "Language",
     "english": "English",
-    "arabic": "العربية"
+    "arabic": "العربية",
+    "defaultName": "User",
+    "noEmail": "No email associated",
+    "currentSpace": "Current space",
+    "spaceId": "ID: {{id}}…",
+    "noSpace": "None",
+    "copyInviteId": "Copy Invite ID",
+    "switchSpace": "Switch space",
+    "appearance": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "systemDefault": "System default",
+    "privacyMode": "Privacy Mode",
+    "privacyModeOn": "Privacy Mode On",
+    "hideBalances": "Hide balances",
+    "signOut": "Sign Out"
   }
 }

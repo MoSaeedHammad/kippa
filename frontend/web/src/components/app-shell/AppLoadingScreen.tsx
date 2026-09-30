@@ -1,11 +1,13 @@
 import { Box, CssBaseline, Stack, ThemeProvider, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
 interface AppLoadingScreenProps {
   theme: Theme;
 }
 
 export function AppLoadingScreen({ theme }: AppLoadingScreenProps) {
+  const { t } = useTranslation('appShell');
   const logoSrc = theme.palette.mode === 'dark'
     ? '/icons/logo_white_transparent.png'
     : '/icons/logo_green_transparent.png';
@@ -15,7 +17,7 @@ export function AppLoadingScreen({ theme }: AppLoadingScreenProps) {
       <CssBaseline />
       <Box
         role="status"
-        aria-label="Loading Kippa"
+        aria-label={t('loadingScreen.aria')}
         sx={{
           position: 'fixed',
           inset: 0,
@@ -65,7 +67,7 @@ export function AppLoadingScreen({ theme }: AppLoadingScreenProps) {
               Kippa
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Your household ledger
+              {t('loadingScreen.tagline')}
             </Typography>
           </Stack>
 

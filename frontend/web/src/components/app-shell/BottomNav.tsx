@@ -7,35 +7,40 @@ import { HourglassEmptyIcon } from '@/components/AppIcon';
 import { SwitchAccountIcon } from '@/components/AppIcon';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
+import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePendingFinancialMessages } from '@/hooks/useFinance';
 
+type NavKey = keyof appShellEn['nav'];
+
 interface NavItem {
-  label: string;
+  labelKey: NavKey;
   path: string;
   icon: ReactNode;
 }
 
 const LEFT_ITEMS: NavItem[] = [
-  { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
-  { label: 'Kip', path: '/ai', icon: <NotesIcon /> },
+  { labelKey: 'dashboard', path: '/', icon: <DashboardIcon /> },
+  { labelKey: 'kip', path: '/ai', icon: <NotesIcon /> },
 ];
 
 const RIGHT_ITEMS: NavItem[] = [
-  { label: 'Transactions', path: '/transactions', icon: <ReceiptLongIcon /> },
-  { label: 'Pending', path: '/pending', icon: <HourglassEmptyIcon /> },
+  { labelKey: 'transactions', path: '/transactions', icon: <ReceiptLongIcon /> },
+  { labelKey: 'pending', path: '/pending', icon: <HourglassEmptyIcon /> },
 ];
 
 // Shared-balance-only members are blocked from everything else by the rules.
 const SCOPED_LEFT_ITEMS: NavItem[] = [
-  { label: 'Spaces', path: '/shared-accounts', icon: <SwitchAccountIcon /> },
+  { labelKey: 'spaces', path: '/shared-accounts', icon: <SwitchAccountIcon /> },
 ];
 const SCOPED_RIGHT_ITEMS: NavItem[] = [
-  { label: 'My space', path: '/household', icon: <DashboardIcon /> },
+  { labelKey: 'mySpace', path: '/household', icon: <DashboardIcon /> },
 ];
 
 export function BottomNav() {
+  const { t } = useTranslation('appShell');
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const theme = useTheme();
@@ -75,7 +80,7 @@ export function BottomNav() {
         type="button"
         key={item.path}
         onClick={() => navigate(item.path)}
-        aria-label={isPending && pendingCount > 0 ? `Approvals, ${pendingCount} items require attention` : item.label}
+        aria-label={isPending && pendingCount > 0 ? t('bottomNav.pendingAria', { count: pendingCount }) : t(item.labelKey)}
         sx={{
           border: 0,
           bgcolor: 'transparent',
@@ -129,7 +134,7 @@ export function BottomNav() {
             whiteSpace: 'nowrap',
           }}
         >
-          {item.label}
+          {t(item.labelKey)}
         </Typography>
       </Box>
     );

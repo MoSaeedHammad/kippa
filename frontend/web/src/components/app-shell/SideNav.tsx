@@ -12,6 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
 import {
   AccountBalanceIcon,
@@ -27,53 +29,54 @@ import {
   SwitchAccountIcon,
 } from '@/components/AppIcon';
 
-type NavChild = { label: string; path: string };
-type NavItem = { label: string; path: string; icon: typeof DashboardIcon; children?: NavChild[] };
+type NavKey = keyof appShellEn['nav'];
+type NavChild = { labelKey: NavKey; path: string };
+type NavItem = { labelKey: NavKey; path: string; icon: typeof DashboardIcon; children?: NavChild[] };
 
 const menuItems: NavItem[] = [
-  { label: 'Dashboard', path: '/', icon: DashboardIcon },
-  { label: 'Ask Kip', path: '/ai', icon: NotesIcon },
-  { label: 'Loans', path: '/loans', icon: PaymentsIcon },
+  { labelKey: 'dashboard', path: '/', icon: DashboardIcon },
+  { labelKey: 'askKip', path: '/ai', icon: NotesIcon },
+  { labelKey: 'loans', path: '/loans', icon: PaymentsIcon },
   {
-    label: 'Analytics',
+    labelKey: 'analytics',
     path: '/cycles',
     icon: BarChartIcon,
     children: [
-      { label: 'Statements', path: '/cycles' },
-      { label: 'Categories', path: '/categories' },
+      { labelKey: 'statements', path: '/cycles' },
+      { labelKey: 'categories', path: '/categories' },
     ],
   },
   {
-    label: 'Transactions',
+    labelKey: 'transactions',
     path: '/transactions',
     icon: ReceiptLongIcon,
     children: [
-      { label: 'All transactions', path: '/transactions' },
-      { label: 'Approvals', path: '/pending' },
-      { label: 'Spaces', path: '/shared-accounts' },
-      { label: 'Shared balance', path: '/shared-balance' },
-      { label: 'Expenses', path: '/transactions?type=expense' },
-      { label: 'Income', path: '/transactions?type=income' },
-      { label: 'Transfers', path: '/transactions?type=transfer' },
+      { labelKey: 'allTransactions', path: '/transactions' },
+      { labelKey: 'approvals', path: '/pending' },
+      { labelKey: 'spaces', path: '/shared-accounts' },
+      { labelKey: 'sharedBalance', path: '/shared-balance' },
+      { labelKey: 'expenses', path: '/transactions?type=expense' },
+      { labelKey: 'income', path: '/transactions?type=income' },
+      { labelKey: 'transfers', path: '/transactions?type=transfer' },
     ],
   },
   {
-    label: 'Accounts & cards',
+    labelKey: 'accountsAndCards',
     path: '/accounts',
     icon: AccountBalanceIcon,
     children: [
-      { label: 'Account overview', path: '/accounts' },
-      { label: 'Reconciliation', path: '/reconciliation' },
+      { labelKey: 'accountOverview', path: '/accounts' },
+      { labelKey: 'reconciliation', path: '/reconciliation' },
     ],
   },
   {
-    label: 'My space',
+    labelKey: 'mySpace',
     path: '/household',
     icon: HomeIcon,
     children: [
-      { label: 'Members & settings', path: '/household' },
-      { label: 'Notifications', path: '/notifications' },
-      { label: 'Activity history', path: '/activity' },
+      { labelKey: 'membersAndSettings', path: '/household' },
+      { labelKey: 'notifications', path: '/notifications' },
+      { labelKey: 'activityHistory', path: '/activity' },
     ],
   },
 ];
@@ -82,43 +85,45 @@ const menuItems: NavItem[] = [
 // notifications, and the shared account page — everything else is blocked by
 // the security rules anyway, so showing it would only lead to errors.
 const sharedBalanceOnlyMenu: NavItem[] = [
-  { label: 'Spaces', path: '/shared-accounts', icon: SwitchAccountIcon },
-  { label: 'Shared balance', path: '/shared-balance', icon: ReceiptLongIcon },
+  { labelKey: 'spaces', path: '/shared-accounts', icon: SwitchAccountIcon },
+  { labelKey: 'sharedBalance', path: '/shared-balance', icon: ReceiptLongIcon },
   {
-    label: 'My space',
+    labelKey: 'mySpace',
     path: '/household',
     icon: HomeIcon,
     children: [
-      { label: 'Members & settings', path: '/household' },
-      { label: 'Notifications', path: '/notifications' },
+      { labelKey: 'membersAndSettings', path: '/household' },
+      { labelKey: 'notifications', path: '/notifications' },
     ],
   },
 ];
 
 export function SideNav() {
+  const { t } = useTranslation('appShell');
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const { userProfile, householdId } = useAppContext();
   const [query, setQuery] = useState('');
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Transactions: true });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ '/transactions': true });
 
   const accessLevel = userProfile?.memberships?.[householdId]?.accessLevel ?? 'full';
   const navForLevel = accessLevel === 'sharedBalanceOnly' ? sharedBalanceOnlyMenu : menuItems;
 
   const matches = (item: NavItem) => {
     const normalizedQuery = query.trim().toLowerCase();
-    return item.label.toLowerCase().includes(normalizedQuery)
-      || item.children?.some(child => child.label.toLowerCase().includes(normalizedQuery));
+    return t(item.labelKey).toLowerCase().includes(normalizedQuery)
+      || item.children?.some(child => t(child.labelKey).toLowerCase().includes(normalizedQuery));
   };
   const visibleMenu = navForLevel.filter(matches);
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
+    const label = t(item.labelKey);
     const active = pathname === item.path || Boolean(item.children?.some(child => pathname === child.path.split('?')[0]));
     const hasChildren = Boolean(item.children?.length);
-    const isExpanded = hasChildren && ((expanded[item.label] ?? active) || query.trim().length > 0);
+    const isExpanded = hasChildren && ((expanded[item.path] ?? active) || query.trim().length > 0);
     return (
-      <Box key={`${item.label}-${item.path}`}>
+      <Box key={`${item.labelKey}-${item.path}`}>
         <ListItemButton
           selected={active}
           onClick={() => navigate(item.path)}
@@ -136,15 +141,15 @@ export function SideNav() {
           <ListItemIcon sx={{ minWidth: 34, color: active ? 'primary.dark' : 'text.primary' }}>
             <Icon fontSize="small" variant={active ? 'Bold' : 'Linear'} />
           </ListItemIcon>
-          <ListItemText primary={item.label} slotProps={{ primary: { fontSize: 13.5, lineHeight: 1.2, fontWeight: active ? 700 : 500 } }} />
+          <ListItemText primary={label} slotProps={{ primary: { fontSize: 13.5, lineHeight: 1.2, fontWeight: active ? 700 : 500 } }} />
           {hasChildren && (
             <Box
               component="span"
               role="button"
-              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.label}`}
+              aria-label={`${isExpanded ? t('sideNav.collapse') : t('sideNav.expand')} ${label}`}
               onClick={event => {
                 event.stopPropagation();
-                setExpanded(current => ({ ...current, [item.label]: !current[item.label] }));
+                setExpanded(current => ({ ...current, [item.path]: !current[item.path] }));
               }}
               sx={{ p: 0.75, mr: -0.75, color: 'text.primary', cursor: 'pointer' }}
             >
@@ -183,7 +188,7 @@ export function SideNav() {
                     '&.Mui-selected:hover': { bgcolor: 'action.hover' },
                   }}
                 >
-                  <ListItemText primary={child.label} slotProps={{ primary: { fontSize: 12.5, lineHeight: 1.3, fontWeight: childActive ? 700 : 500 } }} />
+                  <ListItemText primary={t(child.labelKey)} slotProps={{ primary: { fontSize: 12.5, lineHeight: 1.3, fontWeight: childActive ? 700 : 500 } }} />
                 </ListItemButton>
               );
             })}
@@ -218,7 +223,7 @@ export function SideNav() {
       <TextField
         value={query}
         onChange={event => setQuery(event.target.value)}
-        placeholder="Search navigation"
+        placeholder={t('sideNav.searchPlaceholder')}
         size="small"
         fullWidth
         slotProps={{
@@ -248,16 +253,16 @@ export function SideNav() {
         }}
       >
         <Typography sx={{ px: 1.25, mb: 0.75, color: 'text.secondary', fontSize: 11, fontWeight: 650, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Menu
+          {t('sideNav.menu')}
         </Typography>
         <List disablePadding>{visibleMenu.map(renderItem)}</List>
       </Box>
 
       <Box sx={{ flexShrink: 0, pt: 2 }}>
         <Box sx={{ p: 1.75, borderRadius: '16px', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
-          <Typography sx={{ color: 'text.primary', fontSize: 13, fontWeight: 750 }}>Record something new</Typography>
+          <Typography sx={{ color: 'text.primary', fontSize: 13, fontWeight: 750 }}>{t('sideNav.recordTitle')}</Typography>
           <Typography sx={{ color: 'text.secondary', fontSize: 11, lineHeight: 1.5, mt: 0.5, mb: 1.25 }}>
-            Add an expense, income, or transfer without leaving your flow.
+            {t('sideNav.recordDescription')}
           </Typography>
           <Button
             size="small"
@@ -266,7 +271,7 @@ export function SideNav() {
             onClick={() => navigate('/entry')}
             sx={{ minHeight: 36, width: '100%', borderRadius: '9px', px: 1.5, fontSize: 12 }}
           >
-            Quick entry
+            {t('sideNav.quickEntry')}
           </Button>
         </Box>
       </Box>

@@ -1,1 +1,42 @@
-{}
+{
+  "currency": {
+    "label": "Currency"
+  },
+  "currencyNames": {
+    "USD": "US Dollar",
+    "EUR": "Euro",
+    "GBP": "British Pound",
+    "EGP": "Egyptian Pound",
+    "SAR": "Saudi Riyal",
+    "AED": "UAE Dirham",
+    "KWD": "Kuwaiti Dinar",
+    "QAR": "Qatari Riyal",
+    "BHD": "Bahraini Dinar",
+    "OMR": "Omani Rial",
+    "JOD": "Jordanian Dinar",
+    "LBP": "Lebanese Pound",
+    "TRY": "Turkish Lira",
+    "INR": "Indian Rupee",
+    "PKR": "Pakistani Rupee",
+    "CNY": "Chinese Yuan",
+    "JPY": "Japanese Yen",
+    "NGN": "Nigerian Naira",
+    "ZAR": "South African Rand",
+    "CAD": "Canadian Dollar",
+    "AUD": "Australian Dollar",
+    "CHF": "Swiss Franc",
+    "SEK": "Swedish Krona"
+  },
+  "accountPicker": {
+    "tapToSelect": "Tap to select"
+  },
+  "emptyLayout": {
+    "logoAlt": "Kippa Logo"
+  },
+  "foreignBalance": {
+    "baseEquivalent": "Base equivalent:",
+    "baseEquivalentUnavailable": "Base equivalent unavailable",
+    "currentRate": "Current rate: 1 {{from}} =",
+    "rateUnavailable": "No current {{from}}/{{to}} rate"
+  }
+}

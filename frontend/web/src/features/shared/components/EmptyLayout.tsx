@@ -1,4 +1,5 @@
 import { Box, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { ReactNode } from 'react';
 
 interface EmptyLayoutProps {
@@ -14,6 +15,7 @@ interface EmptyLayoutProps {
  */
 export function EmptyLayout({ title, description, action, icon }: EmptyLayoutProps) {
   const theme = useTheme();
+  const { t } = useTranslation('shared');
   const logoSrc = theme.palette.mode === 'dark' ? '/icons/icon-dark.svg' : '/icons/icon.svg';
 
   return (
@@ -55,7 +57,7 @@ export function EmptyLayout({ title, description, action, icon }: EmptyLayoutPro
         <Box
           component="img"
           src={logoSrc}
-          alt="Kippa Logo"
+          alt={t('emptyLayout.logoAlt')}
           sx={{
             width: 52,
             height: 52,
