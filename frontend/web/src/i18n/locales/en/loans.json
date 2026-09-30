@@ -1,1 +1,71 @@
-{}
+{
+  "page": {
+    "title": "Loans",
+    "subtitle": "Know what is due, keep the account ready, and watch the balance disappear.",
+    "addLoan": "Add loan"
+  },
+  "empty": {
+    "title": "No loans yet",
+    "description": "Add a fixed loan once and Kippa will reserve every monthly installment automatically.",
+    "addFirst": "Add your first loan"
+  },
+  "card": {
+    "paymentsOf": "{{paid}} of {{total}} payments",
+    "edit": "Edit",
+    "progress": "Loan progress",
+    "paidSuffix": "paid",
+    "remainingSuffix": "remaining",
+    "nextPayment": "NEXT PAYMENT",
+    "payoff": "PAYOFF",
+    "months_zero": "{{count}} months",
+    "months_one": "{{count}} month",
+    "months_two": "{{count}} months",
+    "months_few": "{{count}} months",
+    "months_many": "{{count}} months",
+    "months_other": "{{count}} months",
+    "complete": "Complete",
+    "addToPrefix": "Add",
+    "addToSuffix": "to {{name}}",
+    "paymentAccountFallback": "the payment account",
+    "ready": "{{name}} is ready",
+    "recordPayment": "Record payment",
+    "paidOff": "Paid off",
+    "needsFunding": "Needs funding",
+    "readyChip": "Ready"
+  },
+  "dialog": {
+    "editTitle": "Edit loan",
+    "addTitle": "Add loan",
+    "subtitle": "Set the fixed schedule once; Kippa will prepare every cycle.",
+    "detailsHeading": "Loan details",
+    "nameLabel": "Loan name",
+    "installmentLabel": "Fixed monthly payment",
+    "monthsLabel": "Number of months",
+    "contractTotalLabel": "Contract total",
+    "contractTotalHelper": "For a fixed loan, payment × months.",
+    "scheduleHeading": "Schedule and progress",
+    "firstPaymentLabel": "First payment",
+    "dueDayLabel": "Due day",
+    "graceDayLabel": "May withdraw by",
+    "openingInstallmentsLabel": "Earlier payments count",
+    "openingAmountLabel": "Earlier amount paid",
+    "connectionHeading": "Payment connection",
+    "payingAccountLabel": "Paying account",
+    "invalidFallback": "Check the loan details.",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "add": "Add loan"
+  },
+  "paymentDialog": {
+    "title": "Record loan payment",
+    "subtitle": "This creates the expense and advances the loan together.",
+    "amount": "Amount",
+    "date": "Withdrawal date",
+    "cancel": "Cancel",
+    "record": "Record payment"
+  },
+  "reminders": {
+    "message": "{{name}}: add {{shortfall}} {{currency}} before {{date}}.",
+    "notificationTitle": "Loan account needs funding"
+  }
+}

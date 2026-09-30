@@ -1,1 +1,71 @@
-{}
+{
+  "page": {
+    "title": "القروض",
+    "subtitle": "اعرف ما هو مستحق، وأبقِ الحساب جاهزًا، وشاهد الرصيد يتباعد.",
+    "addLoan": "إضافة قرض"
+  },
+  "empty": {
+    "title": "لا توجد قروض بعد",
+    "description": "أضف قرضًا ثابتًا مرة واحدة وسيحجز Kippa كل قسط شهري تلقائيًا.",
+    "addFirst": "أضف أول قرض"
+  },
+  "card": {
+    "paymentsOf": "{{paid}} من {{total}} دفعات",
+    "edit": "تعديل",
+    "progress": "تقدم القرض",
+    "paidSuffix": "مدفوع",
+    "remainingSuffix": "متبقٍ",
+    "nextPayment": "الدفعة القادمة",
+    "payoff": "السداد الكامل",
+    "months_zero": "{{count}} أشهر",
+    "months_one": "شهر واحد",
+    "months_two": "شهران",
+    "months_few": "{{count}} أشهر",
+    "months_many": "{{count}} شهرًا",
+    "months_other": "{{count}} شهر",
+    "complete": "مكتمل",
+    "addToPrefix": "أضف",
+    "addToSuffix": "إلى {{name}}",
+    "paymentAccountFallback": "حساب السداد",
+    "ready": "{{name}} جاهز",
+    "recordPayment": "تسجيل دفعة",
+    "paidOff": "تم السداد",
+    "needsFunding": "يحتاج تمويلًا",
+    "readyChip": "جاهز"
+  },
+  "dialog": {
+    "editTitle": "تعديل القرض",
+    "addTitle": "إضافة قرض",
+    "subtitle": "اضبط الجدول الثابت مرة واحدة؛ وسيجهّز Kippa كل دورة.",
+    "detailsHeading": "تفاصيل القرض",
+    "nameLabel": "اسم القرض",
+    "installmentLabel": "القسط الشهري الثابت",
+    "monthsLabel": "عدد الأشهر",
+    "contractTotalLabel": "إجمالي العقد",
+    "contractTotalHelper": "لقرض ثابت: القسط × عدد الأشهر.",
+    "scheduleHeading": "الجدول والتقدم",
+    "firstPaymentLabel": "أول دفعة",
+    "dueDayLabel": "يوم الاستحقاق",
+    "graceDayLabel": "يجوز السحب حتى",
+    "openingInstallmentsLabel": "عدد الدفعات السابقة",
+    "openingAmountLabel": "المبلغ المدفوع سابقًا",
+    "connectionHeading": "ارتباط السداد",
+    "payingAccountLabel": "حساب السداد",
+    "invalidFallback": "تحقق من تفاصيل القرض.",
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات",
+    "add": "إضافة قرض"
+  },
+  "paymentDialog": {
+    "title": "تسجيل دفعة القرض",
+    "subtitle": "ينشئ هذا المصروف ويقدّم القرض معًا.",
+    "amount": "المبلغ",
+    "date": "تاريخ السحب",
+    "cancel": "إلغاء",
+    "record": "تسجيل دفعة"
+  },
+  "reminders": {
+    "message": "{{name}}: أضف {{shortfall}} {{currency}} قبل {{date}}.",
+    "notificationTitle": "حساب القرض يحتاج تمويلًا"
+  }
+}
