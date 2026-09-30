@@ -3,52 +3,102 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 export type AiProviderName = 'gemini' | 'glm';
 
-const GEMINI_MODEL = 'gemini-3.6-flash';
-/** GLM's OpenAI-compatible endpoint. Zhipu China: https://open.bigmodel.cn/api/paas/v4 · Z.ai international: https://api.z.ai/api/paas/v4 */
-const GLM_BASE_URL = envValue('VITE_GLM_BASE_URL') || 'https://open.bigmodel.cn/api/paas/v4';
-
 function envValue(name: string): string {
   return (import.meta.env as Record<string, string | undefined>)[name]?.trim() ?? '';
 }
 
-const explicitProvider = envValue('VITE_AI_PROVIDER').toLowerCase();
-const glmApiKey = envValue('VITE_GLM_API_KEY');
-const geminiApiKey = envValue('VITE_GEMINI_API_KEY');
+/** Zhipu China: https://open.bigmodel.cn/api/paas/v4 · Z.ai international: https://api.z.ai/api/paas/v4 */
+const ENV_GLM_BASE_URL = envValue('VITE_GLM_BASE_URL') || 'https://open.bigmodel.cn/api/paas/v4';
 
-/** Explicit VITE_AI_PROVIDER wins; otherwise GLM whenever its key exists, with Gemini as the legacy fallback. */
-export const AI_PROVIDER: AiProviderName = explicitProvider === 'glm' || explicitProvider === 'gemini'
-  ? (explicitProvider as AiProviderName)
-  : glmApiKey
-    ? 'glm'
-    : 'gemini';
+/**
+ * Runtime AI configuration, fetched once per session from the Firestore doc
+ * `system/aiConfig` (fields: provider, glmApiKey, glmBaseUrl, glmModel,
+ * geminiApiKey). Lets the owner rotate keys or switch models from the
+ * Firebase console without redeploying. Missing/forbidden doc → the env
+ * values baked at build time are used instead.
+ */
+export type AiRuntimeConfig = {
+  provider: AiProviderName;
+  model: string;
+  apiKey: string;
+  baseUrl?: string;
+};
 
-export const AI_MODEL = AI_PROVIDER === 'glm'
-  ? envValue('VITE_GLM_MODEL') || 'glm-5.3'
-  : GEMINI_MODEL;
-
-function requireApiKey(provider: AiProviderName): string {
-  const key = provider === 'glm' ? glmApiKey : geminiApiKey;
-  if (!key) {
-    const envName = provider === 'glm' ? 'VITE_GLM_API_KEY' : 'VITE_GEMINI_API_KEY';
-    throw new Error(`${provider === 'glm' ? 'GLM' : 'Gemini'} is not configured. Set ${envName} before building Kippa.`);
-  }
-  return key;
+function envRuntimeConfig(): AiRuntimeConfig | null {
+  const glmApiKey = envValue('VITE_GLM_API_KEY');
+  const geminiApiKey = envValue('VITE_GEMINI_API_KEY');
+  const explicit = envValue('VITE_AI_PROVIDER').toLowerCase();
+  const provider: AiProviderName = explicit === 'glm' || explicit === 'gemini'
+    ? (explicit as AiProviderName)
+    : glmApiKey ? 'glm' : geminiApiKey ? 'gemini' : 'glm';
+  const apiKey = provider === 'glm' ? glmApiKey : geminiApiKey;
+  if (!apiKey) return null;
+  return {
+    provider,
+    model: provider === 'glm' ? envValue('VITE_GLM_MODEL') || 'glm-5.3' : 'gemini-3.6-flash',
+    apiKey,
+    baseUrl: provider === 'glm' ? ENV_GLM_BASE_URL : undefined,
+  };
 }
 
-export function requireProviderApiKey(): string {
-  return requireApiKey(AI_PROVIDER);
+let runtimeConfig: Promise<AiRuntimeConfig | null> | null = null;
+
+function mergeRuntime(raw: unknown): AiRuntimeConfig | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const doc = raw as Record<string, unknown>;
+  const env = envRuntimeConfig();
+  const provider = doc.provider === 'glm' || doc.provider === 'gemini'
+    ? (doc.provider as AiProviderName)
+    : env?.provider;
+  if (!provider) return null;
+  const docKey = provider === 'glm' ? doc.glmApiKey : doc.geminiApiKey;
+  const apiKey = typeof docKey === 'string' && docKey.trim() ? docKey.trim() : env?.apiKey;
+  if (!apiKey) return null;
+  const model = provider === 'glm' && typeof doc.glmModel === 'string' && doc.glmModel.trim()
+    ? doc.glmModel.trim()
+    : env?.model ?? (provider === 'glm' ? 'glm-5.3' : 'gemini-3.6-flash');
+  const baseUrl = provider === 'glm'
+    ? (typeof doc.glmBaseUrl === 'string' && doc.glmBaseUrl.trim() ? doc.glmBaseUrl.trim() : env?.baseUrl ?? ENV_GLM_BASE_URL)
+    : undefined;
+  return { provider, model, apiKey, baseUrl };
 }
 
-/** Returns a model-id → chat-model factory for the configured provider. GLM speaks the OpenAI-compatible protocol. */
-export function getChatModel() {
-  if (AI_PROVIDER === 'glm') {
+export function loadAiRuntimeConfig(): Promise<AiRuntimeConfig | null> {
+  runtimeConfig ??= (async () => {
+    try {
+      const { dbLib } = await import('@/libs/db');
+      // dbLib escapes to the root path when householdId is 'system':
+      // ('system', 'system', 'aiConfig') reads the root doc system/aiConfig.
+      const doc = await dbLib.getDoc('system', 'system', 'aiConfig');
+      return mergeRuntime(doc);
+    } catch (error) {
+      console.warn('[kippa] system/aiConfig unavailable — using built-in AI config.', error);
+      return envRuntimeConfig();
+    }
+  })();
+  return runtimeConfig;
+}
+
+/**
+ * Builds the chat model for the resolved config. GLM speaks the
+ * OpenAI-compatible protocol; Gemini uses its first-party SDK.
+ */
+export function createChatModel(config: AiRuntimeConfig): { model: ReturnType<ReturnType<typeof createOpenAICompatible>['chatModel']>; provider: AiProviderName } {
+  if (config.provider === 'glm') {
     const glm = createOpenAICompatible({
       name: 'glm',
-      apiKey: requireApiKey('glm'),
-      baseURL: GLM_BASE_URL,
+      apiKey: config.apiKey,
+      baseURL: config.baseUrl ?? ENV_GLM_BASE_URL,
     });
-    return (modelId: string) => glm.chatModel(modelId);
+    return { model: glm.chatModel(config.model), provider: 'glm' };
   }
-  const google = createGoogleGenerativeAI({ apiKey: requireApiKey('gemini') });
-  return (modelId: string) => google(modelId);
+  const google = createGoogleGenerativeAI({ apiKey: config.apiKey });
+  return { model: google(config.model), provider: 'gemini' };
 }
+
+/**
+ * Synchronous env-only resolution, kept for the error classifier and defaults.
+ * The streaming path resolves the runtime config before creating a model.
+ */
+export const AI_PROVIDER: AiProviderName = envRuntimeConfig()?.provider ?? 'glm';
+export const AI_MODEL = envRuntimeConfig()?.model ?? 'glm-5.3';

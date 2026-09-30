@@ -1,7 +1,8 @@
 import { APICallError, NoSuchToolError, stepCountIs, streamText, type ModelMessage } from 'ai';
-import { AI_MODEL, AI_PROVIDER, getChatModel } from './aiConfig';
+import { AI_PROVIDER, createChatModel, loadAiRuntimeConfig } from './aiConfig';
 import { createAiToolRegistry, toAiSdkTools } from './readTools';
 import type { AiChartSpec, AiMessage, PendingAiAction } from '../types';
+import type { AiProviderName } from './aiConfig';
 import { AiError } from '../types';
 import { aiMemoryService } from './memory';
 
@@ -88,11 +89,11 @@ export function msUntilNextPacificReset(now = new Date()): number {
   return Math.max(60_000, candidate.getTime() - now.getTime());
 }
 
-export function classifyProviderError(error: unknown): AiError {
+export function classifyProviderError(error: unknown, provider: AiProviderName = AI_PROVIDER): AiError {
   const message = providerErrorText(error);
   const normalized = message.toLowerCase();
   if (normalized.includes('quota_exceeded') || normalized.includes('generaterequestsperday') || normalized.includes('permodelperday') || normalized.includes('requestsperday')) {
-    if (AI_PROVIDER === 'gemini') {
+    if (provider === 'gemini') {
       return new AiError('quota', 'Kip’s free AI allowance has been used for today. It resets at midnight Pacific time, and your message is saved.', msUntilNextPacificReset());
     }
     return new AiError('rate-limit', 'Kip has reached the AI service’s usage limit. Your message is saved and will be ready to retry.', retryAfterMsFromError(message) ?? 60_000);
@@ -120,7 +121,12 @@ export async function streamAssistantReply(args: {
   onChart?: (chart: AiChartSpec) => void;
   signal?: AbortSignal;
 }): Promise<string> {
-  const chatModel = getChatModel();
+  const runtimeConfig = await loadAiRuntimeConfig();
+  if (!runtimeConfig) {
+    throw new AiError('authentication', 'Kip is temporarily unavailable because its AI connection is not configured correctly.');
+  }
+  const activeProvider = runtimeConfig.provider;
+  const { model: chatModel } = createChatModel(runtimeConfig);
   const contextMessages = selectContextMessages(args.messages);
   const latestUserMessage = [...contextMessages].reverse().find(message => message.role === 'user');
   const memories = await aiMemoryService.relevant(args.householdId, args.userId, latestUserMessage?.content ?? '').catch(() => []);
@@ -131,7 +137,7 @@ export async function streamAssistantReply(args: {
   let complete = '';
   try {
     const result = streamText({
-      model: chatModel(AI_MODEL),
+      model: chatModel,
       system: `${SYSTEM_PROMPT}${memoryContext}`,
       messages: modelMessages,
       tools: toAiSdkTools(createAiToolRegistry(), { householdId: args.householdId, userId: args.userId, userDisplayName: args.userDisplayName, userPhotoURL: args.userPhotoURL, sourceMessageIds: latestUserMessage ? [latestUserMessage.id] : [] }, args.onActionProposed, args.onChart),
@@ -153,7 +159,7 @@ export async function streamAssistantReply(args: {
         complete += part.text;
         args.onText(complete);
       } else if (part.type === 'error') {
-        throw classifyProviderError(part.error);
+        throw classifyProviderError(part.error, activeProvider);
       } else if (part.type === 'tool-error') {
         if (NoSuchToolError.isInstance(part.error)) {
           throw new AiError('provider', 'Kip could not access the right financial data for that question. Please try asking it another way.');
@@ -165,6 +171,6 @@ export async function streamAssistantReply(args: {
     return complete.trim();
   } catch (error) {
     if (error instanceof AiError) throw error;
-    throw classifyProviderError(error);
+    throw classifyProviderError(error, activeProvider);
   }
 }
