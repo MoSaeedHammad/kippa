@@ -1,4 +1,5 @@
 import { alpha, Box, Card, Divider, Stack, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { Account, Reconciliation } from '@kippa/domain';
 import { AccountBalanceIcon, CheckCircleIcon } from '@/components/AppIcon';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
@@ -17,12 +18,13 @@ function formatReconciliationDate(dateString: string) {
 
 export function ReconciliationHistory({ accounts, history, mask, renderAccountIcon }: Props) {
   const theme = useTheme();
+  const { t } = useTranslation('reconciliation');
   return (
     <Stack spacing={1.5}>
-      <Typography variant="h3">Audit History</Typography>
+      <Typography variant="h3">{t('history.title')}</Typography>
       <Card>
         {history.length === 0 ? (
-          <Box sx={{ p: 2 }}><EmptyLayout title="No past reconciliation logs found" description="Manual adjustments will appear here after reconciling your accounts." /></Box>
+          <Box sx={{ p: 2 }}><EmptyLayout title={t('history.emptyTitle')} description={t('history.emptyDescription')} /></Box>
         ) : history.map((item, index) => {
           const account = accounts.find((candidate) => candidate.id === item.accountId);
           const matched = Math.abs(item.difference) < 0.001;
@@ -35,14 +37,14 @@ export function ReconciliationHistory({ accounts, history, mask, renderAccountIc
                   {matched ? <CheckCircleIcon color="success" sx={{ fontSize: 18 }} /> : account ? renderAccountIcon(account.type, '18px') : <AccountBalanceIcon sx={{ fontSize: 18 }} />}
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="sectionLabel">{account?.name || 'Unknown Account'}</Typography>
+                  <Typography variant="sectionLabel">{account?.name || t('history.unknownAccount')}</Typography>
                   {item.note && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, wordBreak: 'break-word' }}>{item.note}</Typography>}
                   <Typography variant="fieldHint" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                    {formatReconciliationDate(item.date)} · Actual {mask(`${item.actualBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${item.currency}`)}
+                    {formatReconciliationDate(item.date)} · {t('history.actual', { amount: mask(`${item.actualBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${item.currency}`) })}
                   </Typography>
                 </Box>
                 <Typography variant="sectionLabel" color={matched ? 'text.secondary' : item.difference > 0 ? 'success' : 'error'} sx={{ whiteSpace: 'nowrap', flexShrink: 0, mt: 0.5 }}>
-                  {matched ? 'Matched' : `${item.difference > 0 ? '+' : ''}${mask(`${item.difference.toFixed(2)} ${item.currency}`)}`}
+                  {matched ? t('history.matched') : `${item.difference > 0 ? '+' : ''}${mask(`${item.difference.toFixed(2)} ${item.currency}`)}`}
                 </Typography>
               </Box>
             </Box>

@@ -1,1 +1,41 @@
-{}
+{
+  "page": {
+    "title": "Reconciliation",
+    "subtitle": "Audit your account balances manually to keep records perfectly aligned."
+  },
+  "picker": {
+    "label": "Select Account",
+    "emptyMessage": "Create an account first, then come back here to balance-check it."
+  },
+  "comparison": {
+    "calculated": "Calculated",
+    "actual": "Actual",
+    "difference": "Difference",
+    "perfectMatch": "Perfect match — records are aligned."
+  },
+  "adjustment": {
+    "reasonHeading": "Reason for Adjustment",
+    "noteLabel": "Adjustment Note",
+    "notePlaceholder": "Explain the reason...",
+    "apply": "Apply Correction & Reconcile"
+  },
+  "reasons": {
+    "forgottenExpense": "Forgotten expense",
+    "bankFee": "Bank fee",
+    "exchangeDifference": "Exchange difference",
+    "cashCountingCorrection": "Cash counting correction"
+  },
+  "history": {
+    "title": "Audit History",
+    "emptyTitle": "No past reconciliation logs found",
+    "emptyDescription": "Manual adjustments will appear here after reconciling your accounts.",
+    "unknownAccount": "Unknown Account",
+    "actual": "Actual {{amount}}",
+    "matched": "Matched"
+  },
+  "toasts": {
+    "savedPrivate": "Reconciliation saved! Difference corrected.",
+    "saved": "Reconciliation saved! Difference of {{difference}} {{currency}} corrected.",
+    "failed": "Failed to process reconciliation"
+  }
+}

@@ -1,1 +1,41 @@
-{}
+{
+  "page": {
+    "title": "المطابقة",
+    "subtitle": "دقق أرصدة حساباتك يدويًا لتبقى السجلات متطابقة تمامًا."
+  },
+  "picker": {
+    "label": "اختر الحساب",
+    "emptyMessage": "أنشئ حسابًا أولًا، ثم عد هنا لمطابقة رصيده."
+  },
+  "comparison": {
+    "calculated": "المحسوب",
+    "actual": "الفعلي",
+    "difference": "الفرق",
+    "perfectMatch": "تطابق تام — السجلات متوافقة."
+  },
+  "adjustment": {
+    "reasonHeading": "سبب التسوية",
+    "noteLabel": "ملاحظة التسوية",
+    "notePlaceholder": "اشرح السبب...",
+    "apply": "تطبيق التصحيح والمطابقة"
+  },
+  "reasons": {
+    "forgottenExpense": "مصروف منسي",
+    "bankFee": "رسوم بنكية",
+    "exchangeDifference": "فرق صرف",
+    "cashCountingCorrection": "تصحيح جرد النقد"
+  },
+  "history": {
+    "title": "سجل التدقيق",
+    "emptyTitle": "لا توجد سجلات مطابقة سابقة",
+    "emptyDescription": "ستظهر التسويات اليدوية هنا بعد مطابقة حساباتك.",
+    "unknownAccount": "حساب غير معروف",
+    "actual": "الفعلي {{amount}}",
+    "matched": "مطابق"
+  },
+  "toasts": {
+    "savedPrivate": "تم حفظ المطابقة! تم تصحيح الفرق.",
+    "saved": "تم حفظ المطابقة! تم تصحيح فرق قدره {{difference}} {{currency}}.",
+    "failed": "فشلت معالجة المطابقة"
+  }
+}

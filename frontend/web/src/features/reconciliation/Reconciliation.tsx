@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -32,11 +33,21 @@ import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { calculateAccountBalances } from '@/libs/financeCalculations';
 import { ReconciliationHistory } from './components/ReconciliationHistory';
 import { AccountPicker } from '@/features/shared/components/AccountPicker';
+import type reconciliationEn from '@/i18n/locales/en/reconciliation.json';
 
 type AdjustmentReason = 'forgotten expense' | 'bank fee' | 'exchange difference' | 'cash counting correction' | 'unknown difference';
 
+type ReasonLabelKey = keyof typeof reconciliationEn['reasons'];
+const REASON_LABEL_KEYS: Record<Exclude<AdjustmentReason, 'unknown difference'>, ReasonLabelKey> = {
+  'forgotten expense': 'forgottenExpense',
+  'bank fee': 'bankFee',
+  'exchange difference': 'exchangeDifference',
+  'cash counting correction': 'cashCountingCorrection',
+};
+
 export function Reconciliation() {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('reconciliation');
   const { householdId, userProfile } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const { maskDigits, privacyMode } = usePrivacyMask();
@@ -163,12 +174,12 @@ export function Reconciliation() {
       });
 
       enqueueSnackbar(privacyMode
-        ? 'Reconciliation saved! Difference corrected.'
-        : `Reconciliation saved! Difference of ${difference.toFixed(2)} ${selectedAccount.currency} corrected.`, { variant: 'success' });
+        ? t('toasts.savedPrivate')
+        : t('toasts.saved', { difference: difference.toFixed(2), currency: selectedAccount.currency }), { variant: 'success' });
       setActualBalanceInput('');
       setNote('');
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to process reconciliation', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.failed'), { variant: 'error' });
     } finally {
       setIsProcessing(false);
     }
@@ -181,8 +192,8 @@ export function Reconciliation() {
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="Reconciliation"
-          subtitle="Audit your account balances manually to keep records perfectly aligned."
+          title={t('page.title')}
+          subtitle={t('page.subtitle')}
         />
 
         <Box
@@ -198,10 +209,10 @@ export function Reconciliation() {
               <Stack spacing={2.5}>
         <AccountPicker
           accounts={sortedAccounts}
-          label="Select Account"
+          label={t('picker.label')}
           onSelect={(accountId) => { setSelectedAccountId(accountId); setActualBalanceInput(''); }}
           selectedAccountId={selectedAccountId}
-          emptyMessage="Create an account first, then come back here to balance-check it."
+          emptyMessage={t('picker.emptyMessage')}
         />
 
         {selectedAccount && (
@@ -218,7 +229,7 @@ export function Reconciliation() {
                 {/* Calculated */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, mb: 0.5 }}>
-                    Calculated
+                    {t('comparison.calculated')}
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '15px', color: 'text.primary' }}>
                     {maskDigits(`${calculatedBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`)}
@@ -235,7 +246,7 @@ export function Reconciliation() {
                 {/* Actual input */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, mb: 0.5 }}>
-                    Actual
+                    {t('comparison.actual')}
                   </Typography>
                   <TextField
                     type="number"
@@ -267,7 +278,7 @@ export function Reconciliation() {
                 {/* Difference */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, mb: 0.5 }}>
-                    Difference
+                    {t('comparison.difference')}
                   </Typography>
                   <Typography
                     variant="body1"
@@ -291,7 +302,7 @@ export function Reconciliation() {
                 <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <CheckCircleIcon sx={{ fontSize: '14px', color: 'success.main' }} />
                   <Typography variant="body2" sx={{ color: 'success.main', fontSize: '11px', fontWeight: 600 }}>
-                    Perfect match — records are aligned.
+                    {t('comparison.perfectMatch')}
                   </Typography>
                 </Box>
               )}
@@ -301,15 +312,15 @@ export function Reconciliation() {
               <Stack spacing={2.5}>
                 <Box>
                   <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: '14px', mb: 1 }}>
-                    Reason for Adjustment
+                    {t('adjustment.reasonHeading')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {(['forgotten expense', 'bank fee', 'exchange difference', 'cash counting correction'] as AdjustmentReason[]).map(r => {
+                    {(['forgotten expense', 'bank fee', 'exchange difference', 'cash counting correction'] as const).map(r => {
                       const isSel = reason === r;
                       return (
                         <Chip
                           key={r}
-                          label={r}
+                          label={t(`reasons.${REASON_LABEL_KEYS[r]}`)}
                           onClick={() => setReason(r)}
                           variant={isSel ? 'filled' : 'outlined'}
                           sx={{
@@ -330,9 +341,9 @@ export function Reconciliation() {
                 </Box>
 
                 <TextField
-                  label="Adjustment Note"
+                  label={t('adjustment.noteLabel')}
                   fullWidth
-                  placeholder="Explain the reason..."
+                  placeholder={t('adjustment.notePlaceholder')}
                   value={note}
                   onChange={e => setNote(e.target.value)}
                 />
@@ -345,7 +356,7 @@ export function Reconciliation() {
               fullWidth
               variant="contained"
             >
-              Apply Correction & Reconcile
+              {t('adjustment.apply')}
             </Button>
           </Stack>
         )}
