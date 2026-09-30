@@ -39,3 +39,11 @@
 | Income | الإيرادات | income entry = إدخال إيرادات |
 | Transfer | التحويل | |
 | Paid | مدفوع / تم دفع | Due = مستحق |
+| Approve | موافقة | "Request to join" = طلب الانضمام |
+| Decline / Reject | رفض | |
+| Discard | إهمال | pending-message triage |
+| Void | إبطال | transaction voiding |
+| Frozen | مجمّدة | card state |
+| Pending | معلق | entries, requests, messages |
+| Installment | قسط | plural أقساط; see Loan |
+| Wallet | محفظة | account type; Cash = نقد |

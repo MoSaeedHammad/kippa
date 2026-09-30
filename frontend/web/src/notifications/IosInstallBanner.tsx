@@ -1,4 +1,5 @@
 import { Alert, AlertTitle, Button, Stack } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { IosShareIcon } from '@/components/AppIcon';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
  * iOS web push only works from a Home Screen install (iOS 16.4+).
  */
 export function IosInstallBanner({ onClose }: Props) {
+  const { t } = useTranslation('notifications');
   return (
     <Alert
       severity="info"
@@ -17,26 +19,25 @@ export function IosInstallBanner({ onClose }: Props) {
       action={
         onClose ? (
           <Button color="inherit" onClick={onClose}>
-            Dismiss
+            {t('iosBanner.dismiss')}
           </Button>
         ) : undefined
       }
     >
-      <AlertTitle>Enable notifications on iPhone</AlertTitle>
+      <AlertTitle>{t('iosBanner.title')}</AlertTitle>
       <Stack spacing={1}>
-        <span>To receive push notifications, add Kippa to your Home Screen:</span>
+        <span>{t('iosBanner.intro')}</span>
         <span>
-          <strong>1.</strong> Tap the{' '}
-          <IosShareIcon fontSize="small" sx={{ verticalAlign: 'middle' }} /> Share button in
-          Safari's toolbar.
+          <strong>1.</strong> {t('iosBanner.step1Prefix')}{' '}
+          <IosShareIcon fontSize="small" sx={{ verticalAlign: 'middle' }} /> {t('iosBanner.step1Suffix')}
         </span>
         <span>
-          <strong>2.</strong> Select <strong>"Add to Home Screen"</strong>.
+          <strong>2.</strong> {t('iosBanner.step2Prefix')} <strong>{t('iosBanner.addToHomeScreen')}</strong>.
         </span>
         <span>
-          <strong>3.</strong> Open Kippa from the Home Screen icon, then enable notifications.
+          <strong>3.</strong> {t('iosBanner.step3')}
         </span>
-        <span style={{ opacity: 0.7, fontSize: '0.85em' }}>Requires iOS 16.4 or later.</span>
+        <span style={{ opacity: 0.7, fontSize: '0.85em' }}>{t('iosBanner.requires')}</span>
       </Stack>
     </Alert>
   );

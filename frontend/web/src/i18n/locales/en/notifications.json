@@ -48,5 +48,16 @@
     "settingsUpdated": "Notification settings updated!",
     "enabled": "Notifications enabled!",
     "disabled": "Notifications disabled"
+  },
+  "iosBanner": {
+    "dismiss": "Dismiss",
+    "title": "Enable notifications on iPhone",
+    "intro": "To receive push notifications, add Kippa to your Home Screen:",
+    "step1Prefix": "Tap the",
+    "step1Suffix": "Share button in Safari's toolbar.",
+    "step2Prefix": "Select",
+    "addToHomeScreen": "\"Add to Home Screen\"",
+    "step3": "Open Kippa from the Home Screen icon, then enable notifications.",
+    "requires": "Requires iOS 16.4 or later."
   }
 }
