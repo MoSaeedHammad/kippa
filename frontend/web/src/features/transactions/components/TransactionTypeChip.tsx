@@ -1,5 +1,6 @@
 import React from 'react';
 import { alpha, Chip } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { TransactionType } from '@kippa/domain';
 
 interface TransactionTypeChipProps {
@@ -8,17 +9,18 @@ interface TransactionTypeChipProps {
 }
 
 export const TransactionTypeChip: React.FC<TransactionTypeChipProps> = ({ type, size = 'small' }) => {
+  const { t } = useTranslation('transactions');
   const getChipDetails = () => {
     switch (type) {
       case 'income':
-        return { label: 'Income', tone: 'success' as const };
+        return { label: t('types.income'), tone: 'success' as const };
       case 'transfer':
-        return { label: 'Transfer', tone: 'primary' as const };
+        return { label: t('types.transfer'), tone: 'primary' as const };
       case 'adjustment':
-        return { label: 'Reconciliation', tone: 'info' as const };
+        return { label: t('types.reconciliation'), tone: 'info' as const };
       case 'expense':
       default:
-        return { label: 'Expense', tone: null };
+        return { label: t('types.expense'), tone: null };
     }
   };
 

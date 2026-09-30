@@ -1,1 +1,72 @@
-{}
+{
+  "title": "سجل المعاملات",
+  "subtitle": "استعرض وابحث وأدر معاملات فضائك.",
+  "searchPlaceholder": "ابحث في الوصف...",
+  "filters": {
+    "statement": "كشف حساب",
+    "allCycles": "جميع الدورات",
+    "activeCycle": "الدورة الحالية",
+    "account": "الحساب",
+    "allAccounts": "جميع الحسابات",
+    "category": "الفئة",
+    "allCategories": "جميع الفئات",
+    "type": "النوع",
+    "allTypes": "جميع الأنواع"
+  },
+  "types": {
+    "expense": "مصروف",
+    "income": "الإيرادات",
+    "transfer": "تحويل",
+    "reconciliation": "مطابقة"
+  },
+  "table": {
+    "type": "النوع",
+    "transaction": "المعاملة",
+    "accountInfo": "معلومات الحساب",
+    "amount": "المبلغ",
+    "actions": "الإجراءات"
+  },
+  "empty": {
+    "title": "لا توجد معاملات مطابقة",
+    "description": "جرّب تغيير كلمة البحث أو عوامل التصفية للعثور على ما تبحث عنه."
+  },
+  "loadMore_zero": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_one": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_two": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_few": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_many": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_other": "تحميل المزيد ({{count}} متبقٍ)",
+  "voidConfirm": "هل أنت متأكد من إبطال هذه المعاملة؟ سيؤدي ذلك إلى تحديث الأرصدة فورًا.",
+  "voidedToast": "تم إبطال المعاملة بنجاح.",
+  "voidFailed": "فشل إبطال المعاملة",
+  "row": {
+    "transferFallback": "تحويل",
+    "reconciliationFallback": "مطابقة",
+    "generalFallback": "عام",
+    "voidedLabel": "(مُبطلة)",
+    "transferCompleted": "تم التحويل",
+    "editTooltip": "تعديل المعاملة",
+    "voidTooltip": "إبطال المعاملة"
+  },
+  "editDialog": {
+    "title": "تعديل المعاملة",
+    "validAmount": "يرجى إدخال مبلغ صالح.",
+    "updatedToast": "تم تحديث المعاملة بنجاح!",
+    "updateFailed": "فشل تحديث المعاملة",
+    "readonlyWarning": "لأجل سلامة دفتر الأستاذ، لا يمكن تعديل النوع أو الحسابات أو المبلغ لمعاملة {{type}}.",
+    "amountColon": "المبلغ:",
+    "accountColon": "الحساب:",
+    "financialDetails": "التفاصيل المالية",
+    "transactionType": "نوع المعاملة",
+    "classification": "التصنيف والتفاصيل",
+    "amount": "المبلغ",
+    "account": "الحساب",
+    "date": "التاريخ",
+    "category": "الفئة",
+    "incomeCategory": "فئة الإيرادات",
+    "description": "الوصف / ملاحظات",
+    "descriptionPlaceholder": "أضف تفاصيل أو ملاحظات حول هذه المعاملة...",
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات"
+  }
+}

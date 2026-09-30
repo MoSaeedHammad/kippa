@@ -21,6 +21,7 @@ import {
   alpha,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   useAccounts,
   useCategories,
@@ -46,6 +47,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
   onClose,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('transactions');
   const { householdId } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const { data: accounts = [] } = useAccounts(householdId);
@@ -62,7 +64,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
   const handleSave = async () => {
     const amount = parseFloat(fields.amount);
     if (isNaN(amount) || amount <= 0) {
-      enqueueSnackbar('Please enter a valid amount.', { variant: 'warning' });
+      enqueueSnackbar(t('editDialog.validAmount'), { variant: 'warning' });
       return;
     }
 
@@ -86,10 +88,10 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           currency,
         },
       });
-      enqueueSnackbar('Transaction updated successfully!', { variant: 'success' });
+      enqueueSnackbar(t('editDialog.updatedToast'), { variant: 'success' });
       onClose();
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to update transaction', { variant: 'error' });
+      enqueueSnackbar(err.message || t('editDialog.updateFailed'), { variant: 'error' });
     }
   };
 
@@ -97,11 +99,18 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
     return accounts.find((a) => a.id === id)?.name || id;
   };
 
+  const specialTypeLabel =
+    transaction.type === 'adjustment'
+      ? t('types.reconciliation')
+      : transaction.type === 'transfer'
+        ? t('types.transfer')
+        : transaction.type;
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Edit Transaction
+          {t('editDialog.title')}
         </Typography>
         <TransactionTypeChip type={transaction.type} />
       </DialogTitle>
@@ -120,14 +129,14 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                 }}
               >
                 <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mb: 1.5 }}>
-                  For ledger integrity, the type, accounts, and amount of a {transaction.type === 'adjustment' ? 'Reconciliation' : transaction.type} transaction cannot be modified.
+                  {t('editDialog.readonlyWarning', { type: specialTypeLabel })}
                 </Typography>
                 <Stack spacing={1}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    Amount: <span style={{ fontWeight: 'normal' }}>{fields.amount} {findPrimaryLedgerLine(transaction.id, ledgerLines)?.currency || baseCurrency}</span>
+                    {t('editDialog.amountColon')} <span style={{ fontWeight: 'normal' }}>{fields.amount} {findPrimaryLedgerLine(transaction.id, ledgerLines)?.currency || baseCurrency}</span>
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    Account: <span style={{ fontWeight: 'normal' }}>{getAccountName(fields.accountId)}</span>
+                    {t('editDialog.accountColon')} <span style={{ fontWeight: 'normal' }}>{getAccountName(fields.accountId)}</span>
                   </Typography>
                 </Stack>
               </Box>
@@ -137,7 +146,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           {/* Section 1: Financial Details */}
           <Grid size={{ xs: 12 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Financial Details
+              {t('editDialog.financialDetails')}
             </Typography>
             <Divider sx={{ mt: 1, mb: 1 }} />
           </Grid>
@@ -145,7 +154,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           {isRegularTx && (
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontWeight: 'medium' }}>
-                Transaction Type
+                {t('editDialog.transactionType')}
               </Typography>
               <RadioGroup
                 row
@@ -153,8 +162,8 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                 onChange={(e) => setField('type', e.target.value)}
                 sx={{ gap: 2 }}
               >
-                <FormControlLabel value="expense" control={<Radio />} label="Expense" />
-                <FormControlLabel value="income" control={<Radio />} label="Income" />
+                <FormControlLabel value="expense" control={<Radio />} label={t('types.expense')} />
+                <FormControlLabel value="income" control={<Radio />} label={t('types.income')} />
               </RadioGroup>
             </Grid>
           )}
@@ -164,7 +173,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
               <TextField
                 type="number"
                 fullWidth
-                label="Amount"
+                label={t('editDialog.amount')}
                 value={fields.amount}
                 onChange={(e) => setField('amount', e.target.value)}
               />
@@ -174,11 +183,11 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           {isRegularTx && (
             <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
-                <InputLabel id="edit-tx-acc-label">Account</InputLabel>
+                <InputLabel id="edit-tx-acc-label">{t('editDialog.account')}</InputLabel>
                 <Select
                   labelId="edit-tx-acc-label"
                   value={fields.accountId}
-                  label="Account"
+                  label={t('editDialog.account')}
                   onChange={(e) => setField('accountId', e.target.value)}
                 >
                   {accounts.map((a) => (
@@ -194,7 +203,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           {/* Section 2: Metadata & Notes */}
           <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Classification & Details
+              {t('editDialog.classification')}
             </Typography>
             <Divider sx={{ mt: 1, mb: 1 }} />
           </Grid>
@@ -204,7 +213,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
             <TextField
               type="date"
               fullWidth
-              label="Date"
+              label={t('editDialog.date')}
               slotProps={{ inputLabel: { shrink: true } }}
               value={fields.date}
               onChange={(e) => setField('date', e.target.value)}
@@ -216,11 +225,11 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
             <Grid size={{ xs: 12, sm: 6 }}>
               {fields.type === 'expense' ? (
                 <FormControl fullWidth>
-                  <InputLabel id="edit-tx-cat-label">Category</InputLabel>
+                  <InputLabel id="edit-tx-cat-label">{t('editDialog.category')}</InputLabel>
                   <Select
                     labelId="edit-tx-cat-label"
                     value={fields.categoryId}
-                    label="Category"
+                    label={t('editDialog.category')}
                     onChange={(e) => setField('categoryId', e.target.value)}
                   >
                     {categories
@@ -234,11 +243,11 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                 </FormControl>
               ) : (
                 <FormControl fullWidth>
-                  <InputLabel id="edit-tx-cat-income-label">Income Category</InputLabel>
+                  <InputLabel id="edit-tx-cat-income-label">{t('editDialog.incomeCategory')}</InputLabel>
                   <Select
                     labelId="edit-tx-cat-income-label"
                     value={fields.categoryId}
-                    label="Income Category"
+                    label={t('editDialog.incomeCategory')}
                     onChange={(e) => setField('categoryId', e.target.value)}
                   >
                     {categories
@@ -260,8 +269,8 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
               fullWidth
               multiline
               rows={2}
-              label="Description / Notes"
-              placeholder="Add details or notes about this transaction..."
+              label={t('editDialog.description')}
+              placeholder={t('editDialog.descriptionPlaceholder')}
               value={fields.description}
               onChange={(e) => setField('description', e.target.value)}
             />
@@ -271,14 +280,14 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
 
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
         <Button onClick={onClose} color="inherit">
-          Cancel
+          {t('editDialog.cancel')}
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
           loading={updateMutation.isPending}
         >
-          Save Changes
+          {t('editDialog.saveChanges')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Stack,
@@ -40,6 +41,7 @@ import { useTransactionHistoryUi } from './hooks/useTransactionHistoryUi';
 import { TransactionHistoryRow } from './components/TransactionHistoryRow';
 
 export function TransactionHistory() {
+  const { t } = useTranslation('transactions');
   const [searchParams, setSearchParams] = useSearchParams();
   const { enqueueSnackbar } = useSnackbar();
   const { householdId } = useAppContext();
@@ -79,12 +81,12 @@ export function TransactionHistory() {
 
   // Void Transaction
   const handleVoid = async (txId: string) => {
-    if (window.confirm('Are you sure you want to void this transaction? This updates balances immediately.')) {
+    if (window.confirm(t('voidConfirm'))) {
       try {
         await voidTxMutation.mutateAsync({ householdId, transactionId: txId });
-        enqueueSnackbar('Transaction voided successfully.', { variant: 'success' });
+        enqueueSnackbar(t('voidedToast'), { variant: 'success' });
       } catch (err: any) {
-        enqueueSnackbar(err.message || 'Failed to void transaction', { variant: 'error' });
+        enqueueSnackbar(err.message || t('voidFailed'), { variant: 'error' });
       }
     }
   };
@@ -136,17 +138,17 @@ export function TransactionHistory() {
         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
           <Box>
             <Typography variant="h1" sx={{ fontSize: '24px', fontWeight: 800, color: 'text.primary' }}>
-              Transaction History
+              {t('title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              View, search, and manage your space transactions.
+              {t('subtitle')}
             </Typography>
           </Box>
         </Box>
 
         <Stack spacing={1.5}>
           <TextField
-            placeholder="Search description..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={e => handleSearch(e.target.value)}
             fullWidth
@@ -172,10 +174,10 @@ export function TransactionHistory() {
             }}
           >
             <FormControl fullWidth>
-              <InputLabel id="history-cycle-label">Statement</InputLabel>
-              <Select labelId="history-cycle-label" value={selectedCycleId} label="Statement" onChange={e => handleCycleChange(e.target.value)}>
-                <MenuItem value="all">All Cycles</MenuItem>
-                <MenuItem value="active">Active Cycle</MenuItem>
+              <InputLabel id="history-cycle-label">{t('filters.statement')}</InputLabel>
+              <Select labelId="history-cycle-label" value={selectedCycleId} label={t('filters.statement')} onChange={e => handleCycleChange(e.target.value)}>
+                <MenuItem value="all">{t('filters.allCycles')}</MenuItem>
+                <MenuItem value="active">{t('filters.activeCycle')}</MenuItem>
                 {cycles.filter(c => c.status !== 'open').map(c => (
                   <MenuItem key={c.id} value={c.id}>{c.name} ({c.status})</MenuItem>
                 ))}
@@ -183,9 +185,9 @@ export function TransactionHistory() {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel id="history-account-label">Account</InputLabel>
-              <Select labelId="history-account-label" value={selectedAccount} label="Account" onChange={e => handleAccountChange(e.target.value)}>
-                <MenuItem value="all">All Accounts</MenuItem>
+              <InputLabel id="history-account-label">{t('filters.account')}</InputLabel>
+              <Select labelId="history-account-label" value={selectedAccount} label={t('filters.account')} onChange={e => handleAccountChange(e.target.value)}>
+                <MenuItem value="all">{t('filters.allAccounts')}</MenuItem>
                 {accounts.map(a => (
                   <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
                 ))}
@@ -193,9 +195,9 @@ export function TransactionHistory() {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel id="history-category-label">Category</InputLabel>
-              <Select labelId="history-category-label" value={selectedCategory} label="Category" onChange={e => handleCategoryChange(e.target.value)}>
-                <MenuItem value="all">All Categories</MenuItem>
+              <InputLabel id="history-category-label">{t('filters.category')}</InputLabel>
+              <Select labelId="history-category-label" value={selectedCategory} label={t('filters.category')} onChange={e => handleCategoryChange(e.target.value)}>
+                <MenuItem value="all">{t('filters.allCategories')}</MenuItem>
                 {categories.map(c => (
                   <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
                 ))}
@@ -203,13 +205,13 @@ export function TransactionHistory() {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel id="history-type-label">Type</InputLabel>
-              <Select labelId="history-type-label" value={selectedType} label="Type" onChange={e => handleTypeChange(e.target.value)}>
-                <MenuItem value="all">All Types</MenuItem>
-                <MenuItem value="expense">Expense</MenuItem>
-                <MenuItem value="income">Income</MenuItem>
-                <MenuItem value="transfer">Transfer</MenuItem>
-                <MenuItem value="adjustment">Reconciliation</MenuItem>
+              <InputLabel id="history-type-label">{t('filters.type')}</InputLabel>
+              <Select labelId="history-type-label" value={selectedType} label={t('filters.type')} onChange={e => handleTypeChange(e.target.value)}>
+                <MenuItem value="all">{t('filters.allTypes')}</MenuItem>
+                <MenuItem value="expense">{t('types.expense')}</MenuItem>
+                <MenuItem value="income">{t('types.income')}</MenuItem>
+                <MenuItem value="transfer">{t('types.transfer')}</MenuItem>
+                <MenuItem value="adjustment">{t('types.reconciliation')}</MenuItem>
               </Select>
             </FormControl>
           </Box>
@@ -220,11 +222,11 @@ export function TransactionHistory() {
           <Table sx={{ tableLayout: { xs: 'fixed', md: 'auto' } }}>
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: 64, py: 1.75 }}>Type</TableCell>
-                <TableCell sx={{ py: 1.75 }}>Transaction</TableCell>
-                <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>Account Info</TableCell>
-                <TableCell align="right" sx={{ width: { xs: 120, sm: 160 }, py: 1.75 }}>Amount</TableCell>
-                <TableCell align="center" sx={{ width: { xs: 92, sm: 112 }, py: 1.75 }}>Actions</TableCell>
+                <TableCell align="center" sx={{ width: 64, py: 1.75 }}>{t('table.type')}</TableCell>
+                <TableCell sx={{ py: 1.75 }}>{t('table.transaction')}</TableCell>
+                <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.accountInfo')}</TableCell>
+                <TableCell align="right" sx={{ width: { xs: 120, sm: 160 }, py: 1.75 }}>{t('table.amount')}</TableCell>
+                <TableCell align="center" sx={{ width: { xs: 92, sm: 112 }, py: 1.75 }}>{t('table.actions')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -233,8 +235,8 @@ export function TransactionHistory() {
                   <TableCell colSpan={5} sx={{ p: 2, borderBottom: 0 }}>
                     <EmptyLayout
                       icon={<SearchIcon sx={{ fontSize: 28 }} />}
-                      title="No matching transactions"
-                      description="Try changing your search term or filters to find what you’re looking for."
+                      title={t('empty.title')}
+                      description={t('empty.description')}
                     />
                   </TableCell>
                 </TableRow>
@@ -250,7 +252,7 @@ export function TransactionHistory() {
                 onClick={loadMore}
                 sx={{ fontWeight: 600, fontSize: '12px', color: 'primary.main', textTransform: 'none', px: 2 }}
               >
-                Load more ({filteredTxs.length - visibleCount} remaining)
+                {t('loadMore', { count: filteredTxs.length - visibleCount })}
               </Button>
             </Box>
           )}

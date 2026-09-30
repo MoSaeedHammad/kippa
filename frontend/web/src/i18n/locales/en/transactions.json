@@ -1,1 +1,72 @@
-{}
+{
+  "title": "Transaction History",
+  "subtitle": "View, search, and manage your space transactions.",
+  "searchPlaceholder": "Search description...",
+  "filters": {
+    "statement": "Statement",
+    "allCycles": "All Cycles",
+    "activeCycle": "Active Cycle",
+    "account": "Account",
+    "allAccounts": "All Accounts",
+    "category": "Category",
+    "allCategories": "All Categories",
+    "type": "Type",
+    "allTypes": "All Types"
+  },
+  "types": {
+    "expense": "Expense",
+    "income": "Income",
+    "transfer": "Transfer",
+    "reconciliation": "Reconciliation"
+  },
+  "table": {
+    "type": "Type",
+    "transaction": "Transaction",
+    "accountInfo": "Account Info",
+    "amount": "Amount",
+    "actions": "Actions"
+  },
+  "empty": {
+    "title": "No matching transactions",
+    "description": "Try changing your search term or filters to find what you’re looking for."
+  },
+  "loadMore_zero": "Load more ({{count}} remaining)",
+  "loadMore_one": "Load more ({{count}} remaining)",
+  "loadMore_two": "Load more ({{count}} remaining)",
+  "loadMore_few": "Load more ({{count}} remaining)",
+  "loadMore_many": "Load more ({{count}} remaining)",
+  "loadMore_other": "Load more ({{count}} remaining)",
+  "voidConfirm": "Are you sure you want to void this transaction? This updates balances immediately.",
+  "voidedToast": "Transaction voided successfully.",
+  "voidFailed": "Failed to void transaction",
+  "row": {
+    "transferFallback": "Transfer",
+    "reconciliationFallback": "Reconciliation",
+    "generalFallback": "General",
+    "voidedLabel": "(VOIDED)",
+    "transferCompleted": "Transfer Completed",
+    "editTooltip": "Edit transaction",
+    "voidTooltip": "Void transaction"
+  },
+  "editDialog": {
+    "title": "Edit Transaction",
+    "validAmount": "Please enter a valid amount.",
+    "updatedToast": "Transaction updated successfully!",
+    "updateFailed": "Failed to update transaction",
+    "readonlyWarning": "For ledger integrity, the type, accounts, and amount of a {{type}} transaction cannot be modified.",
+    "amountColon": "Amount:",
+    "accountColon": "Account:",
+    "financialDetails": "Financial Details",
+    "transactionType": "Transaction Type",
+    "classification": "Classification & Details",
+    "amount": "Amount",
+    "account": "Account",
+    "date": "Date",
+    "category": "Category",
+    "incomeCategory": "Income Category",
+    "description": "Description / Notes",
+    "descriptionPlaceholder": "Add details or notes about this transaction...",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes"
+  }
+}
