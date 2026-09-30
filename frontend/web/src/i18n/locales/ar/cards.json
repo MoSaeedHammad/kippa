@@ -1,1 +1,64 @@
-{}
+{
+  "kind": {
+    "debit": "خصم",
+    "credit": "ائتمان"
+  },
+  "tile": {
+    "frozen": "مجمّدة",
+    "outstanding": "المستحق",
+    "due": "مستحق {{date}}",
+    "utilized": "{{count}}% مستغل",
+    "limit": "الحد: {{limit}}",
+    "availableBalance": "الرصيد المتاح"
+  },
+  "detail": {
+    "outstandingBalance": "الرصيد المستحق",
+    "payAll": "سداد الكل",
+    "payAllTitle": "سداد الكل ({{amount}})",
+    "payChargeTitle": "سداد {{name}} ({{amount}})",
+    "amountLabel": "المبلغ ({{currency}})",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ…",
+    "confirm": "تأكيد"
+  },
+  "activity": {
+    "emptyTitle": "لا توجد مشتريات بعد",
+    "emptyDescription": "ستظهر معاملات هذه البطاقة هنا مجمعة حسب الدورة.",
+    "charges_zero": "لا مشتريات",
+    "charges_one": "عملية شراء واحدة",
+    "charges_two": "عمليتا شراء",
+    "charges_few": "{{count}} مشتريات",
+    "charges_many": "{{count}} عملية شراء",
+    "charges_other": "{{count}} عملية شراء",
+    "pay": "سداد",
+    "loadPrevious_zero": "تحميل الدورة السابقة ({{count}} متبقية)",
+    "loadPrevious_one": "تحميل الدورة السابقة ({{count}} متبقية)",
+    "loadPrevious_two": "تحميل الدورة السابقة ({{count}} متبقية)",
+    "loadPrevious_few": "تحميل الدورة السابقة ({{count}} متبقية)",
+    "loadPrevious_many": "تحميل الدورة السابقة ({{count}} متبقية)",
+    "loadPrevious_other": "تحميل الدورة السابقة ({{count}} متبقية)"
+  },
+  "addDialog": {
+    "title": "إضافة بطاقة",
+    "cardType": "نوع البطاقة",
+    "tier": "الفئة",
+    "tierPlaceholder": "مثال: بلاتينيوم",
+    "network": "الشبكة",
+    "cardDetails": "تفاصيل البطاقة",
+    "cardName": "اسم البطاقة",
+    "last4": "آخر 4 أرقام",
+    "expiryMonth": "شهر الانتهاء",
+    "expiryYear": "سنة الانتهاء",
+    "linkedAccount": "الحساب المرتبط",
+    "paymentAndLimit": "السداد والحد",
+    "drawsFrom": "يسحب من الحساب",
+    "paymentAccount": "حساب السداد",
+    "creditLimit": "حد الائتمان",
+    "creditRequired": "حد الائتمان وحساب السداد مطلوبان.",
+    "cancel": "إلغاء",
+    "saveCard": "حفظ البطاقة"
+  },
+  "bankPicker": {
+    "searchPlaceholder": "ابحث في البنوك..."
+  }
+}

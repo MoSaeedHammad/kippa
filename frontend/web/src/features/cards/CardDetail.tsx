@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -31,6 +32,7 @@ import { CardActivityList } from './components/CardActivityList';
 import { useCardPaymentState } from './hooks/useCardPaymentState';
 
 export function CardDetail({ card, onClose }: { card: Card; onClose: () => void }) {
+  const { t } = useTranslation('cards');
   const { householdId } = useAppContext();
   const formatMoney = useFormattedMoney();
   const { maskText, maskDigits } = usePrivacyMask();
@@ -65,7 +67,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
     const settlesIds = unpaid.map(c => c.txId);
     const descriptions = unpaid.map(c => c.description ?? c.txType);
     setPayAmount(Number(totalDebt.toFixed(2)));
-    setPayLabel(`Pay all (${formatMoney(totalDebt, card.currency, 2)})`);
+    setPayLabel(t('detail.payAllTitle', { amount: formatMoney(totalDebt, card.currency, 2) }));
     setPaySettlesChargeIds(settlesIds);
     setPaySettlesDescriptions(descriptions);
     setPayOpen(true);
@@ -74,7 +76,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
   const openPayOne = (charge: CardCharge) => {
     const desc = charge.description ?? charge.txType;
     setPayAmount(Number(charge.amount.toFixed(2)));
-    setPayLabel(`Pay ${desc} (${formatMoney(charge.amount, card.currency, 2)})`);
+    setPayLabel(t('detail.payChargeTitle', { name: desc, amount: formatMoney(charge.amount, card.currency, 2) }));
     setPaySettlesChargeIds([charge.txId]);
     setPaySettlesDescriptions([desc]);
     setPayOpen(true);
@@ -168,7 +170,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
                         mr: 0.5,
                       }}
                     >
-                      Debit
+                      {t('kind.debit')}
                     </Typography>
                   )}
                   <ContactlessIcon />
@@ -219,7 +221,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
                           <Money amount={totalDebt} code={card.currency} maxDigits={2} />
                         </Typography>
                         <Typography sx={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.7)', mt: 0.5 }}>
-                          Outstanding Balance
+                          {t('detail.outstandingBalance')}
                         </Typography>
                         {utilizationPct != null && (
                           <Box sx={{ mt: 1.5 }}>
@@ -238,11 +240,11 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
                             />
                             <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
                               <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)' }}>
-                                {utilizationPct}% utilized
+                                {t('tile.utilized', { count: utilizationPct })}
                               </Typography>
                               {card.creditLimit != null && (
                                 <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)' }}>
-                                  Limit: {maskDigits(`${card.currency} ${card.creditLimit.toLocaleString()}`)}
+                                  {t('tile.limit', { limit: maskDigits(`${card.currency} ${card.creditLimit.toLocaleString()}`) })}
                                 </Typography>
                               )}
                             </Stack>
@@ -263,7 +265,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
                             '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' },
                           }}
                         >
-                          Pay all
+                          {t('detail.payAll')}
                         </Button>
                       </>
                     ) : (
@@ -272,7 +274,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
                           {formattedBalance}
                         </Typography>
                         <Typography sx={{ fontSize: '10px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.7)', mt: 0.5 }}>
-                          Available Balance
+                          {t('tile.availableBalance')}
                         </Typography>
                       </>
                     )}
@@ -296,7 +298,7 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
         <DialogContent>
           <TextField
             type="number"
-            label={`Amount (${card.currency})`}
+            label={t('detail.amountLabel', { currency: card.currency })}
             value={typeof payAmount === 'number' ? maskDigits(String(payAmount)) : payAmount}
             onChange={e => setPayAmount(e.target.value ? Number(e.target.value) : '')}
             autoFocus
@@ -304,9 +306,9 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPayOpen(false)}>Cancel</Button>
+          <Button onClick={() => setPayOpen(false)}>{t('detail.cancel')}</Button>
           <Button variant="contained" disabled={payCard.isPending} onClick={handlePay}>
-            {payCard.isPending ? 'Saving…' : 'Confirm'}
+            {payCard.isPending ? t('detail.saving') : t('detail.confirm')}
           </Button>
         </DialogActions>
       </Dialog>

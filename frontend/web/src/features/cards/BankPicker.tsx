@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, TextField, Typography, Stack } from '@mui/material';
 import { BANK_LIST } from './banks/banks';
 import { BankLogo } from './CardDesign';
 
 export function BankPicker({ onPick }: { onPick: (bankId: string) => void }) {
+  const { t } = useTranslation('cards');
   const [q, setQ] = useState('');
   const filtered = BANK_LIST.filter(b => b.name.toLowerCase().includes(q.toLowerCase()));
 
@@ -12,7 +14,7 @@ export function BankPicker({ onPick }: { onPick: (bankId: string) => void }) {
       <TextField
         value={q}
         onChange={e => setQ(e.target.value)}
-        placeholder="Search banks..."
+        placeholder={t('bankPicker.searchPlaceholder')}
         size="small"
         fullWidth
       />

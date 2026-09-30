@@ -1,4 +1,5 @@
 import { Box, Typography, LinearProgress, Stack, IconButton, Chip } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { AcUnitIcon } from '@/components/AppIcon';
 import { EditIcon } from '@/components/AppIcon';
 import type { Card } from '@kippa/domain';
@@ -28,6 +29,7 @@ export function CardTile({
   const isCredit = card.kind === 'credit';
 
   const formatMoney = useFormattedMoney();
+  const { t } = useTranslation('cards');
   const { maskText, maskDigits } = usePrivacyMask();
   const formattedBalance = parentAccountBalance != null
     ? formatMoney(parentAccountBalance, card.currency, 2)
@@ -64,7 +66,7 @@ export function CardTile({
           {!card.isActive && (
             <Chip
               icon={<AcUnitIcon sx={{ fontSize: 14 }} />}
-              label="Frozen"
+              label={t('tile.frozen')}
               size="small"
               sx={{ position: 'absolute', top: 12, left: 12, bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', zIndex: 2 }}
             />
@@ -88,7 +90,7 @@ export function CardTile({
                     mr: 0.5,
                   }}
                 >
-                  Debit
+                  {t('kind.debit')}
                 </Typography>
               )}
               <ContactlessIcon />
@@ -138,11 +140,11 @@ export function CardTile({
                     </Typography>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                       <Typography sx={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#ffffff', opacity: 0.7 }}>
-                        Outstanding
+                        {t('tile.outstanding')}
                       </Typography>
                       {summary.nextDueDate && (
                         <Typography sx={{ fontSize: '9px', fontWeight: 600, color: '#ffffff', opacity: 0.8 }}>
-                          Due {summary.nextDueDate}
+                          {t('tile.due', { date: summary.nextDueDate })}
                         </Typography>
                       )}
                     </Stack>
@@ -160,11 +162,11 @@ export function CardTile({
                         />
                         <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.25 }}>
                           <Typography sx={{ fontSize: '8px', color: '#ffffff', opacity: 0.7 }}>
-                            {utilizationPct}% utilized
+                            {t('tile.utilized', { count: utilizationPct })}
                           </Typography>
                           {card.creditLimit != null && (
                             <Typography sx={{ fontSize: '8px', color: '#ffffff', opacity: 0.7 }}>
-                              Limit: {maskDigits(`${card.currency} ${card.creditLimit.toLocaleString()}`)}
+                              {t('tile.limit', { limit: maskDigits(`${card.currency} ${card.creditLimit.toLocaleString()}`) })}
                             </Typography>
                           )}
                         </Stack>
@@ -179,7 +181,7 @@ export function CardTile({
                       {formattedBalance}
                     </Typography>
                     <Typography sx={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#ffffff', opacity: 0.7 }}>
-                      Available Balance
+                      {t('tile.availableBalance')}
                     </Typography>
                   </Stack>
                 )}

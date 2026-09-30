@@ -2,6 +2,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem,
   FormControl, InputLabel, Typography, Box, IconButton, Grid, Divider, ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { ArrowBackIcon } from '@/components/AppIcon';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useAccounts, useCreateDebitCardMutation, useCreateCreditCardMutation, useHouseholdBaseCurrency } from '@/hooks/useFinance';
@@ -18,6 +19,7 @@ export function AddCardDialog({ open, preselectAccountId, onClose }: { open: boo
 }
 
 function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountId: string | null; onClose: () => void }) {
+  const { t } = useTranslation('cards');
   const { householdId } = useAppContext();
   const { data: accounts = [] } = useAccounts(householdId);
   const createDebit = useCreateDebitCardMutation();
@@ -92,7 +94,10 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
       if (kind === 'debit') {
         await createDebit.mutateAsync({ householdId, card: base, accounts });
       } else {
-        if (creditLimit === '' || !paymentAccountId) throw new Error('Credit limit and payment account are required.');
+        if (creditLimit === '' || !paymentAccountId) {
+          setError(t('addDialog.creditRequired'));
+          return;
+        }
         const nextOrder = accounts.length > 0 ? Math.max(...accounts.map(a => a.sortOrder)) + 1 : 1;
         await createCredit.mutateAsync({
           householdId,
@@ -116,7 +121,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
             <ArrowBackIcon fontSize="small" />
           </IconButton>
         )}
-        {isBankStep ? 'Add a card' : (bank?.name ?? 'Add a card')}
+        {isBankStep ? t('addDialog.title') : (bank?.name ?? t('addDialog.title'))}
       </DialogTitle>
       <DialogContent>
         {isBankStep ? (
@@ -135,7 +140,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
               {/* ── Section 1: Card Type ─────────────────────────────── */}
               <Grid size={{ xs: 12 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  Card Type
+                  {t('addDialog.cardType')}
                 </Typography>
                 <Divider sx={{ mt: 1, mb: 1 }} />
               </Grid>
@@ -165,27 +170,27 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
                     },
                   }}
                 >
-                  <ToggleButton value="debit">Debit</ToggleButton>
-                  <ToggleButton value="credit">Credit</ToggleButton>
+                  <ToggleButton value="debit">{t('kind.debit')}</ToggleButton>
+                  <ToggleButton value="credit">{t('kind.credit')}</ToggleButton>
                 </ToggleButtonGroup>
               </Grid>
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 {isOtherBank ? (
                   <TextField
-                    label="Tier"
+                    label={t('addDialog.tier')}
                     value={tierId}
                     onChange={e => setTierId(e.target.value)}
-                    placeholder="e.g. Platinum"
+                    placeholder={t('addDialog.tierPlaceholder')}
                     fullWidth
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                   />
                 ) : (
                   <FormControl fullWidth>
-                    <InputLabel>Tier</InputLabel>
+                    <InputLabel>{t('addDialog.tier')}</InputLabel>
                     <Select
                       value={tierId}
-                      label="Tier"
+                      label={t('addDialog.tier')}
                       onChange={e => handleTierChange(e.target.value as string)}
                       sx={{ borderRadius: '12px' }}
                     >
@@ -199,10 +204,10 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <FormControl fullWidth>
-                  <InputLabel>Network</InputLabel>
+                  <InputLabel>{t('addDialog.network')}</InputLabel>
                   <Select
                     value={network}
-                    label="Network"
+                    label={t('addDialog.network')}
                     onChange={e => setNetwork(e.target.value as CardNetwork)}
                     sx={{ borderRadius: '12px' }}
                   >
@@ -218,14 +223,14 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
               {/* ── Section 2: Card Details ──────────────────────────── */}
               <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  Card Details
+                  {t('addDialog.cardDetails')}
                 </Typography>
                 <Divider sx={{ mt: 1, mb: 1 }} />
               </Grid>
 
               <Grid size={{ xs: 12 }}>
                 <TextField
-                  label="Card name"
+                  label={t('addDialog.cardName')}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   fullWidth
@@ -235,7 +240,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
 
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
-                  label="Last 4 digits"
+                  label={t('addDialog.last4')}
                   value={last4}
                   onChange={e => setLast4(e.target.value.slice(0, 4))}
                   fullWidth
@@ -245,7 +250,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
 
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
-                  label="Expiry month"
+                  label={t('addDialog.expiryMonth')}
                   type="number"
                   value={expiryMonth}
                   onChange={e => setExpiryMonth(e.target.value ? Number(e.target.value) : '')}
@@ -256,7 +261,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
 
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
-                  label="Expiry year"
+                  label={t('addDialog.expiryYear')}
                   type="number"
                   value={expiryYear}
                   onChange={e => setExpiryYear(e.target.value ? Number(e.target.value) : '')}
@@ -268,17 +273,17 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
               {/* ── Section 3: Account ───────────────────────────────── */}
               <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  {kind === 'debit' ? 'Linked Account' : 'Payment & Limit'}
+                  {kind === 'debit' ? t('addDialog.linkedAccount') : t('addDialog.paymentAndLimit')}
                 </Typography>
                 <Divider sx={{ mt: 1, mb: 1 }} />
               </Grid>
 
               <Grid size={{ xs: 12, sm: kind === 'credit' ? 6 : 12 }}>
                 <FormControl fullWidth>
-                  <InputLabel>{kind === 'debit' ? 'Draws from account' : 'Payment account'}</InputLabel>
+                  <InputLabel>{kind === 'debit' ? t('addDialog.drawsFrom') : t('addDialog.paymentAccount')}</InputLabel>
                   <Select
                     value={kind === 'debit' ? parentAccountId : paymentAccountId}
-                    label={kind === 'debit' ? 'Draws from account' : 'Payment account'}
+                    label={kind === 'debit' ? t('addDialog.drawsFrom') : t('addDialog.paymentAccount')}
                     onChange={e => {
                       const id = e.target.value as string;
                       const acc = accounts.find(a => a.id === id);
@@ -298,7 +303,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
               {kind === 'credit' && (
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
-                    label="Credit limit"
+                    label={t('addDialog.creditLimit')}
                     type="number"
                     value={creditLimit}
                     onChange={e => setCreditLimit(e.target.value ? Number(e.target.value) : '')}
@@ -318,12 +323,12 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={onClose} color="inherit">Cancel</Button>
+        <Button onClick={onClose} color="inherit">{t('addDialog.cancel')}</Button>
         {!isBankStep && (
           <Button variant="contained" onClick={handleSave}
             disabled={!name.trim() || (kind === 'debit' ? !parentAccountId : !paymentAccountId)}
             sx={{ borderRadius: '12px', boxShadow: 'none' }}>
-            Save card
+            {t('addDialog.saveCard')}
           </Button>
         )}
       </DialogActions>

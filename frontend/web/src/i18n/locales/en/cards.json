@@ -1,1 +1,64 @@
-{}
+{
+  "kind": {
+    "debit": "Debit",
+    "credit": "Credit"
+  },
+  "tile": {
+    "frozen": "Frozen",
+    "outstanding": "Outstanding",
+    "due": "Due {{date}}",
+    "utilized": "{{count}}% utilized",
+    "limit": "Limit: {{limit}}",
+    "availableBalance": "Available Balance"
+  },
+  "detail": {
+    "outstandingBalance": "Outstanding Balance",
+    "payAll": "Pay all",
+    "payAllTitle": "Pay all ({{amount}})",
+    "payChargeTitle": "Pay {{name}} ({{amount}})",
+    "amountLabel": "Amount ({{currency}})",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "confirm": "Confirm"
+  },
+  "activity": {
+    "emptyTitle": "No charges yet",
+    "emptyDescription": "Transactions on this card will appear here grouped by cycle.",
+    "charges_zero": "{{count}} charges",
+    "charges_one": "{{count}} charge",
+    "charges_two": "{{count}} charges",
+    "charges_few": "{{count}} charges",
+    "charges_many": "{{count}} charges",
+    "charges_other": "{{count}} charges",
+    "pay": "Pay",
+    "loadPrevious_zero": "Load previous cycle ({{count}} remaining)",
+    "loadPrevious_one": "Load previous cycle ({{count}} remaining)",
+    "loadPrevious_two": "Load previous cycle ({{count}} remaining)",
+    "loadPrevious_few": "Load previous cycle ({{count}} remaining)",
+    "loadPrevious_many": "Load previous cycle ({{count}} remaining)",
+    "loadPrevious_other": "Load previous cycle ({{count}} remaining)"
+  },
+  "addDialog": {
+    "title": "Add a card",
+    "cardType": "Card Type",
+    "tier": "Tier",
+    "tierPlaceholder": "e.g. Platinum",
+    "network": "Network",
+    "cardDetails": "Card Details",
+    "cardName": "Card name",
+    "last4": "Last 4 digits",
+    "expiryMonth": "Expiry month",
+    "expiryYear": "Expiry year",
+    "linkedAccount": "Linked Account",
+    "paymentAndLimit": "Payment & Limit",
+    "drawsFrom": "Draws from account",
+    "paymentAccount": "Payment account",
+    "creditLimit": "Credit limit",
+    "creditRequired": "Credit limit and payment account are required.",
+    "cancel": "Cancel",
+    "saveCard": "Save card"
+  },
+  "bankPicker": {
+    "searchPlaceholder": "Search banks..."
+  }
+}
