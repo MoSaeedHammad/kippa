@@ -1,1 +1,58 @@
-{}
+{
+  "bell": {
+    "noActivity": "لا يوجد نشاط جديد",
+    "newActivity_zero": "لا يوجد نشاط جديد في الفضاء",
+    "newActivity_one": "نشاط واحد جديد في الفضاء",
+    "newActivity_two": "نشاطان جديدان في الفضاء",
+    "newActivity_few": "{{count}} أنشطة جديدة في الفضاء",
+    "newActivity_many": "{{count}} نشاطًا جديدًا في الفضاء",
+    "newActivity_other": "{{count}} نشاط جديد في الفضاء"
+  },
+  "page": {
+    "title": "سجل النشاط",
+    "subtitle": "خط زمني فوري لكل ما يحدث في فضائك"
+  },
+  "empty": {
+    "title": "لا يوجد نشاط بعد",
+    "description": "الإجراءات التي تقوم بها أنت وفضاؤك — تسجيل المصروفات وإنشاء الدورات وتحديث الحسابات — ستظهر هنا في الوقت الفعلي."
+  },
+  "searchPlaceholder": "ابحث في النشاط...",
+  "filters": {
+    "action": "الإجراء",
+    "allActions": "جميع الإجراءات",
+    "member": "العضو",
+    "allMembers": "جميع الأعضاء"
+  },
+  "actionGroups": {
+    "transactions": "المعاملات",
+    "accounts": "الحسابات",
+    "categories": "الفئات",
+    "statements": "الكشوفات",
+    "allocations": "التخصيصات",
+    "reconciliation": "المطابقة",
+    "spaces": "الفضاءات",
+    "settings": "الإعدادات"
+  },
+  "table": {
+    "type": "النوع",
+    "activity": "النشاط",
+    "member": "العضو",
+    "when": "الوقت"
+  },
+  "noMatching": {
+    "title": "لا يوجد نشاط مطابق",
+    "description": "جرّب مصطلح بحث آخر أو وسّع عوامل تصفية الإجراء والعضو المحددين."
+  },
+  "loadMore_zero": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_one": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_two": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_few": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_many": "تحميل المزيد ({{count}} متبقٍ)",
+  "loadMore_other": "تحميل المزيد ({{count}} متبقٍ)",
+  "time": {
+    "justNow": "الآن",
+    "minutesAgo": "قبل {{count}} د",
+    "hoursAgo": "قبل {{count}} س",
+    "daysAgo": "قبل {{count}} ي"
+  }
+}

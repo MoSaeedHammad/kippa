@@ -1,4 +1,5 @@
 import { IconButton, Badge, Tooltip } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { NotificationsIcon } from '@/components/AppIcon';
 
 import { useUnreadActivityCount } from '@/hooks/useFinance';
@@ -14,10 +15,11 @@ interface ActivityBellProps {
  * opened the activity feed.
  */
 export function ActivityBell({ onClick }: ActivityBellProps) {
+  const { t } = useTranslation('activity');
   const { userProfile, householdId } = useAppContext();
   const { unreadCount } = useUnreadActivityCount(householdId, userProfile?.uid);
 
-  const label = unreadCount > 0 ? `${unreadCount} new space activit${unreadCount === 1 ? 'y' : 'ies'}` : 'No new activity';
+  const label = unreadCount > 0 ? t('bell.newActivity', { count: unreadCount }) : t('bell.noActivity');
 
   return (
     <Tooltip title={label}>

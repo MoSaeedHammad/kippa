@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Box,
@@ -46,6 +47,7 @@ import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { AuditAction, AuditLogEntry } from '@kippa/domain';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
+import type activityEn from '@/i18n/locales/en/activity.json';
 
 interface ActionVisual {
   Icon: React.ComponentType<{ sx?: object }>;
@@ -93,29 +95,35 @@ function getActionVisual(action: AuditAction, theme: any): ActionVisual {
  * Groups raw AuditAction values into the filter options shown in the UI.
  * Mirrors the per-case icon mapping in getActionVisual above.
  */
-const ACTION_GROUPS: { label: string; actions: AuditAction[] }[] = [
-  { label: 'Transactions', actions: ['transaction_created', 'transaction_updated', 'transaction_voided'] },
-  { label: 'Accounts', actions: ['account_created', 'account_updated'] },
-  { label: 'Categories', actions: ['category_created', 'category_updated'] },
-  { label: 'Statements', actions: ['cycle_created', 'cycle_status_changed'] },
-  { label: 'Allocations', actions: ['allocation_saved', 'allocations_batch_saved', 'expected_income_saved'] },
-  { label: 'Reconciliation', actions: ['reconciliation_created'] },
-  { label: 'Spaces', actions: ['household_joined', 'household_left'] },
-  { label: 'Settings', actions: ['notification_settings_updated'] },
+type ActionGroupLabelKey = keyof typeof activityEn['actionGroups'];
+
+/**
+ * Groups raw AuditAction values into the filter options shown in the UI.
+ * Mirrors the per-case icon mapping in getActionVisual above.
+ */
+const ACTION_GROUPS: { labelKey: ActionGroupLabelKey; actions: AuditAction[] }[] = [
+  { labelKey: 'transactions', actions: ['transaction_created', 'transaction_updated', 'transaction_voided'] },
+  { labelKey: 'accounts', actions: ['account_created', 'account_updated'] },
+  { labelKey: 'categories', actions: ['category_created', 'category_updated'] },
+  { labelKey: 'statements', actions: ['cycle_created', 'cycle_status_changed'] },
+  { labelKey: 'allocations', actions: ['allocation_saved', 'allocations_batch_saved', 'expected_income_saved'] },
+  { labelKey: 'reconciliation', actions: ['reconciliation_created'] },
+  { labelKey: 'spaces', actions: ['household_joined', 'household_left'] },
+  { labelKey: 'settings', actions: ['notification_settings_updated'] },
 ];
 
 /** Compact relative timestamp, e.g. "2m ago", "3h ago", "Just now". */
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: (key: 'time.justNow' | 'time.minutesAgo' | 'time.hoursAgo' | 'time.daysAgo', opts?: { count: number }) => string): string {
   const then = new Date(iso).getTime();
   const diffMs = Date.now() - then;
   const sec = Math.round(diffMs / 1000);
-  if (sec < 45) return 'Just now';
+  if (sec < 45) return t('time.justNow');
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return t('time.minutesAgo', { count: min });
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return t('time.hoursAgo', { count: hr });
   const days = Math.round(hr / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t('time.daysAgo', { count: days });
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
@@ -128,6 +136,7 @@ function initials(name: string): string {
 
 function AuditLogRow({ entry }: { entry: AuditLogEntry }) {
   const theme = useTheme();
+  const { t } = useTranslation('activity');
   const { maskDigits } = usePrivacyMask();
   const { Icon, color, bg } = getActionVisual(entry.action, theme);
   return (
@@ -170,13 +179,14 @@ function AuditLogRow({ entry }: { entry: AuditLogEntry }) {
         </Stack>
       </TableCell>
       <TableCell align="right" sx={{ width: { xs: 100, sm: 140 }, py: 1.25 }}>
-        <Typography noWrap sx={{ color: 'text.secondary', fontSize: 12, fontWeight: 650 }}>{relativeTime(entry.createdAt)}</Typography>
+        <Typography noWrap sx={{ color: 'text.secondary', fontSize: 12, fontWeight: 650 }}>{relativeTime(entry.createdAt, t)}</Typography>
       </TableCell>
     </TableRow>
   );
 }
 
 export function AuditLog() {
+  const { t } = useTranslation('activity');
   const { householdId, userProfile } = useAppContext();
   const { entries, isLoading } = useAuditLog(householdId, 200);
   const { markSeen } = useUnreadActivityCount(householdId, userProfile?.uid);
@@ -221,7 +231,7 @@ export function AuditLog() {
       // 2. Action group
       let actionMatch = true;
       if (selectedAction !== 'all') {
-        const group = ACTION_GROUPS.find((g) => g.label === selectedAction);
+        const group = ACTION_GROUPS.find((g) => g.labelKey === selectedAction);
         actionMatch = !!group && group.actions.includes(entry.action);
       }
 
@@ -241,8 +251,8 @@ export function AuditLog() {
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="Activity Log"
-          subtitle="A real-time timeline of everything happening in your space"
+          title={t('page.title')}
+          subtitle={t('page.subtitle')}
         />
 
         {isLoading ? (
@@ -265,15 +275,15 @@ export function AuditLog() {
           <Card>
             <EmptyLayout
               icon={<HistoryIcon />}
-              title="No activity yet"
-              description="Actions you and your space take—logging expenses, creating cycles, and updating accounts—will appear here in real time."
+              title={t('empty.title')}
+              description={t('empty.description')}
             />
           </Card>
         ) : (
           <>
             <Stack spacing={1.5}>
               <TextField
-                placeholder="Search activity..."
+                placeholder={t('searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 fullWidth
@@ -293,16 +303,16 @@ export function AuditLog() {
               />
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5 }}>
                 <FormControl fullWidth>
-                  <InputLabel id="activity-action-label">Action</InputLabel>
-                  <Select labelId="activity-action-label" value={selectedAction} label="Action" onChange={(e) => handleActionChange(e.target.value)}>
-                    <MenuItem value="all">All Actions</MenuItem>
-                    {ACTION_GROUPS.map((g) => <MenuItem key={g.label} value={g.label}>{g.label}</MenuItem>)}
+                  <InputLabel id="activity-action-label">{t('filters.action')}</InputLabel>
+                  <Select labelId="activity-action-label" value={selectedAction} label={t('filters.action')} onChange={(e) => handleActionChange(e.target.value)}>
+                    <MenuItem value="all">{t('filters.allActions')}</MenuItem>
+                    {ACTION_GROUPS.map((g) => <MenuItem key={g.labelKey} value={g.labelKey}>{t(`actionGroups.${g.labelKey}`)}</MenuItem>)}
                   </Select>
                 </FormControl>
                 <FormControl fullWidth>
-                  <InputLabel id="activity-member-label">Member</InputLabel>
-                  <Select labelId="activity-member-label" value={selectedMember} label="Member" onChange={(e) => handleMemberChange(e.target.value)}>
-                    <MenuItem value="all">All Members</MenuItem>
+                  <InputLabel id="activity-member-label">{t('filters.member')}</InputLabel>
+                  <Select labelId="activity-member-label" value={selectedMember} label={t('filters.member')} onChange={(e) => handleMemberChange(e.target.value)}>
+                    <MenuItem value="all">{t('filters.allMembers')}</MenuItem>
                     {members.map((m) => <MenuItem key={m.userId} value={m.userId}>{m.userDisplayName}</MenuItem>)}
                   </Select>
                 </FormControl>
@@ -313,10 +323,10 @@ export function AuditLog() {
               <Table sx={{ tableLayout: 'fixed' }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell align="center" sx={{ width: 64, py: 1.75 }}>Type</TableCell>
-                    <TableCell sx={{ py: 1.75 }}>Activity</TableCell>
-                    <TableCell sx={{ width: 220, py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>Member</TableCell>
-                    <TableCell align="right" sx={{ width: { xs: 100, sm: 140 }, py: 1.75 }}>When</TableCell>
+                    <TableCell align="center" sx={{ width: 64, py: 1.75 }}>{t('table.type')}</TableCell>
+                    <TableCell sx={{ py: 1.75 }}>{t('table.activity')}</TableCell>
+                    <TableCell sx={{ width: 220, py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.member')}</TableCell>
+                    <TableCell align="right" sx={{ width: { xs: 100, sm: 140 }, py: 1.75 }}>{t('table.when')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -325,8 +335,8 @@ export function AuditLog() {
                       <TableCell colSpan={4} sx={{ p: 2, borderBottom: 0 }}>
                         <EmptyLayout
                           icon={<SearchIcon />}
-                          title="No matching activity"
-                          description="Try another search term or broaden the selected action and member filters."
+                          title={t('noMatching.title')}
+                          description={t('noMatching.description')}
                         />
                       </TableCell>
                     </TableRow>
@@ -336,7 +346,7 @@ export function AuditLog() {
               {visibleCount < filteredEntries.length && (
                 <Box sx={{ textAlign: 'center', py: 1.5 }}>
                   <Button size="small" onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}>
-                    Load more ({filteredEntries.length - visibleCount} remaining)
+                    {t('loadMore', { count: filteredEntries.length - visibleCount })}
                   </Button>
                 </Box>
               )}

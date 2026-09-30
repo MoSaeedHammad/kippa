@@ -1,1 +1,58 @@
-{}
+{
+  "bell": {
+    "noActivity": "No new activity",
+    "newActivity_zero": "{{count}} new space activities",
+    "newActivity_one": "{{count}} new space activity",
+    "newActivity_two": "{{count}} new space activities",
+    "newActivity_few": "{{count}} new space activities",
+    "newActivity_many": "{{count}} new space activities",
+    "newActivity_other": "{{count}} new space activities"
+  },
+  "page": {
+    "title": "Activity Log",
+    "subtitle": "A real-time timeline of everything happening in your space"
+  },
+  "empty": {
+    "title": "No activity yet",
+    "description": "Actions you and your space take—logging expenses, creating cycles, and updating accounts—will appear here in real time."
+  },
+  "searchPlaceholder": "Search activity...",
+  "filters": {
+    "action": "Action",
+    "allActions": "All Actions",
+    "member": "Member",
+    "allMembers": "All Members"
+  },
+  "actionGroups": {
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "statements": "Statements",
+    "allocations": "Allocations",
+    "reconciliation": "Reconciliation",
+    "spaces": "Spaces",
+    "settings": "Settings"
+  },
+  "table": {
+    "type": "Type",
+    "activity": "Activity",
+    "member": "Member",
+    "when": "When"
+  },
+  "noMatching": {
+    "title": "No matching activity",
+    "description": "Try another search term or broaden the selected action and member filters."
+  },
+  "loadMore_zero": "Load more ({{count}} remaining)",
+  "loadMore_one": "Load more ({{count}} remaining)",
+  "loadMore_two": "Load more ({{count}} remaining)",
+  "loadMore_few": "Load more ({{count}} remaining)",
+  "loadMore_many": "Load more ({{count}} remaining)",
+  "loadMore_other": "Load more ({{count}} remaining)",
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  }
+}
