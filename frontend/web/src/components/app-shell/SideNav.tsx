@@ -29,7 +29,7 @@ import {
   SwitchAccountIcon,
 } from '@/components/AppIcon';
 
-type NavKey = keyof appShellEn['nav'];
+type NavKey = keyof typeof appShellEn['nav'];
 type NavChild = { labelKey: NavKey; path: string };
 type NavItem = { labelKey: NavKey; path: string; icon: typeof DashboardIcon; children?: NavChild[] };
 
@@ -111,14 +111,14 @@ export function SideNav() {
 
   const matches = (item: NavItem) => {
     const normalizedQuery = query.trim().toLowerCase();
-    return t(item.labelKey).toLowerCase().includes(normalizedQuery)
-      || item.children?.some(child => t(child.labelKey).toLowerCase().includes(normalizedQuery));
+    return t(`nav.${item.labelKey}`).toLowerCase().includes(normalizedQuery)
+      || item.children?.some(child => t(`nav.${child.labelKey}`).toLowerCase().includes(normalizedQuery));
   };
   const visibleMenu = navForLevel.filter(matches);
 
   const renderItem = (item: NavItem) => {
     const Icon = item.icon;
-    const label = t(item.labelKey);
+    const label = t(`nav.${item.labelKey}`);
     const active = pathname === item.path || Boolean(item.children?.some(child => pathname === child.path.split('?')[0]));
     const hasChildren = Boolean(item.children?.length);
     const isExpanded = hasChildren && ((expanded[item.path] ?? active) || query.trim().length > 0);
@@ -188,7 +188,7 @@ export function SideNav() {
                     '&.Mui-selected:hover': { bgcolor: 'action.hover' },
                   }}
                 >
-                  <ListItemText primary={t(child.labelKey)} slotProps={{ primary: { fontSize: 12.5, lineHeight: 1.3, fontWeight: childActive ? 700 : 500 } }} />
+                  <ListItemText primary={t(`nav.${child.labelKey}`)} slotProps={{ primary: { fontSize: 12.5, lineHeight: 1.3, fontWeight: childActive ? 700 : 500 } }} />
                 </ListItemButton>
               );
             })}

@@ -64,8 +64,8 @@ const sectionHeaderStyle = {
   display: 'block',
 };
 
-type SectionKey = keyof appShellEn['sections'];
-type NavKey = keyof appShellEn['nav'];
+type SectionKey = keyof typeof appShellEn['sections'];
+type NavKey = keyof typeof appShellEn['nav'];
 
 const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavKey; icon: ReactNode; path: string }> }> = [
   {
@@ -204,7 +204,7 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
                 }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={t(item.labelKey)} />
+                <ListItemText primary={t(`nav.${item.labelKey}`)} />
               </MenuItem>
             );
           })}

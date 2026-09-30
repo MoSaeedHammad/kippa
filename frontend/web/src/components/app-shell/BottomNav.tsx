@@ -13,7 +13,7 @@ import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePendingFinancialMessages } from '@/hooks/useFinance';
 
-type NavKey = keyof appShellEn['nav'];
+type NavKey = keyof typeof appShellEn['nav'];
 
 interface NavItem {
   labelKey: NavKey;
@@ -74,13 +74,14 @@ export function BottomNav() {
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.path;
     const isPending = item.path === '/pending';
+    const label = t(`nav.${item.labelKey}`);
     return (
       <Box
         component="button"
         type="button"
         key={item.path}
         onClick={() => navigate(item.path)}
-        aria-label={isPending && pendingCount > 0 ? t('bottomNav.pendingAria', { count: pendingCount }) : t(item.labelKey)}
+        aria-label={isPending && pendingCount > 0 ? t('bottomNav.pendingAria', { count: pendingCount }) : label}
         sx={{
           border: 0,
           bgcolor: 'transparent',
@@ -134,7 +135,7 @@ export function BottomNav() {
             whiteSpace: 'nowrap',
           }}
         >
-          {t(item.labelKey)}
+          {label}
         </Typography>
       </Box>
     );

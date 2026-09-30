@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b",
     "lint": "eslint src",
     "deploy": "npm run build && firebase deploy",
     "deploy:firebase": "firebase deploy --project YOUR_FIREBASE_PROJECT_ID",

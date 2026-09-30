@@ -12,7 +12,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { useLoanReminders } from '@/features/loans/useLoanReminders';
 
-type PageTitleKey = keyof appShellEn['pageTitles'];
+type PageTitleKey = keyof typeof appShellEn['pageTitles'];
 
 const PAGE_TITLES: Record<string, PageTitleKey> = {
   '/': 'dashboard',
