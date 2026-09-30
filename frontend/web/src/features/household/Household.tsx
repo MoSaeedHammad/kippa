@@ -1,4 +1,5 @@
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
@@ -38,6 +39,7 @@ import { useHouseholdUi } from './hooks/useHouseholdUi';
 
 export function Household() {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('household');
   const {
     userProfile,
     householdId,
@@ -59,7 +61,7 @@ export function Household() {
   const handleCopyHouseholdId = (id: string) => {
     navigator.clipboard.writeText(id);
     setCopied(true);
-    enqueueSnackbar('Invite ID copied to clipboard!', { variant: 'success' });
+    enqueueSnackbar(t('toasts.inviteIdCopied'), { variant: 'success' });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -67,7 +69,7 @@ export function Household() {
     const link = `${window.location.origin}/join?invite=${id}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
-    enqueueSnackbar('Invite link copied — they sign in and request to join; you pick their access level.', { variant: 'success' });
+    enqueueSnackbar(t('toasts.inviteLinkCopied'), { variant: 'success' });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -75,9 +77,9 @@ export function Household() {
     setActionLoading(true);
     try {
       await switchHousehold(id);
-      enqueueSnackbar('Switched space successfully!', { variant: 'success' });
+      enqueueSnackbar(t('toasts.switched'), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to switch space.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.switchFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -85,16 +87,16 @@ export function Household() {
 
   const handleCreateHousehold = async () => {
     if (!newHouseholdName.trim()) {
-      enqueueSnackbar('Please enter a space name', { variant: 'warning' });
+      enqueueSnackbar(t('toasts.nameRequired'), { variant: 'warning' });
       return;
     }
     setActionLoading(true);
     try {
       const newHh = await createHousehold(newHouseholdName.trim());
       setNewHouseholdName('');
-      enqueueSnackbar(`Shared account "${newHh.name}" created and set as active!`, { variant: 'success' });
+      enqueueSnackbar(t('toasts.created', { name: newHh.name }), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to create space', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.createFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -102,15 +104,15 @@ export function Household() {
 
   const handleJoinHousehold = async () => {
     if (!householdIdToJoin.trim()) {
-      enqueueSnackbar('Please enter a valid Invite ID', { variant: 'warning' });
+      enqueueSnackbar(t('toasts.inviteIdRequired'), { variant: 'warning' });
       return;
     }
     setActionLoading(true);
     try {
       await requestToJoinHousehold(householdIdToJoin.trim());
-      enqueueSnackbar('Request sent — the space owner will review it.', { variant: 'success' });
+      enqueueSnackbar(t('toasts.requestSent'), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to request join. Make sure the ID is correct.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.requestJoinFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -121,9 +123,9 @@ export function Household() {
     setActionLoading(true);
     try {
       await decideJoinRequest(householdId, requesterUid, decision, accessLevel);
-      enqueueSnackbar(decision === 'approve' ? 'Request approved.' : 'Request rejected.', { variant: 'success' });
+      enqueueSnackbar(decision === 'approve' ? t('toasts.requestApproved') : t('toasts.requestRejected'), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to decide request.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.decideFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -137,12 +139,12 @@ export function Household() {
       await queryClient.invalidateQueries({ queryKey: ['householdMembers', householdId] });
       enqueueSnackbar(
         accessLevel === 'full'
-          ? 'Member now has full access.'
-          : 'Member now sees the shared balance only.',
+          ? t('toasts.nowFullAccess')
+          : t('toasts.nowSharedOnly'),
         { variant: 'success' },
       );
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to update access level.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.accessLevelFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -161,10 +163,10 @@ export function Household() {
     setActionLoading(true);
     try {
       await leaveHousehold(householdToLeave.id);
-      enqueueSnackbar(`Successfully left space "${householdToLeave.name}"`, { variant: 'success' });
+      enqueueSnackbar(t('toasts.leftSpace', { name: householdToLeave.name }), { variant: 'success' });
       handleCloseLeaveConfirm();
     } catch (err: any) {
-      enqueueSnackbar(err.message || 'Failed to leave space.', { variant: 'error' });
+      enqueueSnackbar(err.message || t('toasts.leaveFailed'), { variant: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -183,9 +185,9 @@ export function Household() {
     try {
       await ledgerLib.updateHouseholdBaseCurrency(householdId, newCurrency);
       await queryClient.invalidateQueries({ queryKey: ['userHouseholds'] });
-      enqueueSnackbar(`Base currency updated to ${newCurrency}`, { variant: 'success' });
+      enqueueSnackbar(t('toasts.baseCurrencyUpdated', { currency: newCurrency }), { variant: 'success' });
     } catch (err: any) {
-      enqueueSnackbar(err?.message || 'Failed to update base currency', { variant: 'error' });
+      enqueueSnackbar(err?.message || t('toasts.baseCurrencyFailed'), { variant: 'error' });
     } finally {
       setBaseCurrencyLoading(false);
     }
@@ -195,8 +197,8 @@ export function Household() {
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={3}>
         <PageHeader
-          title="My space"
-          subtitle="Manage members, shared access, and the spaces you belong to."
+          title={t('page.title')}
+          subtitle={t('page.subtitle')}
         />
 
         <Grid container spacing={3} alignItems="stretch">
@@ -209,10 +211,10 @@ export function Household() {
                 <CardHeading
                   icon={<HomeIcon variant="Bulk" />}
                   title={activeHh.name}
-                  subtitle={`${activeHh.baseCurrency} (Base Currency) • ${userProfile!.role === 'owner' ? 'Owner' : 'Member'}`}
+                  subtitle={`${activeHh.baseCurrency} (${t('spotlight.baseCurrencyTag')}) • ${userProfile!.role === 'owner' ? t('roles.owner') : t('roles.member')}`}
                   trailing={
                     <Chip
-                      label="Active"
+                      label={t('spotlight.active')}
                       color="primary"
                       size="small"
                       icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
@@ -224,7 +226,7 @@ export function Household() {
                 {/* Base Currency Setting */}
                 <Box sx={{ mt: 1 }}>
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
-                    Base Currency
+                    {t('spotlight.baseCurrencyLabel')}
                   </Typography>
                   <CurrencySelect
                     labelId="hh-base-currency-label"
@@ -233,7 +235,7 @@ export function Household() {
                   />
                   {baseCurrencyLoading && (
                     <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
-                      Saving…
+                      {t('spotlight.saving')}
                     </Typography>
                   )}
                 </Box>
@@ -242,10 +244,10 @@ export function Household() {
 
                 <Stack spacing={1}>
                   <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Invite
+                    {t('spotlight.inviteHeading')}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px' }}>
-                    Share the link and they request to join — you pick what they can see (Full or Shared balance only) when approving.
+                    {t('spotlight.inviteHelp')}
                   </Typography>
                   <Box sx={{
                     display: 'flex',
@@ -258,7 +260,7 @@ export function Household() {
                     gap: 1
                   }}>
                     <Typography variant="caption" sx={{ color: 'text.primary', py: 0.5 }}>
-                      Invite link — opens the join screen with this shared account pre-filled
+                      {t('spotlight.inviteLinkCaption')}
                     </Typography>
                     <Button
                       size="small"
@@ -268,7 +270,7 @@ export function Household() {
                       color={copied ? "success" : "primary"}
                       sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
                     >
-                      {copied ? "Copied!" : "Copy invite link"}
+                      {copied ? t('spotlight.copied') : t('spotlight.copyInviteLink')}
                     </Button>
                   </Box>
                   <Box sx={{
@@ -292,7 +294,7 @@ export function Household() {
                       color="primary"
                       sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
                     >
-                      Copy ID
+                      {t('spotlight.copyId')}
                     </Button>
                   </Box>
                 </Stack>
@@ -327,24 +329,24 @@ export function Household() {
           <Grid size={{ xs: 12, md: 6 }}>
               <Card>
                 <CardContent>
-                  <CardHeading icon={<GroupAddIcon variant="Bulk" />} title="Manage shared accounts" subtitle="Create a new space or join someone else's." />
+                  <CardHeading icon={<GroupAddIcon variant="Bulk" />} title={t('manageCard.title')} subtitle={t('manageCard.subtitle')} />
                 </CardContent>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)} variant="fullWidth">
-                    <Tab icon={<AddHomeIcon sx={{ fontSize: '18px' }} />} iconPosition="start" label="Create" />
-                    <Tab icon={<GroupAddIcon sx={{ fontSize: '18px' }} />} iconPosition="start" label="Join" />
+                    <Tab icon={<AddHomeIcon sx={{ fontSize: '18px' }} />} iconPosition="start" label={t('manageCard.createTab')} />
+                    <Tab icon={<GroupAddIcon sx={{ fontSize: '18px' }} />} iconPosition="start" label={t('manageCard.joinTab')} />
                   </Tabs>
                 </Box>
                 <CardContent>
                   {tabValue === 0 && (
                     <Stack spacing={2}>
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                        Start a separate, brand-new shared account database container.
+                        {t('manageCard.createHelp')}
                       </Typography>
                       <TextField
                         fullWidth
-                        label="Shared account name"
-                        placeholder="e.g. Vacation home"
+                        label={t('manageCard.nameLabel')}
+                        placeholder={t('manageCard.namePlaceholder')}
                         value={newHouseholdName}
                         onChange={e => setNewHouseholdName(e.target.value)}
                         disabled={actionLoading}
@@ -355,19 +357,19 @@ export function Household() {
                         onClick={handleCreateHousehold}
                         disabled={actionLoading}
                       >
-                        Create
+                        {t('manageCard.createButton')}
                       </Button>
                     </Stack>
                   )}
                   {tabValue === 1 && (
                     <Stack spacing={2}>
                       <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                        Paste an Invite ID from a shared account owner. They'll need to approve your request before you can join.
+                        {t('manageCard.joinHelp')}
                       </Typography>
                       <TextField
                         fullWidth
-                        label="Invite ID"
-                        placeholder="Paste UUID here"
+                        label={t('manageCard.inviteIdLabel')}
+                        placeholder={t('manageCard.inviteIdPlaceholder')}
                         value={householdIdToJoin}
                         onChange={e => setHouseholdIdToJoin(e.target.value)}
                         disabled={actionLoading}
@@ -379,18 +381,18 @@ export function Household() {
                           onClick={handleJoinHousehold}
                           disabled={actionLoading}
                         >
-                          Request to Join
+                          {t('manageCard.requestToJoin')}
                         </Button>
                       )}
                       {outgoingStatus === 'pending' && (
                         <Alert severity="info" icon={<HourglassEmptyIcon />}>
-                          Request pending — waiting for the owner to approve.
+                          {t('manageCard.requestPending')}
                         </Alert>
                       )}
                       {outgoingStatus === 'rejected' && (
                         <>
                           <Alert severity="error">
-                            Your request was declined by the owner.
+                            {t('manageCard.requestDeclined')}
                           </Alert>
                           <Button
                             fullWidth
@@ -398,14 +400,14 @@ export function Household() {
                             onClick={handleJoinHousehold}
                             disabled={actionLoading}
                           >
-                            Request Again
+                            {t('manageCard.requestAgain')}
                           </Button>
                         </>
                       )}
                       {outgoingStatus === 'approved' && (
                         <>
                           <Alert severity="success" icon={<CheckCircleIcon />}>
-                            You're approved!
+                            {t('manageCard.approved')}
                           </Alert>
                           <Button
                             fullWidth
@@ -413,7 +415,7 @@ export function Household() {
                             onClick={() => handleSwitchHousehold(householdIdToJoin.trim())}
                             disabled={householdIdToJoin.trim() === householdId || actionLoading}
                           >
-                            Switch to this shared account
+                            {t('manageCard.switchToAccount')}
                           </Button>
                         </>
                       )}

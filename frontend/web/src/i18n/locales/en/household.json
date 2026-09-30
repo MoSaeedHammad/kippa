@@ -1,1 +1,112 @@
-{}
+{
+  "page": {
+    "title": "My space",
+    "subtitle": "Manage members, shared access, and the spaces you belong to."
+  },
+  "spotlight": {
+    "baseCurrencyTag": "Base Currency",
+    "active": "Active",
+    "baseCurrencyLabel": "Base Currency",
+    "saving": "Saving…",
+    "inviteHeading": "Invite",
+    "inviteHelp": "Share the link and they request to join — you pick what they can see (Full or Shared balance only) when approving.",
+    "inviteLinkCaption": "Invite link — opens the join screen with this shared account pre-filled",
+    "copied": "Copied!",
+    "copyInviteLink": "Copy invite link",
+    "copyId": "Copy ID"
+  },
+  "roles": {
+    "owner": "Owner",
+    "member": "Member"
+  },
+  "manageCard": {
+    "title": "Manage shared accounts",
+    "subtitle": "Create a new space or join someone else's.",
+    "createTab": "Create",
+    "joinTab": "Join",
+    "createHelp": "Start a separate, brand-new shared account database container.",
+    "nameLabel": "Shared account name",
+    "namePlaceholder": "e.g. Vacation home",
+    "createButton": "Create",
+    "joinHelp": "Paste an Invite ID from a shared account owner. They’ll need to approve your request before you can join.",
+    "inviteIdLabel": "Invite ID",
+    "inviteIdPlaceholder": "Paste UUID here",
+    "requestToJoin": "Request to Join",
+    "requestPending": "Request pending — waiting for the owner to approve.",
+    "requestDeclined": "Your request was declined by the owner.",
+    "requestAgain": "Request Again",
+    "approved": "You’re approved!",
+    "switchToAccount": "Switch to this shared account"
+  },
+  "membersCard": {
+    "title": "Members",
+    "connected_zero": "{{count}} people connected to this space",
+    "connected_one": "{{count}} person connected to this space",
+    "connected_two": "{{count}} people connected to this space",
+    "connected_few": "{{count}} people connected to this space",
+    "connected_many": "{{count}} people connected to this space",
+    "connected_other": "{{count}} people connected to this space",
+    "loading": "Loading members…",
+    "empty": "No other members yet. Invite someone or approve a join request to share this space.",
+    "ownerChip": "Owner",
+    "limitToShared": "Limit to shared balance",
+    "grantFull": "Grant full access",
+    "requestsHeading_zero": "Pending Requests ({{count}})",
+    "requestsHeading_one": "Pending Requests ({{count}})",
+    "requestsHeading_two": "Pending Requests ({{count}})",
+    "requestsHeading_few": "Pending Requests ({{count}})",
+    "requestsHeading_many": "Pending Requests ({{count}})",
+    "requestsHeading_other": "Pending Requests ({{count}})",
+    "approveSharedOnly": "Approve (shared only)",
+    "approveFull": "Approve (full)",
+    "reject": "Reject",
+    "askedForSharedOnly": "asked for Shared balance only"
+  },
+  "accessLevels": {
+    "full": "Full access",
+    "sharedBalanceOnly": "Shared balance only"
+  },
+  "yourSpacesCard": {
+    "title": "Your spaces",
+    "available_zero": "{{count}} spaces available",
+    "available_one": "{{count}} space available",
+    "available_two": "{{count}} spaces available",
+    "available_few": "{{count}} spaces available",
+    "available_many": "{{count}} spaces available",
+    "available_other": "{{count}} spaces available",
+    "empty": "No spaces found. Please create or request to join one below.",
+    "active": "Active",
+    "switchTooltip": "Switch to this space",
+    "leaveTooltip": "Leave this space",
+    "idCurrency": "ID: {{id}}… • Currency: {{currency}}"
+  },
+  "leaveDialog": {
+    "title": "Leave space?",
+    "descriptionPrefix": "Are you sure you want to leave the space",
+    "descriptionSuffix": "? You will no longer be able to access its transactions and ledger details. You can only rejoin if the owner approves a new request.",
+    "cancel": "Cancel",
+    "confirm": "Leave space"
+  },
+  "toasts": {
+    "inviteIdCopied": "Invite ID copied to clipboard!",
+    "inviteLinkCopied": "Invite link copied — they sign in and request to join; you pick their access level.",
+    "switched": "Switched space successfully!",
+    "switchFailed": "Failed to switch space.",
+    "nameRequired": "Please enter a space name",
+    "created": "Shared account \"{{name}}\" created and set as active!",
+    "createFailed": "Failed to create space",
+    "inviteIdRequired": "Please enter a valid Invite ID",
+    "requestSent": "Request sent — the space owner will review it.",
+    "requestJoinFailed": "Failed to request join. Make sure the ID is correct.",
+    "requestApproved": "Request approved.",
+    "requestRejected": "Request rejected.",
+    "decideFailed": "Failed to decide request.",
+    "nowFullAccess": "Member now has full access.",
+    "nowSharedOnly": "Member now sees the shared balance only.",
+    "accessLevelFailed": "Failed to update access level.",
+    "leftSpace": "Successfully left space \"{{name}}\"",
+    "leaveFailed": "Failed to leave space.",
+    "baseCurrencyUpdated": "Base currency updated to {{currency}}",
+    "baseCurrencyFailed": "Failed to update base currency"
+  }
+}

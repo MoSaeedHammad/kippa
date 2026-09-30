@@ -1,1 +1,112 @@
-{}
+{
+  "page": {
+    "title": "فضائي",
+    "subtitle": "أدر الأعضاء والوصول المشترك والفضاءات التي تنتمي إليها."
+  },
+  "spotlight": {
+    "baseCurrencyTag": "العملة الأساسية",
+    "active": "نشط",
+    "baseCurrencyLabel": "العملة الأساسية",
+    "saving": "جارٍ الحفظ…",
+    "inviteHeading": "الدعوة",
+    "inviteHelp": "شارك الرابط وسيطلب الانضمام — أنت تحدد ما يمكنه رؤيته (كامل أو الرصيد المشترك فقط) عند الموافقة.",
+    "inviteLinkCaption": "رابط الدعوة — يفتح شاشة الانضمام مع تعبئة هذا الحساب المشترك مسبقًا",
+    "copied": "تم النسخ!",
+    "copyInviteLink": "نسخ رابط الدعوة",
+    "copyId": "نسخ المعرّف"
+  },
+  "roles": {
+    "owner": "مالك",
+    "member": "عضو"
+  },
+  "manageCard": {
+    "title": "إدارة الحسابات المشتركة",
+    "subtitle": "أنشئ فضاءً جديدًا أو انضم إلى فضاء شخص آخر.",
+    "createTab": "إنشاء",
+    "joinTab": "الانضمام",
+    "createHelp": "ابدأ حاوية قاعدة بيانات منفصلة تمامًا لحساب مشترك جديد.",
+    "nameLabel": "اسم الحساب المشترك",
+    "namePlaceholder": "مثال: بيت الإجازات",
+    "createButton": "إنشاء",
+    "joinHelp": "الصق معرف دعوة من مالك حساب مشترك. سيحتاج إلى الموافقة على طلبك قبل أن تتمكن من الانضمام.",
+    "inviteIdLabel": "معرف الدعوة",
+    "inviteIdPlaceholder": "الصق المعرّف هنا",
+    "requestToJoin": "طلب الانضمام",
+    "requestPending": "الطلب معلق — بانتظار موافقة المالك.",
+    "requestDeclined": "رفض المالك طلبك.",
+    "requestAgain": "إعادة الطلب",
+    "approved": "تمت الموافقة عليك!",
+    "switchToAccount": "التبديل إلى هذا الحساب المشترك"
+  },
+  "membersCard": {
+    "title": "الأعضاء",
+    "connected_zero": "لا يوجد أعضاء مرتبطون بهذا الفضاء",
+    "connected_one": "عضو واحد مرتبط بهذا الفضاء",
+    "connected_two": "عضوان مرتبطان بهذا الفضاء",
+    "connected_few": "{{count}} أعضاء مرتبطون بهذا الفضاء",
+    "connected_many": "{{count}} عضوًا مرتبطًا بهذا الفضاء",
+    "connected_other": "{{count}} عضو مرتبط بهذا الفضاء",
+    "loading": "جارٍ تحميل الأعضاء…",
+    "empty": "لا يوجد أعضاء آخرون بعد. ادعُ شخصًا أو وافق على طلب انضمام لمشاركة هذا الفضاء.",
+    "ownerChip": "مالك",
+    "limitToShared": "حصر بالرصيد المشترك",
+    "grantFull": "منح الوصول الكامل",
+    "requestsHeading_zero": "طلبات معلقة ({{count}})",
+    "requestsHeading_one": "طلبات معلقة ({{count}})",
+    "requestsHeading_two": "طلبات معلقة ({{count}})",
+    "requestsHeading_few": "طلبات معلقة ({{count}})",
+    "requestsHeading_many": "طلبات معلقة ({{count}})",
+    "requestsHeading_other": "طلبات معلقة ({{count}})",
+    "approveSharedOnly": "موافقة (مشترك فقط)",
+    "approveFull": "موافقة (كامل)",
+    "reject": "رفض",
+    "askedForSharedOnly": "طلب الرصيد المشترك فقط"
+  },
+  "accessLevels": {
+    "full": "وصول كامل",
+    "sharedBalanceOnly": "الرصيد المشترك فقط"
+  },
+  "yourSpacesCard": {
+    "title": "فضاؤك",
+    "available_zero": "لا توجد فضاءات متاحة",
+    "available_one": "فضاء واحد متاح",
+    "available_two": "فضاءان متاحان",
+    "available_few": "{{count}} فضاءات متاحة",
+    "available_many": "{{count}} فضاءً متاحًا",
+    "available_other": "{{count}} فضاء متاح",
+    "empty": "لم يتم العثور على فضاءات. أنشئ واحدًا أو اطلب الانضمام إلى واحد بالأسفل.",
+    "active": "نشط",
+    "switchTooltip": "التبديل إلى هذا الفضاء",
+    "leaveTooltip": "مغادرة هذا الفضاء",
+    "idCurrency": "المعرّف: {{id}}… • العملة: {{currency}}"
+  },
+  "leaveDialog": {
+    "title": "مغادرة الفضاء؟",
+    "descriptionPrefix": "هل أنت متأكد من مغادرة الفضاء",
+    "descriptionSuffix": "؟ لن تتمكن بعد الآن من الوصول إلى معاملاته وتفاصيل دفتر الأستاذ. يمكنك الانضمام مرة أخرى فقط إذا وافق المالك على طلب جديد.",
+    "cancel": "إلغاء",
+    "confirm": "مغادرة الفضاء"
+  },
+  "toasts": {
+    "inviteIdCopied": "تم نسخ معرف الدعوة إلى الحافظة!",
+    "inviteLinkCopied": "تم نسخ رابط الدعوة — يسجّل الدخول ويطلب الانضمام؛ وأنت تحدد مستوى وصوله.",
+    "switched": "تم تبديل الفضاء بنجاح!",
+    "switchFailed": "فشل تبديل الفضاء.",
+    "nameRequired": "يرجى إدخال اسم الفضاء",
+    "created": "تم إنشاء الحساب المشترك \"{{name}}\" وتعيينه كنشط!",
+    "createFailed": "فشل إنشاء الفضاء",
+    "inviteIdRequired": "يرجى إدخال معرف دعوة صالح",
+    "requestSent": "أُرسل الطلب — سيراجعه مالك الفضاء.",
+    "requestJoinFailed": "فشل طلب الانضمام. تأكد من صحة المعرّف.",
+    "requestApproved": "تمت الموافقة على الطلب.",
+    "requestRejected": "تم رفض الطلب.",
+    "decideFailed": "فشل البتّ في الطلب.",
+    "nowFullAccess": "أصبح للعضو وصول كامل.",
+    "nowSharedOnly": "أصبح العضو يرى الرصيد المشترك فقط.",
+    "accessLevelFailed": "فشل تحديث مستوى الوصول.",
+    "leftSpace": "تمت مغادرة الفضاء \"{{name}}\" بنجاح",
+    "leaveFailed": "فشلت مغادرة الفضاء.",
+    "baseCurrencyUpdated": "تم تحديث العملة الأساسية إلى {{currency}}",
+    "baseCurrencyFailed": "فشل تحديث العملة الأساسية"
+  }
+}
