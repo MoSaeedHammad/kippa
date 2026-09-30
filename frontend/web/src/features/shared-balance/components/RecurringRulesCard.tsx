@@ -1,4 +1,5 @@
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -22,14 +23,8 @@ type Props = {
   members: HouseholdMember[];
 };
 
-function directionPhrase(rule: RecurringSharedEntryRule, viewerUid: string, members: HouseholdMember[]): string {
-  const nameOf = (uid: string) => members.find((member) => member.uid === uid)?.displayName ?? 'Member';
-  if (rule.fromUid === viewerUid) return 'You pay them';
-  if (rule.toUid === viewerUid) return 'They pay you';
-  return `${nameOf(rule.fromUid)} pays ${nameOf(rule.toUid)}`;
-}
-
 export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
+  const { t } = useTranslation('sharedBalance');
   const { data: rules = [] } = useRecurringRules(householdId);
   const upsertMutation = useUpsertRecurringRuleMutation(householdId);
   const { enqueueSnackbar } = useSnackbar();
@@ -37,15 +32,22 @@ export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
 
   if (rules.length === 0) return null;
 
+  const nameOf = (uid: string) => members.find((member) => member.uid === uid)?.displayName ?? t('rules.memberFallback');
+  const directionPhrase = (rule: RecurringSharedEntryRule): string => {
+    if (rule.fromUid === viewerUid) return t('rules.youPayThem');
+    if (rule.toUid === viewerUid) return t('rules.theyPayYou');
+    return t('rules.memberPays', { from: nameOf(rule.fromUid), to: nameOf(rule.toUid) });
+  };
+
   const act = async (rule: RecurringSharedEntryRule, action: 'pause' | 'resume' | 'cancel') => {
     try {
       await upsertMutation.mutateAsync({ action, ruleId: rule.id });
       enqueueSnackbar(
-        action === 'pause' ? 'Recurring entry paused' : action === 'resume' ? 'Recurring entry resumed' : 'Recurring entry cancelled',
+        action === 'pause' ? t('rules.pausedToast') : action === 'resume' ? t('rules.resumedToast') : t('rules.cancelledToast'),
         { variant: 'success' },
       );
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not update the recurring entry', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('rules.couldNotUpdate'), { variant: 'error' });
     }
   };
 
@@ -54,8 +56,8 @@ export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
       <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
         <CardHeading
           icon={<SyncAltIcon variant="Bulk" />}
-          title="Recurring entries"
-          subtitle="Each occurrence lands as pending — the other member confirms it before it counts."
+          title={t('rules.title')}
+          subtitle={t('rules.subtitle')}
         />
       </Box>
       <Divider />
@@ -72,13 +74,13 @@ export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="cardSubtitle" sx={{ fontWeight: 700 }} noWrap>
-                  {rule.typeLabel} · {directionPhrase(rule, viewerUid, members)}
+                  {rule.typeLabel} · {directionPhrase(rule)}
                 </Typography>
-                {rule.status === 'paused' && <Chip label="Paused" size="small" color="warning" />}
-                {rule.status === 'cancelled' && <Chip label="Cancelled" size="small" color="default" />}
+                {rule.status === 'paused' && <Chip label={t('rules.paused')} size="small" color="warning" />}
+                {rule.status === 'cancelled' && <Chip label={t('rules.cancelled')} size="small" color="default" />}
               </Stack>
               <Typography variant="cardSubtitle" color="text.secondary">
-                {formatFrequencyPhrase(rule)}{next ? ` · next ${next}` : ''}
+                {formatFrequencyPhrase(rule)}{next ? ` · ${t('rules.next', { date: next })}` : ''}
               </Typography>
             </Box>
             <Typography variant="amountValue" color={rule.fromUid === viewerUid ? 'error.main' : 'success.main'}>
@@ -87,19 +89,19 @@ export function RecurringRulesCard({ householdId, viewerUid, members }: Props) {
             {rule.createdBy === viewerUid && rule.status !== 'cancelled' && (
               <Stack direction="row" spacing={0.5}>
                 {rule.status === 'active' ? (
-                  <Tooltip title="Pause">
+                  <Tooltip title={t('rules.pauseTooltip')}>
                     <IconButton size="small" disabled={busy} onClick={() => act(rule, 'pause')}>
                       <PauseIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 ) : (
-                  <Tooltip title="Resume">
+                  <Tooltip title={t('rules.resumeTooltip')}>
                     <IconButton size="small" disabled={busy} onClick={() => act(rule, 'resume')}>
                       <PlayIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title="Cancel recurring entry">
+                <Tooltip title={t('rules.cancelTooltip')}>
                   <IconButton size="small" color="error" disabled={busy} onClick={() => act(rule, 'cancel')}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>

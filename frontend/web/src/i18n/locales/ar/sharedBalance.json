@@ -1,1 +1,133 @@
-{}
+{
+  "page": {
+    "title": "الرصيد المشترك",
+    "subtitle": "ديون وتقسيمات وسدادات بينك وبين عضو آخر في هذا الفضاء. لا يُحتسب أي شيء قبل موافقة الطرف الآخر.",
+    "addEntry": "إضافة إدخال"
+  },
+  "balance": {
+    "owesYou": "{{name}} يدين لك",
+    "youOwe": "أنت مدين لـ {{name}}",
+    "allSettled": "تم التسوية بالكامل",
+    "otherMemberFallback": "العضو الآخر",
+    "otherMemberFallbackLower": "العضو الآخر",
+    "caption": "الموجب يعني أن لك؛ السالب يعني أن عليك."
+  },
+  "pendingBadge_zero": "{{count}} إدخالات تنتظر موافقتك",
+  "pendingBadge_one": "إدخال واحد ينتظر موافقتك",
+  "pendingBadge_two": "إدخالان ينتظران موافقتك",
+  "pendingBadge_few": "{{count}} إدخالات تنتظر موافقتك",
+  "pendingBadge_many": "{{count}} إدخالًا ينتظر موافقتك",
+  "pendingBadge_other": "{{count}} إدخال ينتظر موافقتك",
+  "empty": {
+    "title": "لا توجد إدخالات مشتركة بعد",
+    "description": "أضف دينًا أو تقسيمًا أو سدادًا — يوافق عليه العضو الآخر قبل أن يؤثر على الرصيد."
+  },
+  "entries": {
+    "title": "الإدخالات",
+    "showingFiltered": "يُعرض {{visible}} من {{total}} — الرصيد يُحتسب دائمًا من الكل",
+    "newestFirst": "الأحدث أولًا — الإدخالات المعلقة في الأعلى",
+    "noneInPeriod": "لا توجد إدخالات في هذه الفترة."
+  },
+  "kinds": {
+    "iou": "دين",
+    "split": "تقسيم",
+    "repayment": "سداد"
+  },
+  "directions": {
+    "callerPaidRepayment": "سددتَ له",
+    "counterpartyPaidRepayment": "سدد لك",
+    "callerPaid": "دفعتَ نيابة عنه",
+    "counterpartyPaid": "دفع نيابة عنك"
+  },
+  "entryDirection": {
+    "repaymentCreditor": "{{name}} سدد لك",
+    "repaymentDebtor": "سددتَ لـ {{name}}",
+    "iouCreditor": "دفعتَ نيابة عن {{name}}",
+    "iouDebtor": "{{name}} دفع نيابة عنك"
+  },
+  "status": {
+    "waitingForApproval": "بانتظار الموافقة",
+    "waitsForYourApproval": "ينتظر موافقتك",
+    "approved": "تمت الموافقة",
+    "declined": "مرفوض",
+    "cancelled": "ملغى"
+  },
+  "author": {
+    "you": "أنت",
+    "addedBy": "أضافه {{name}}"
+  },
+  "actions": {
+    "approve": "موافقة",
+    "decline": "رفض",
+    "cancel": "إلغاء",
+    "edit": "تعديل"
+  },
+  "toasts": {
+    "recurringScheduled": "تمت جدولة إدخال متكرر — أول حدث ينتظر الموافقة",
+    "entrySent": "أُرسل الإدخال للموافقة",
+    "entryUpdated": "تم تحديث الإدخال — ينتظر الموافقة مرة أخرى",
+    "entryApproved": "تمت الموافقة على الإدخال",
+    "entryDeclined": "تم رفض الإدخال",
+    "entryCancelled": "تم إلغاء الإدخال",
+    "couldNotAdd": "تعذر إضافة هذا الإدخال",
+    "couldNotUpdate": "تعذر تحديث هذا الإدخال"
+  },
+  "addEntryDialog": {
+    "editTitle": "تعديل إدخال الرصيد المشترك",
+    "addTitle": "إضافة إدخال إلى الرصيد المشترك",
+    "whoPaid": "من دفع",
+    "withMember": "مع العضو",
+    "noOtherMember": "لا يوجد عضو آخر في هذا الفضاء بعد.",
+    "amount": "المبلغ",
+    "type": "النوع",
+    "date": "التاريخ",
+    "repeat": "التكرار",
+    "repeatHelper": "يصل كل حدث كإدخال معلق — يؤكده العضو الآخر قبل أن يُحتسب.",
+    "noRepeat": "لا يتكرر",
+    "weekly": "أسبوعيًا",
+    "monthly": "شهريًا",
+    "yearly": "سنويًا",
+    "note": "ملاحظة (اختياري)",
+    "cancel": "إلغاء",
+    "saveAndResend": "حفظ وإعادة الإرسال للموافقة",
+    "sendForApproval": "إرسال للموافقة"
+  },
+  "months": {
+    "january": "يناير",
+    "february": "فبراير",
+    "march": "مارس",
+    "april": "أبريل",
+    "may": "مايو",
+    "june": "يونيو",
+    "july": "يوليو",
+    "august": "أغسطس",
+    "september": "سبتمبر",
+    "october": "أكتوبر",
+    "november": "نوفمبر",
+    "december": "ديسمبر"
+  },
+  "period": {
+    "year": "السنة",
+    "month": "الشهر",
+    "allYears": "جميع السنوات",
+    "allMonths": "جميع الأشهر"
+  },
+  "rules": {
+    "title": "الإدخالات المتكررة",
+    "subtitle": "يصل كل حدث كإدخال معلق — يؤكده العضو الآخر قبل أن يُحتسب.",
+    "youPayThem": "أنت تدفع له",
+    "theyPayYou": "هو يدفع لك",
+    "memberPays": "{{from}} يدفع لـ {{to}}",
+    "memberFallback": "عضو",
+    "paused": "متوقف مؤقتًا",
+    "cancelled": "ملغى",
+    "next": "التالي {{date}}",
+    "pauseTooltip": "إيقاف مؤقت",
+    "resumeTooltip": "استئناف",
+    "cancelTooltip": "إلغاء الإدخال المتكرر",
+    "pausedToast": "تم إيقاف الإدخال المتكرر مؤقتًا",
+    "resumedToast": "تم استئناف الإدخال المتكرر",
+    "cancelledToast": "تم إلغاء الإدخال المتكرر",
+    "couldNotUpdate": "تعذر تحديث الإدخال المتكرر"
+  }
+}

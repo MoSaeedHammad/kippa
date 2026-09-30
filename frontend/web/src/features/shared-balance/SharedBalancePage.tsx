@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -32,6 +33,7 @@ import { EntryHistoryFilter } from './components/EntryHistoryFilter';
 import { RecurringRulesCard } from './components/RecurringRulesCard';
 
 export function SharedBalancePage() {
+  const { t } = useTranslation('sharedBalance');
   const { householdId, userProfile, userHouseholds } = useAppContext();
   const { enqueueSnackbar } = useSnackbar();
   const viewerUid = userProfile!.uid;
@@ -62,10 +64,10 @@ export function SharedBalancePage() {
 
   const otherName = members.find((member) => member.uid !== viewerUid)?.displayName;
   const balanceCaption = balance > 0
-    ? `${otherName ?? 'The other member'} owes you`
+    ? t('balance.owesYou', { name: otherName ?? t('balance.otherMemberFallback') })
     : balance < 0
-      ? `You owe ${otherName ?? 'the other member'}`
-      : 'All settled up';
+      ? t('balance.youOwe', { name: otherName ?? t('balance.otherMemberFallbackLower') })
+      : t('balance.allSettled');
 
   const closeDialog = () => {
     if (busy) return;
@@ -90,7 +92,7 @@ export function SharedBalancePage() {
             anchorDate: input.date,
           },
         });
-        enqueueSnackbar('Recurring entry scheduled — the first occurrence is waiting for approval', { variant: 'success' });
+        enqueueSnackbar(t('toasts.recurringScheduled'), { variant: 'success' });
       } else {
         await proposeMutation.mutateAsync({
           householdId,
@@ -103,11 +105,11 @@ export function SharedBalancePage() {
           note: input.note,
           date: input.date,
         });
-        enqueueSnackbar('Entry sent for approval', { variant: 'success' });
+        enqueueSnackbar(t('toasts.entrySent'), { variant: 'success' });
       }
       setDialogOpen(false);
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not add this entry', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.couldNotAdd'), { variant: 'error' });
     }
   };
 
@@ -115,11 +117,11 @@ export function SharedBalancePage() {
     if (!editingEntry) return;
     try {
       await editMutation.mutateAsync({ householdId, entryId: editingEntry.id, ...input });
-      enqueueSnackbar('Entry updated — waiting for approval again', { variant: 'success' });
+      enqueueSnackbar(t('toasts.entryUpdated'), { variant: 'success' });
       setDialogOpen(false);
       setEditingEntry(null);
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not update this entry', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.couldNotUpdate'), { variant: 'error' });
     }
   };
 
@@ -127,25 +129,25 @@ export function SharedBalancePage() {
     try {
       await decideMutation.mutateAsync({ householdId, entryId: entry.id, action });
       enqueueSnackbar(
-        action === 'approve' ? 'Entry approved' : action === 'reject' ? 'Entry declined' : 'Entry cancelled',
+        action === 'approve' ? t('toasts.entryApproved') : action === 'reject' ? t('toasts.entryDeclined') : t('toasts.entryCancelled'),
         { variant: 'success' },
       );
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not update this entry', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.couldNotUpdate'), { variant: 'error' });
     }
   };
 
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Shared balance"
-        subtitle="IOUs, splits and repayments between you and another member of this space. Nothing counts until the other side approves."
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
         action={
           <Button
             variant="contained"
             onClick={() => { setEditingEntry(null); setDialogOpen(true); }}
           >
-            Add entry
+            {t('page.addEntry')}
           </Button>
         }
       />
@@ -156,7 +158,7 @@ export function SharedBalancePage() {
           <Box>
             <Typography variant="sectionLabel">{balanceCaption}</Typography>
             <Typography variant="cardSubtitle" color="text.secondary">
-              Positive means you are owed; negative means you owe.
+              {t('balance.caption')}
             </Typography>
           </Box>
         </Stack>
@@ -167,7 +169,7 @@ export function SharedBalancePage() {
 
       {pendingForViewer > 0 && (
         <Chip
-          label={`${pendingForViewer} ${pendingForViewer === 1 ? 'entry waits' : 'entries wait'} for your approval`}
+          label={t('pendingBadge', { count: pendingForViewer })}
           color="secondary"
           sx={{ alignSelf: 'flex-start' }}
         />
@@ -180,26 +182,26 @@ export function SharedBalancePage() {
       ) : entries.length === 0 ? (
         <EmptyLayout
           icon={<SwapHorizIcon sx={{ fontSize: 28 }} />}
-          title="No shared entries yet"
-          description="Add an IOU, split or repayment — the other member approves it before it changes the balance."
+          title={t('empty.title')}
+          description={t('empty.description')}
         />
       ) : (
         <Stack spacing={1.5}>
           <EntryHistoryFilter years={years} value={periodFilter} onChange={setPeriodFilter} />
           <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
             <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-              <Typography variant="cardTitle">Entries</Typography>
+              <Typography variant="cardTitle">{t('entries.title')}</Typography>
               <Typography variant="cardSubtitle" color="text.secondary">
                 {isFiltering
-                  ? `Showing ${visibleEntries.length} of ${entries.length} — balance always counts everything`
-                  : 'Newest first — pending entries sit on top'}
+                  ? t('entries.showingFiltered', { visible: visibleEntries.length, total: entries.length })
+                  : t('entries.newestFirst')}
               </Typography>
             </Box>
             <Divider />
             {visibleEntries.length === 0 ? (
               <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 3 }}>
                 <Typography variant="cardSubtitle" color="text.secondary">
-                  No entries in this period.
+                  {t('entries.noneInPeriod')}
                 </Typography>
               </Box>
             ) : (

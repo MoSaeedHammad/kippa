@@ -1,5 +1,7 @@
 import { Button, Chip, Divider, ListItem, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { SharedBalanceEntry } from '@kippa/domain';
+import type sharedBalanceEn from '@/i18n/locales/en/sharedBalance.json';
 import { CheckCircleIcon, SwapHorizIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
 
@@ -13,21 +15,17 @@ type Props = {
   onEdit: (entry: SharedBalanceEntry) => void;
 };
 
-const KIND_LABEL: Record<SharedBalanceEntry['kind'], string> = {
-  iou: 'IOU',
-  split: 'Split',
-  repayment: 'Repayment',
-};
+type StatusLabelKey = keyof typeof sharedBalanceEn['status'];
 
-function statusOf(entry: SharedBalanceEntry, viewerUid: string): { label: string; tone: 'warning' | 'success' | 'error' | 'default' } {
+function statusOf(entry: SharedBalanceEntry, viewerUid: string): { labelKey: StatusLabelKey; tone: 'warning' | 'success' | 'error' | 'default' } {
   if (entry.status === 'pending') {
     return entry.createdBy === viewerUid
-      ? { label: 'Waiting for approval', tone: 'warning' }
-      : { label: 'Waits for your approval', tone: 'warning' };
+      ? { labelKey: 'waitingForApproval', tone: 'warning' }
+      : { labelKey: 'waitsForYourApproval', tone: 'warning' };
   }
-  if (entry.status === 'approved') return { label: 'Approved', tone: 'success' };
-  if (entry.status === 'rejected') return { label: 'Declined', tone: 'error' };
-  return { label: 'Cancelled', tone: 'default' };
+  if (entry.status === 'approved') return { labelKey: 'approved', tone: 'success' };
+  if (entry.status === 'rejected') return { labelKey: 'declined', tone: 'error' };
+  return { labelKey: 'cancelled', tone: 'default' };
 }
 
 /** Display name of the member who created the entry, as seen by the viewer. */
@@ -37,12 +35,14 @@ function authorName(entry: SharedBalanceEntry, viewerUid: string): string {
 }
 
 export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onReject, onCancel, onEdit }: Props) {
+  const { t } = useTranslation('sharedBalance');
   const isViewerCreditor = entry.fromUid === viewerUid;
   const relAmount = isViewerCreditor ? entry.amount : -entry.amount;
   const directionText = entry.kind === 'repayment'
-    ? (isViewerCreditor ? `${entry.fromDisplayName} paid you back` : `You paid ${entry.toDisplayName} back`)
-    : (isViewerCreditor ? `You paid for ${entry.toDisplayName}` : `${entry.fromDisplayName} paid for you`);
+    ? (isViewerCreditor ? t('entryDirection.repaymentCreditor', { name: entry.fromDisplayName }) : t('entryDirection.repaymentDebtor', { name: entry.toDisplayName }))
+    : (isViewerCreditor ? t('entryDirection.iouCreditor', { name: entry.toDisplayName }) : t('entryDirection.iouDebtor', { name: entry.fromDisplayName }));
   const status = statusOf(entry, viewerUid);
+  const author = authorName(entry, viewerUid);
   const isCounterpartyPending = entry.status === 'pending' && entry.createdBy !== viewerUid;
   const isAuthorPending = entry.status === 'pending' && entry.createdBy === viewerUid;
 
@@ -55,7 +55,7 @@ export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onRe
         />
         <Stack sx={{ flex: 1, minWidth: 0 }} spacing={0.25}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Chip label={KIND_LABEL[entry.kind]} size="small" variant="outlined" />
+            <Chip label={t(`kinds.${entry.kind}`)} size="small" variant="outlined" />
             <Chip label={entry.typeLabel} size="small" variant="filter" />
             <Typography variant="fieldHint" color="text.secondary">{entry.date}</Typography>
           </Stack>
@@ -64,7 +64,7 @@ export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onRe
           </Typography>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <Chip
-              label={status.label}
+              label={t(`status.${status.labelKey}`)}
               size="small"
               color={status.tone === 'default' ? 'default' : status.tone}
               variant="outlined"
@@ -74,7 +74,7 @@ export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onRe
               <Typography noWrap variant="fieldHint" color="text.secondary">{entry.note}</Typography>
             )}
             {entry.createdBy !== viewerUid && (
-              <Typography noWrap variant="fieldHint" color="text.secondary">added by {authorName(entry, viewerUid)}</Typography>
+              <Typography noWrap variant="fieldHint" color="text.secondary">{t('author.addedBy', { name: author === 'You' ? t('author.you') : author })}</Typography>
             )}
           </Stack>
         </Stack>
@@ -86,18 +86,18 @@ export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onRe
           <Stack direction="row" spacing={0.5}>
             {isCounterpartyPending && (
               <>
-                <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => onApprove(entry)}>Approve</Button>
-                <Button size="small" variant="outlined" color="error" disabled={busy} onClick={() => onReject(entry)}>Decline</Button>
+                <Button size="small" variant="contained" color="success" disabled={busy} onClick={() => onApprove(entry)}>{t('actions.approve')}</Button>
+                <Button size="small" variant="outlined" color="error" disabled={busy} onClick={() => onReject(entry)}>{t('actions.decline')}</Button>
               </>
             )}
             {isAuthorPending && (
               <>
-                <Button size="small" variant="text" disabled={busy} onClick={() => onEdit(entry)}>Edit</Button>
-                <Button size="small" variant="text" color="error" disabled={busy} onClick={() => onCancel(entry)}>Cancel</Button>
+                <Button size="small" variant="text" disabled={busy} onClick={() => onEdit(entry)}>{t('actions.edit')}</Button>
+                <Button size="small" variant="text" color="error" disabled={busy} onClick={() => onCancel(entry)}>{t('actions.cancel')}</Button>
               </>
             )}
             {entry.status === 'approved' && entry.createdBy === viewerUid && (
-              <Button size="small" variant="text" disabled={busy} onClick={() => onEdit(entry)}>Edit</Button>
+              <Button size="small" variant="text" disabled={busy} onClick={() => onEdit(entry)}>{t('actions.edit')}</Button>
             )}
           </Stack>
         </Stack>

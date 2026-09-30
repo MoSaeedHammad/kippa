@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -11,6 +12,7 @@ import {
 } from '@mui/material';
 import type { HouseholdMember, RecurringFrequency, SharedBalanceEntry, SharedBalanceEntryKind } from '@kippa/domain';
 import { SHARED_BALANCE_TYPE_LABELS } from '@/libs/sharedBalance';
+import type sharedBalanceEn from '@/i18n/locales/en/sharedBalance.json';
 
 export type AddEntryRepeat = 'none' | RecurringFrequency;
 
@@ -39,22 +41,25 @@ type Props = {
   onEditSubmit: (input: { amount: number; typeLabel: string; note: string | null; date: string }) => Promise<void>;
 };
 
-const KIND_OPTIONS: { value: SharedBalanceEntryKind; label: string }[] = [
-  { value: 'iou', label: 'IOU' },
-  { value: 'split', label: 'Split' },
-  { value: 'repayment', label: 'Repayment' },
+type KindLabelKey = keyof typeof sharedBalanceEn['kinds'];
+type DirectionLabelKey = keyof typeof sharedBalanceEn['directions'];
+
+const KIND_OPTIONS: { value: SharedBalanceEntryKind; labelKey: KindLabelKey }[] = [
+  { value: 'iou', labelKey: 'iou' },
+  { value: 'split', labelKey: 'split' },
+  { value: 'repayment', labelKey: 'repayment' },
 ];
 
-function directionOptions(kind: SharedBalanceEntryKind): { value: 'caller_paid' | 'counterparty_paid'; label: string }[] {
+function directionOptions(kind: SharedBalanceEntryKind): { value: 'caller_paid' | 'counterparty_paid'; labelKey: DirectionLabelKey }[] {
   if (kind === 'repayment') {
     return [
-      { value: 'caller_paid', label: 'You paid them back' },
-      { value: 'counterparty_paid', label: 'They paid you back' },
+      { value: 'caller_paid', labelKey: 'callerPaidRepayment' },
+      { value: 'counterparty_paid', labelKey: 'counterpartyPaidRepayment' },
     ];
   }
   return [
-    { value: 'caller_paid', label: 'You paid for them' },
-    { value: 'counterparty_paid', label: 'They paid for you' },
+    { value: 'caller_paid', labelKey: 'callerPaid' },
+    { value: 'counterparty_paid', labelKey: 'counterpartyPaid' },
   ];
 }
 
@@ -65,6 +70,7 @@ function todayIso(): string {
 export function AddSharedBalanceEntryDialog({
   open, busy, entry, members, viewerUid, defaultCurrency, onClose, onSubmit, onEditSubmit,
 }: Props) {
+  const { t } = useTranslation('sharedBalance');
   const editing = !!entry;
   const [kind, setKind] = useState<SharedBalanceEntryKind>('iou');
   const [direction, setDirection] = useState<'caller_paid' | 'counterparty_paid'>('caller_paid');
@@ -107,7 +113,7 @@ export function AddSharedBalanceEntryDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{editing ? 'Edit shared balance entry' : 'Add shared balance entry'}</DialogTitle>
+      <DialogTitle>{editing ? t('addEntryDialog.editTitle') : t('addEntryDialog.addTitle')}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction="row" spacing={1}>
@@ -122,7 +128,7 @@ export function AddSharedBalanceEntryDialog({
                   setDirection('caller_paid');
                 }}
               >
-                {option.label}
+                {t(`kinds.${option.labelKey}`)}
               </Button>
             ))}
           </Stack>
@@ -130,12 +136,12 @@ export function AddSharedBalanceEntryDialog({
             <TextField
               select
               fullWidth
-              label="Who paid"
+              label={t('addEntryDialog.whoPaid')}
               value={direction}
               onChange={(e) => setDirection(e.target.value as 'caller_paid' | 'counterparty_paid')}
             >
               {directionOptions(kind).map((option) => (
-                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                <MenuItem key={option.value} value={option.value}>{t(`directions.${option.labelKey}`)}</MenuItem>
               ))}
             </TextField>
           )}
@@ -143,10 +149,10 @@ export function AddSharedBalanceEntryDialog({
             <TextField
               select
               fullWidth
-              label="With member"
+              label={t('addEntryDialog.withMember')}
               value={counterpartyUid}
               onChange={(e) => setCounterpartyUid(e.target.value)}
-              helperText={otherMembers.length === 0 ? 'No other member in this space yet.' : undefined}
+              helperText={otherMembers.length === 0 ? t('addEntryDialog.noOtherMember') : undefined}
             >
               {otherMembers.map((member) => (
                 <MenuItem key={member.uid} value={member.uid}>{member.displayName}</MenuItem>
@@ -155,7 +161,7 @@ export function AddSharedBalanceEntryDialog({
           )}
           <TextField
             fullWidth
-            label="Amount"
+            label={t('addEntryDialog.amount')}
             type="number"
             slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
             value={amount}
@@ -165,7 +171,7 @@ export function AddSharedBalanceEntryDialog({
           <TextField
             select
             fullWidth
-            label="Type"
+            label={t('addEntryDialog.type')}
             value={typeLabel}
             onChange={(e) => setTypeLabel(e.target.value)}
           >
@@ -175,7 +181,7 @@ export function AddSharedBalanceEntryDialog({
           </TextField>
           <TextField
             fullWidth
-            label="Date"
+            label={t('addEntryDialog.date')}
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -185,22 +191,22 @@ export function AddSharedBalanceEntryDialog({
             <TextField
               select
               fullWidth
-              label="Repeat"
+              label={t('addEntryDialog.repeat')}
               value={repeat}
               onChange={(e) => setRepeat(e.target.value as AddEntryRepeat)}
               helperText={repeat === 'none'
                 ? undefined
-                : 'Each occurrence lands as a pending entry — the other member confirms it before it counts.'}
+                : t('addEntryDialog.repeatHelper')}
             >
-              <MenuItem value="none">Doesn't repeat</MenuItem>
-              <MenuItem value="weekly">Weekly</MenuItem>
-              <MenuItem value="monthly">Monthly</MenuItem>
-              <MenuItem value="yearly">Yearly</MenuItem>
+              <MenuItem value="none">{t('addEntryDialog.noRepeat')}</MenuItem>
+              <MenuItem value="weekly">{t('addEntryDialog.weekly')}</MenuItem>
+              <MenuItem value="monthly">{t('addEntryDialog.monthly')}</MenuItem>
+              <MenuItem value="yearly">{t('addEntryDialog.yearly')}</MenuItem>
             </TextField>
           )}
           <TextField
             fullWidth
-            label="Note (optional)"
+            label={t('addEntryDialog.note')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             multiline
@@ -209,9 +215,9 @@ export function AddSharedBalanceEntryDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>Cancel</Button>
+        <Button onClick={onClose} disabled={busy}>{t('addEntryDialog.cancel')}</Button>
         <Button variant="contained" onClick={handleSubmit} loading={busy} disabled={!canSubmit}>
-          {editing ? 'Save and resend for approval' : 'Send for approval'}
+          {editing ? t('addEntryDialog.saveAndResend') : t('addEntryDialog.sendForApproval')}
         </Button>
       </DialogActions>
     </Dialog>

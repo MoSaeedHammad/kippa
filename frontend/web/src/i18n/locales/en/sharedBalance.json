@@ -1,1 +1,133 @@
-{}
+{
+  "page": {
+    "title": "Shared balance",
+    "subtitle": "IOUs, splits and repayments between you and another member of this space. Nothing counts until the other side approves.",
+    "addEntry": "Add entry"
+  },
+  "balance": {
+    "owesYou": "{{name}} owes you",
+    "youOwe": "You owe {{name}}",
+    "allSettled": "All settled up",
+    "otherMemberFallback": "The other member",
+    "otherMemberFallbackLower": "the other member",
+    "caption": "Positive means you are owed; negative means you owe."
+  },
+  "pendingBadge_zero": "{{count}} entries wait for your approval",
+  "pendingBadge_one": "{{count}} entry waits for your approval",
+  "pendingBadge_two": "{{count}} entries wait for your approval",
+  "pendingBadge_few": "{{count}} entries wait for your approval",
+  "pendingBadge_many": "{{count}} entries wait for your approval",
+  "pendingBadge_other": "{{count}} entries wait for your approval",
+  "empty": {
+    "title": "No shared entries yet",
+    "description": "Add an IOU, split or repayment — the other member approves it before it changes the balance."
+  },
+  "entries": {
+    "title": "Entries",
+    "showingFiltered": "Showing {{visible}} of {{total}} — balance always counts everything",
+    "newestFirst": "Newest first — pending entries sit on top",
+    "noneInPeriod": "No entries in this period."
+  },
+  "kinds": {
+    "iou": "IOU",
+    "split": "Split",
+    "repayment": "Repayment"
+  },
+  "directions": {
+    "callerPaidRepayment": "You paid them back",
+    "counterpartyPaidRepayment": "They paid you back",
+    "callerPaid": "You paid for them",
+    "counterpartyPaid": "They paid for you"
+  },
+  "entryDirection": {
+    "repaymentCreditor": "{{name}} paid you back",
+    "repaymentDebtor": "You paid {{name}} back",
+    "iouCreditor": "You paid for {{name}}",
+    "iouDebtor": "{{name}} paid for you"
+  },
+  "status": {
+    "waitingForApproval": "Waiting for approval",
+    "waitsForYourApproval": "Waits for your approval",
+    "approved": "Approved",
+    "declined": "Declined",
+    "cancelled": "Cancelled"
+  },
+  "author": {
+    "you": "You",
+    "addedBy": "added by {{name}}"
+  },
+  "actions": {
+    "approve": "Approve",
+    "decline": "Decline",
+    "cancel": "Cancel",
+    "edit": "Edit"
+  },
+  "toasts": {
+    "recurringScheduled": "Recurring entry scheduled — the first occurrence is waiting for approval",
+    "entrySent": "Entry sent for approval",
+    "entryUpdated": "Entry updated — waiting for approval again",
+    "entryApproved": "Entry approved",
+    "entryDeclined": "Entry declined",
+    "entryCancelled": "Entry cancelled",
+    "couldNotAdd": "Could not add this entry",
+    "couldNotUpdate": "Could not update this entry"
+  },
+  "addEntryDialog": {
+    "editTitle": "Edit shared balance entry",
+    "addTitle": "Add shared balance entry",
+    "whoPaid": "Who paid",
+    "withMember": "With member",
+    "noOtherMember": "No other member in this space yet.",
+    "amount": "Amount",
+    "type": "Type",
+    "date": "Date",
+    "repeat": "Repeat",
+    "repeatHelper": "Each occurrence lands as a pending entry — the other member confirms it before it counts.",
+    "noRepeat": "Doesn't repeat",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "note": "Note (optional)",
+    "cancel": "Cancel",
+    "saveAndResend": "Save and resend for approval",
+    "sendForApproval": "Send for approval"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+  "period": {
+    "year": "Year",
+    "month": "Month",
+    "allYears": "All years",
+    "allMonths": "All months"
+  },
+  "rules": {
+    "title": "Recurring entries",
+    "subtitle": "Each occurrence lands as pending — the other member confirms it before it counts.",
+    "youPayThem": "You pay them",
+    "theyPayYou": "They pay you",
+    "memberPays": "{{from}} pays {{to}}",
+    "memberFallback": "Member",
+    "paused": "Paused",
+    "cancelled": "Cancelled",
+    "next": "next {{date}}",
+    "pauseTooltip": "Pause",
+    "resumeTooltip": "Resume",
+    "cancelTooltip": "Cancel recurring entry",
+    "pausedToast": "Recurring entry paused",
+    "resumedToast": "Recurring entry resumed",
+    "cancelledToast": "Recurring entry cancelled",
+    "couldNotUpdate": "Could not update the recurring entry"
+  }
+}
