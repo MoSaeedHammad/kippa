@@ -69,7 +69,8 @@ export function NotificationSettingsForm({
   };
 
   type PreferenceTitleKey = keyof typeof notificationsEn['preferences'];
-  const preferences: { key: keyof NotificationSettings; prefKey: PreferenceTitleKey; Icon: React.ComponentType<{ sx?: object }> }[] = [
+  type BooleanPrefKey = { [K in keyof NotificationSettings]: NotificationSettings[K] extends boolean ? K : never }[keyof NotificationSettings];
+  const preferences: { key: BooleanPrefKey; prefKey: PreferenceTitleKey; Icon: React.ComponentType<{ sx?: object }> }[] = [
     {
       key: 'dailyReminderEnabled',
       prefKey: 'dailyReminder',
