@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -63,6 +64,7 @@ const PREVIEW_PENDING_ITEMS: PendingFinancialMessage[] = [
 ];
 
 export function PendingTransactions() {
+  const { t } = useTranslation('pendingTransactions');
   const { householdId } = useAppContext();
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const { data: remotePending = [], isLoading: remoteLoading } = usePendingFinancialMessages(householdId);
@@ -125,7 +127,7 @@ export function PendingTransactions() {
       || (selected.kind === 'transfer' && !destinationAccountId)
       || (selected.conversionRequired && !(Number(convertedAmount) > 0))) return;
     if (previewMode && selected.id.startsWith('preview-')) {
-      enqueueSnackbar('Preview only — no transaction was created', { variant: 'success' });
+      enqueueSnackbar(t('toasts.previewApproved'), { variant: 'success' });
       setSelected(null);
       return;
     }
@@ -146,12 +148,12 @@ export function PendingTransactions() {
         },
       });
       setItemStates((current) => ({ ...current, [pendingId]: 'settled' }));
-      enqueueSnackbar('Transaction approved', { variant: 'success' });
+      enqueueSnackbar(t('toasts.approved'), { variant: 'success' });
       setSelected(null);
       setConfirmDiscard(false);
     } catch (error) {
       setItemStates((current) => ({ ...current, [pendingId]: 'idle' }));
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not approve this item', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.approveFailed'), { variant: 'error' });
     }
   };
 
@@ -162,7 +164,7 @@ export function PendingTransactions() {
       return;
     }
     if (previewMode && selected.id.startsWith('preview-')) {
-      enqueueSnackbar('Preview only — nothing was deleted', { variant: 'info' });
+      enqueueSnackbar(t('toasts.previewDiscarded'), { variant: 'info' });
       setSelected(null);
       setConfirmDiscard(false);
       return;
@@ -172,7 +174,7 @@ export function PendingTransactions() {
     try {
       await discardMutation.mutateAsync({ householdId, pendingId: discardedItem.id });
       setItemStates((current) => ({ ...current, [discardedItem.id]: 'settled' }));
-      enqueueSnackbar('Pending item discarded', {
+      enqueueSnackbar(t('toasts.discarded'), {
         variant: 'success',
         action: (snackbarKey) => (
           <Button
@@ -183,13 +185,13 @@ export function PendingTransactions() {
               try {
                 await restoreMutation.mutateAsync({ householdId, pendingId: discardedItem.id });
                 setItemStates((current) => ({ ...current, [discardedItem.id]: 'idle' }));
-                enqueueSnackbar('Pending item restored', { variant: 'success' });
+                enqueueSnackbar(t('toasts.restored'), { variant: 'success' });
               } catch (error) {
-                enqueueSnackbar(error instanceof Error ? error.message : 'Could not restore this item', { variant: 'error' });
+                enqueueSnackbar(error instanceof Error ? error.message : t('toasts.restoreFailed'), { variant: 'error' });
               }
             }}
           >
-            Undo
+            {t('undo')}
           </Button>
         ),
       });
@@ -197,7 +199,7 @@ export function PendingTransactions() {
       setConfirmDiscard(false);
     } catch (error) {
       setItemStates((current) => ({ ...current, [discardedItem.id]: 'idle' }));
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not discard this item', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.discardFailed'), { variant: 'error' });
     }
   };
 
@@ -205,10 +207,10 @@ export function PendingTransactions() {
     try {
       await restoreMutation.mutateAsync({ householdId, pendingId });
       setItemStates((current) => ({ ...current, [pendingId]: 'idle' }));
-      enqueueSnackbar('Pending item restored for review', { variant: 'success' });
+      enqueueSnackbar(t('toasts.restoredForReview'), { variant: 'success' });
       setTab('review');
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Could not restore this item', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.restoreFailed'), { variant: 'error' });
     }
   };
 
@@ -219,9 +221,9 @@ export function PendingTransactions() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Message activity"
-        subtitle="Review detected bank activity and keep a complete resolution history."
-        action={<Chip label={tab === 'review' ? `${pending.length} pending` : `${resolved.length} resolved`} color={tab === 'review' && pending.length ? 'secondary' : 'default'} />}
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
+        action={<Chip label={tab === 'review' ? t('page.pending', { count: pending.length }) : t('page.resolved', { count: resolved.length })} color={tab === 'review' && pending.length ? 'secondary' : 'default'} />}
       />
 
       <Box
@@ -240,20 +242,20 @@ export function PendingTransactions() {
         <Stack direction="row" spacing={1.5} alignItems="center">
           <KeyIcon sx={{ color: 'primary.main' }} />
           <Box>
-            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>Bank message connection</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>{t('connection.title')}</Typography>
             <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-              Connect your bank's SMS automation securely
+              {t('connection.subtitle')}
             </Typography>
           </Box>
         </Stack>
         <Button variant="outlined" onClick={() => setSetupOpen(true)}>
-          {activeConnections ? 'Manage' : 'Connect'}
+          {activeConnections ? t('connection.manage') : t('connection.connect')}
         </Button>
       </Box>
 
       <Tabs value={tab} onChange={(_, value: 'review' | 'history') => setTab(value)} variant="fullWidth">
-        <Tab value="review" label="Review" />
-        <Tab value="history" label="History" icon={<HistoryIcon fontSize="small" />} iconPosition="start" />
+        <Tab value="review" label={t('tabs.review')} />
+        <Tab value="history" label={t('tabs.history')} icon={<HistoryIcon fontSize="small" />} iconPosition="start" />
       </Tabs>
 
       {tab === 'review' && (isLoading ? (
@@ -263,14 +265,14 @@ export function PendingTransactions() {
       ) : pending.length === 0 ? (
         <EmptyLayout
           icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
-          title="Nothing waiting for you"
-          description="Detected bank activity will appear here. No ledger entry is created until you approve it."
+          title={t('reviewTab.emptyTitle')}
+          description={t('reviewTab.emptyDescription')}
         />
       ) : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Detected activity</Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25 }}>Tap an item to review it</Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{t('reviewTab.detectedTitle')}</Typography>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25 }}>{t('reviewTab.detectedHint')}</Typography>
           </Box>
           <Divider />
           {pending.map((item, index) => (
@@ -316,13 +318,13 @@ export function PendingTransactions() {
       ) : resolved.length === 0 ? (
         <EmptyLayout
           icon={<HistoryIcon sx={{ fontSize: 28 }} />}
-          title="No review history yet"
-          description="Approved and discarded message activity will appear here after you resolve it."
+          title={t('historyTab.emptyTitle')}
+          description={t('historyTab.emptyDescription')}
         />
       ) : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-            <CardHeading icon={<HistoryIcon variant="Bulk" />} title="Resolved activity" subtitle="The latest 100 reviewed messages" />
+            <CardHeading icon={<HistoryIcon variant="Bulk" />} title={t('historyTab.title')} subtitle={t('historyTab.subtitle')} />
           </Box>
           <Divider />
           {resolved.map((item, index) => {
@@ -340,7 +342,7 @@ export function PendingTransactions() {
                     </Stack>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
                       <Chip
-                        label={item.state === 'approved' ? 'Approved' : 'Discarded'}
+                        label={item.state === 'approved' ? t('historyTab.approved') : t('historyTab.discarded')}
                         color={item.state === 'approved' ? 'success' : 'default'}
                         size="small"
                         variant="outlined"
@@ -352,7 +354,7 @@ export function PendingTransactions() {
                   </Box>
                   {item.state === 'discarded' && (
                     <Button size="small" variant="outlined" disabled={restoring} onClick={() => restoreDiscarded(item.id)}>
-                      {restoring ? 'Restoring…' : 'Restore'}
+                      {restoring ? t('historyTab.restoring') : t('historyTab.restore')}
                     </Button>
                   )}
                 </Box>

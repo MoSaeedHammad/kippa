@@ -1,1 +1,103 @@
-{}
+{
+  "page": {
+    "title": "Message activity",
+    "subtitle": "Review detected bank activity and keep a complete resolution history.",
+    "pending_zero": "{{count}} pending",
+    "pending_one": "{{count}} pending",
+    "pending_two": "{{count}} pending",
+    "pending_few": "{{count}} pending",
+    "pending_many": "{{count}} pending",
+    "pending_other": "{{count}} pending",
+    "resolved_zero": "{{count}} resolved",
+    "resolved_one": "{{count}} resolved",
+    "resolved_two": "{{count}} resolved",
+    "resolved_few": "{{count}} resolved",
+    "resolved_many": "{{count}} resolved",
+    "resolved_other": "{{count}} resolved"
+  },
+  "connection": {
+    "title": "Bank message connection",
+    "subtitle": "Connect your bank's SMS automation securely",
+    "manage": "Manage",
+    "connect": "Connect"
+  },
+  "tabs": {
+    "review": "Review",
+    "history": "History"
+  },
+  "reviewTab": {
+    "emptyTitle": "Nothing waiting for you",
+    "emptyDescription": "Detected bank activity will appear here. No ledger entry is created until you approve it.",
+    "detectedTitle": "Detected activity",
+    "detectedHint": "Tap an item to review it"
+  },
+  "historyTab": {
+    "emptyTitle": "No review history yet",
+    "emptyDescription": "Approved and discarded message activity will appear here after you resolve it.",
+    "title": "Resolved activity",
+    "subtitle": "The latest 100 reviewed messages",
+    "approved": "Approved",
+    "discarded": "Discarded",
+    "restoring": "Restoring…",
+    "restore": "Restore"
+  },
+  "reviewDialog": {
+    "transferTitle": "Review transfer",
+    "detectedTitle": "Review detected {{kind}}",
+    "subtitle": "Nothing enters your ledger until you approve.",
+    "loanInstallment": "{{name}} · installment {{installment}}",
+    "loanFallback": "Loan",
+    "waitingOtherLeg": "Waiting for the other leg of this transfer…",
+    "category": "Category",
+    "toAccount": "To account",
+    "fromAccount": "From account",
+    "amountIn": "Amount in {{currency}}",
+    "rateApprox": "1 {{currency}} ≈ {{rate}} {{target}}",
+    "enterBilled": "Enter what the bank billed in {{currency}}",
+    "bankMessage": "Bank message",
+    "sharedBalanceTitle": "Shared balance (optional)",
+    "sharedBalanceHelp": "Tag this message as an IOU or split — the other member approves it before it counts.",
+    "sharedBalanceTag": "Shared balance tag",
+    "noTag": "No tag",
+    "tagIou": "IOU — full amount for them",
+    "tagSplit": "Split — a share of it is theirs",
+    "member": "Member",
+    "theirShare": "Their share (max {{max}})",
+    "sharePrivate": "The entry stores only their share — your full {{amount}} {{currency}} stays private.",
+    "discarding": "Discarding…",
+    "discardPermanently": "Discard permanently",
+    "discard": "Discard",
+    "approving": "Approving…",
+    "approve": "Approve"
+  },
+  "connectionsDialog": {
+    "title": "Connect SMS forwarding",
+    "subtitle": "Create a private, revocable connection for your SMS forwarder app.",
+    "existing": "Existing connections",
+    "used": "Used {{date}}",
+    "neverUsed": "Never used",
+    "active": "Active",
+    "disabled": "Disabled",
+    "revokeAria": "Revoke {{label}}",
+    "connection": "Connection",
+    "endpoint": "Endpoint",
+    "bearerToken": "Bearer token",
+    "copyAria": "Copy {{label}}",
+    "creating": "Creating…",
+    "create": "Create secure connection",
+    "forwarderRequest": "Forwarder request",
+    "close": "Close"
+  },
+  "toasts": {
+    "previewApproved": "Preview only — no transaction was created",
+    "approved": "Transaction approved",
+    "approveFailed": "Could not approve this item",
+    "previewDiscarded": "Preview only — nothing was deleted",
+    "discarded": "Pending item discarded",
+    "restored": "Pending item restored",
+    "restoredForReview": "Pending item restored for review",
+    "restoreFailed": "Could not restore this item",
+    "discardFailed": "Could not discard this item"
+  },
+  "undo": "Undo"
+}

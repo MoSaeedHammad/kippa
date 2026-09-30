@@ -1,1 +1,103 @@
-{}
+{
+  "page": {
+    "title": "نشاط الرسائل",
+    "subtitle": "راجع نشاط البنك المكتشف واحتفظ بسجل قرار كامل.",
+    "pending_zero": "لا عناصر معلقة",
+    "pending_one": "عنصر واحد معلق",
+    "pending_two": "عنصران معلقان",
+    "pending_few": "{{count}} عناصر معلقة",
+    "pending_many": "{{count}} عنصرًا معلقًا",
+    "pending_other": "{{count}} عنصر معلق",
+    "resolved_zero": "لا عناصر مُحسومة",
+    "resolved_one": "عنصر واحد محسوم",
+    "resolved_two": "عنصران محسومان",
+    "resolved_few": "{{count}} عناصر محسومة",
+    "resolved_many": "{{count}} عنصرًا محسومًا",
+    "resolved_other": "{{count}} عنصر محسوم"
+  },
+  "connection": {
+    "title": "اتصال رسائل البنك",
+    "subtitle": "اربط أتمتة رسائل البنك لديك بأمان",
+    "manage": "إدارة",
+    "connect": "ربط"
+  },
+  "tabs": {
+    "review": "المراجعة",
+    "history": "السجل"
+  },
+  "reviewTab": {
+    "emptyTitle": "لا شيء بانتظارك",
+    "emptyDescription": "سيظهر نشاط البنك المكتشف هنا. لا يُنشأ أي قيد في دفتر الأستاذ حتى توافق عليه.",
+    "detectedTitle": "النشاط المكتشف",
+    "detectedHint": "اضغط على عنصر لمراجعته"
+  },
+  "historyTab": {
+    "emptyTitle": "لا يوجد سجل مراجعة بعد",
+    "emptyDescription": "ستظهر هنا أنشطة الرسائل الموافق عليها والمهملة بعد أن تحسمها.",
+    "title": "النشاط المحسوم",
+    "subtitle": "أحدث 100 رسالة تمت مراجعتها",
+    "approved": "موافق عليه",
+    "discarded": "مهمل",
+    "restoring": "جارٍ الاستعادة…",
+    "restore": "استعادة"
+  },
+  "reviewDialog": {
+    "transferTitle": "مراجعة التحويل",
+    "detectedTitle": "مراجعة {{kind}} مكتشف",
+    "subtitle": "لا يدخل شيء إلى دفتر الأستاذ حتى توافق.",
+    "loanInstallment": "{{name}} · القسط {{installment}}",
+    "loanFallback": "القرض",
+    "waitingOtherLeg": "بانتظار الطرف الآخر من هذا التحويل…",
+    "category": "الفئة",
+    "toAccount": "إلى حساب",
+    "fromAccount": "من حساب",
+    "amountIn": "المبلغ بعملة {{currency}}",
+    "rateApprox": "1 {{currency}} ≈ {{rate}} {{target}}",
+    "enterBilled": "أدخل المبلغ الذي خصمه البنك بعملة {{currency}}",
+    "bankMessage": "رسالة البنك",
+    "sharedBalanceTitle": "الرصيد المشترك (اختياري)",
+    "sharedBalanceHelp": "وسّم هذه الرسالة كدين أو تقسيم — يوافق عليه العضو الآخر قبل احتسابه.",
+    "sharedBalanceTag": "وسم الرصيد المشترك",
+    "noTag": "بدون وسم",
+    "tagIou": "دين — المبلغ كامل له",
+    "tagSplit": "تقسيم — جزء منه له",
+    "member": "العضو",
+    "theirShare": "نصيبه (الحد الأقصى {{max}})",
+    "sharePrivate": "يخزّن الإدخال نصيبه فقط — يبقى مبلغك الكامل {{amount}} {{currency}} خاصًا بك.",
+    "discarding": "جارٍ الإهمال…",
+    "discardPermanently": "إهمال نهائي",
+    "discard": "إهمال",
+    "approving": "جارٍ الموافقة…",
+    "approve": "موافقة"
+  },
+  "connectionsDialog": {
+    "title": "ربط تحويل الرسائل",
+    "subtitle": "أنشئ اتصالًا خاصًا قابلًا للإلغاء لتطبيق محوّل الرسائل لديك.",
+    "existing": "الاتصالات الموجودة",
+    "used": "استُخدم {{date}}",
+    "neverUsed": "لم يُستخدم أبدًا",
+    "active": "نشط",
+    "disabled": "معطّل",
+    "revokeAria": "إلغاء {{label}}",
+    "connection": "الاتصال",
+    "endpoint": "نقطة النهاية",
+    "bearerToken": "رمز الحامل",
+    "copyAria": "نسخ {{label}}",
+    "creating": "جارٍ الإنشاء…",
+    "create": "إنشاء اتصال آمن",
+    "forwarderRequest": "طلب المحوّل",
+    "close": "إغلاق"
+  },
+  "toasts": {
+    "previewApproved": "معاينة فقط — لم تُنشأ أي معاملة",
+    "approved": "تمت الموافقة على المعاملة",
+    "approveFailed": "تعذر الموافقة على هذا العنصر",
+    "previewDiscarded": "معاينة فقط — لم يُحذف أي شيء",
+    "discarded": "تم إهمال العنصر المعلق",
+    "restored": "تمت استعادة العنصر المعلق",
+    "restoredForReview": "استُعيد العنصر المعلق للمراجعة",
+    "restoreFailed": "تعذر استعادة هذا العنصر",
+    "discardFailed": "تعذر إهمال هذا العنصر"
+  },
+  "undo": "تراجع"
+}
