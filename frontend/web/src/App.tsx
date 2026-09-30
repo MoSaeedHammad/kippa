@@ -46,7 +46,12 @@ export default function App() {
   // the Notifications settings page owns the prompt via its own instance.
   useNotifications(householdId);
 
-  if (isAuthLoading) return <AppLoadingScreen theme={theme} />;
+  if (isAuthLoading)
+    return (
+      <CacheProvider value={cache}>
+        <AppLoadingScreen theme={theme} />
+      </CacheProvider>
+    );
 
   if (!userProfile || !householdId) {
     return (
