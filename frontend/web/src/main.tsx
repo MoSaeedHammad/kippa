@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import App from '@/App';
 
+import '@/i18n';
 import { AppProvider } from '@/contexts/AppContext';
+import { LanguageProvider } from '@/hooks/LanguageProvider';
 import { ThemeModeProvider } from '@/hooks/ThemeModeProvider';
 import { PrivacyModeProvider } from '@/hooks/PrivacyModeProvider';
 import { versionDetails } from '@/version';
@@ -24,15 +26,17 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AppProvider>
-        <ThemeModeProvider>
-          <PrivacyModeProvider>
-            <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-              <App />
-            </SnackbarProvider>
-          </PrivacyModeProvider>
-        </ThemeModeProvider>
-      </AppProvider>
+      <LanguageProvider>
+        <AppProvider>
+          <ThemeModeProvider>
+            <PrivacyModeProvider>
+              <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+                <App />
+              </SnackbarProvider>
+            </PrivacyModeProvider>
+          </ThemeModeProvider>
+        </AppProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   </React.StrictMode>,
 );

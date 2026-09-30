@@ -1,8 +1,11 @@
 import { useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
+import { CacheProvider } from '@emotion/react';
 import { Box, ThemeProvider, CssBaseline } from '@mui/material';
 import { createAppTheme } from '@kippa/design-system';
 import { useThemeMode } from '@/hooks/useThemeMode';
+import { useLanguage } from '@/hooks/useLanguage';
+import { ltrCache, rtlCache } from '@/i18n/rtlCaches';
 import { AppBackground } from '@/features/shared/components/AppBackground';
 import { useAppContext } from '@/hooks/useAppContext';
 import { AppLoadingScreen } from '@/components/app-shell/AppLoadingScreen';
@@ -30,7 +33,12 @@ const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: 
 export default function App() {
   const { userProfile, householdId, isAuthLoading } = useAppContext();
   const { resolvedMode } = useThemeMode();
-  const theme = useMemo(() => createAppTheme(resolvedMode), [resolvedMode]);
+  const { direction } = useLanguage();
+  const theme = useMemo(() => {
+    const base = createAppTheme(resolvedMode);
+    return { ...base, direction };
+  }, [resolvedMode, direction]);
+  const cache = direction === 'rtl' ? rtlCache : ltrCache;
 
   // Register FCM push notifications once the user has a shared account. Side-effect
   // only — this instance handles the logout-unregister and re-register-on-reload
@@ -42,45 +50,49 @@ export default function App() {
 
   if (!userProfile || !householdId) {
     return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AppBackground />
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Suspense fallback={<AppLoadingScreen theme={theme} />}>
-            <AuthScreen />
-          </Suspense>
-        </Box>
-      </ThemeProvider>
+      <CacheProvider value={cache}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppBackground />
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Suspense fallback={<AppLoadingScreen theme={theme} />}>
+              <AuthScreen />
+            </Suspense>
+          </Box>
+        </ThemeProvider>
+      </CacheProvider>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AppBackground />
-      <BrowserRouter>
-        <Suspense fallback={<AppLoadingScreen theme={theme} />}>
-          <Routes>
-            <Route element={<AppShell />}>
-              <Route index element={<Dashboard />} />
-              <Route path="entry" element={<FastEntry />} />
-              <Route path="reconciliation" element={<Reconciliation />} />
-              <Route path="cycles" element={<BudgetCycles />} />
-              <Route path="transactions" element={<TransactionHistory />} />
-              <Route path="pending" element={<PendingTransactions />} />
-              <Route path="shared-accounts" element={<SharedAccountsPage />} />
-              <Route path="shared-balance" element={<SharedBalancePage />} />
-              <Route path="activity" element={<AuditLog />} />
-              <Route path="accounts" element={<Accounts />} />
-              <Route path="household" element={<Household />} />
-              <Route path="categories" element={<Categories />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="ai" element={<AiAssistant />} />
-              <Route path="loans" element={<Loans />} />
-            </Route>
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </ThemeProvider>
+    <CacheProvider value={cache}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppBackground />
+        <BrowserRouter>
+          <Suspense fallback={<AppLoadingScreen theme={theme} />}>
+            <Routes>
+              <Route element={<AppShell />}>
+                <Route index element={<Dashboard />} />
+                <Route path="entry" element={<FastEntry />} />
+                <Route path="reconciliation" element={<Reconciliation />} />
+                <Route path="cycles" element={<BudgetCycles />} />
+                <Route path="transactions" element={<TransactionHistory />} />
+                <Route path="pending" element={<PendingTransactions />} />
+                <Route path="shared-accounts" element={<SharedAccountsPage />} />
+                <Route path="shared-balance" element={<SharedBalancePage />} />
+                <Route path="activity" element={<AuditLog />} />
+                <Route path="accounts" element={<Accounts />} />
+                <Route path="household" element={<Household />} />
+                <Route path="categories" element={<Categories />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="ai" element={<AiAssistant />} />
+                <Route path="loans" element={<Loans />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </ThemeProvider>
+    </CacheProvider>
   );
 }

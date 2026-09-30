@@ -1,0 +1,5 @@
+{
+  "actions": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit", "add": "Add", "close": "Close", "retry": "Retry", "confirm": "Confirm" },
+  "states": { "loading": "Loading…", "empty": "Nothing here yet", "error": "Something went wrong" },
+  "misc": { "id": "ID" }
+}
