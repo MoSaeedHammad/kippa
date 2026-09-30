@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { Category } from '@kippa/domain';
 
 type CategoryChipsProps = {
@@ -32,15 +33,16 @@ export function CategoryChips({
   selectedCategoryId,
   totalCount,
 }: CategoryChipsProps) {
+  const { t } = useTranslation('fastEntry');
   return (
     <Box>
       <Typography variant="sectionLabel" sx={{ mb: 1 }}>
-        Category
+        {t('chips.category')}
       </Typography>
       {totalCount === 0 ? (
         <EmptyLayout
-          title={`No ${mode} categories yet`}
-          description={`Create ${mode} categories first to tag your ${mode} entries.`}
+          title={t(`chips.emptyTitle_${mode}`)}
+          description={t(`chips.emptyDescription_${mode}`)}
         />
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -58,7 +60,7 @@ export function CategoryChips({
           {totalCount > categories.length && (
             <Chip
               icon={<AddIcon fontSize="small" />}
-              label={`More (${totalCount - categories.length})`}
+              label={t('chips.more', { count: totalCount - categories.length })}
               onClick={onOpenAll}
               variant="filterAction"
             />
@@ -88,12 +90,13 @@ export function CategoryDialog({
   search,
   selectedCategoryId,
 }: CategoryDialogProps) {
+  const { t } = useTranslation('fastEntry');
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
-        Choose category
+        {t('categoryDialog.title')}
         <Typography component="span" variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-          Frequent categories stay on the entry screen for faster logging.
+          {t('categoryDialog.subtitle')}
         </Typography>
       </DialogTitle>
       <DialogContent dividers>
@@ -101,7 +104,7 @@ export function CategoryDialog({
           <TextField
             autoFocus
             fullWidth
-            placeholder="Search categories"
+            placeholder={t('categoryDialog.searchPlaceholder')}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             slotProps={{
@@ -129,12 +132,12 @@ export function CategoryDialog({
               })}
             </Box>
           ) : (
-            <EmptyLayout title="No matching categories" description="Try another category name." />
+            <EmptyLayout title={t('categoryDialog.noMatchTitle')} description={t('categoryDialog.noMatchDescription')} />
           )}
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('categoryDialog.cancel')}</Button>
       </DialogActions>
     </Dialog>
   );

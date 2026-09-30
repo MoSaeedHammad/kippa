@@ -1,1 +1,64 @@
-{}
+{
+  "page": {
+    "title": "إضافة معاملة",
+    "subtitle": "سجّل المصروفات والإيرادات والتحويلات"
+  },
+  "modes": {
+    "expense": "مصروف",
+    "income": "إيرادات",
+    "transfer": "تحويل"
+  },
+  "date": {
+    "today": "اليوم"
+  },
+  "pickers": {
+    "sourceAccount": "الحساب المصدر",
+    "fromAccount": "من حساب",
+    "destinationAccount": "الحساب الهدف",
+    "noOtherAccounts": "لا توجد حسابات أخرى متاحة.",
+    "selectSourceFirst": "يرجى اختيار الحساب المصدر أولًا.",
+    "notePlaceholder": "ملاحظة (اختياري)"
+  },
+  "save": {
+    "expense": "حفظ المصروف",
+    "income": "حفظ الإيراد",
+    "transaction": "حفظ المعاملة",
+    "saving": "جارٍ الحفظ…",
+    "save": "حفظ",
+    "errorToast": "حدث خطأ أثناء حفظ المعاملة"
+  },
+  "feedback": {
+    "expenseLogged": "تم تسجيل المصروف",
+    "incomeLogged": "تم تسجيل الإيراد",
+    "transferSent": "تم إرسال التحويل",
+    "transferTitle": "تحويل",
+    "entrySavedAria": "تم حفظ الإدخال",
+    "tapAnywhere": "اضغط في أي مكان للمتابعة"
+  },
+  "keypad": {
+    "sourceAmount": "مبلغ المصدر",
+    "amountToLog": "المبلغ المراد تسجيله",
+    "destinationAmount": "مبلغ الهدف",
+    "rate": "السعر: 1 {{source}} = {{rate}} {{destination}}"
+  },
+  "chips": {
+    "category": "الفئة",
+    "emptyTitle_expense": "لا توجد فئات مصروفات بعد",
+    "emptyTitle_income": "لا توجد فئات إيرادات بعد",
+    "emptyDescription_expense": "أنشئ فئات المصروفات أولًا لوسم إدخالات المصروفات.",
+    "emptyDescription_income": "أنشئ فئات الإيرادات أولًا لوسم إدخالات الإيرادات.",
+    "more": "المزيد ({{count}})"
+  },
+  "categoryDialog": {
+    "title": "اختر فئة",
+    "subtitle": "تبقى الفئات المتكررة على شاشة الإدخال لتسجيل أسرع.",
+    "searchPlaceholder": "ابحث في الفئات",
+    "noMatchTitle": "لا توجد فئات مطابقة",
+    "noMatchDescription": "جرّب اسم فئة آخر.",
+    "cancel": "إلغاء"
+  },
+  "empty": {
+    "title": "لا توجد حسابات لتسجيل الإدخالات عليها",
+    "description": "أضف حسابًا أولًا — ستحتاجه لتسجيل المصروفات أو الإيرادات أو التحويلات."
+  }
+}

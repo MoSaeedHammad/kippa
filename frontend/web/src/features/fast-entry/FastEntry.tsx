@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -35,6 +36,7 @@ import { useFastEntryFormState } from './hooks/useFastEntryFormState';
 
 export function FastEntry() {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('fastEntry');
   const { householdId, userProfile } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const isSaveAnimationPreview = import.meta.env.DEV
@@ -60,7 +62,7 @@ export function FastEntry() {
   const activeCycle = cycles.find(c => c.status === 'open') || null;
   // YYYY-MM-DD string submitted to the backend
   const date = format(entryDate, 'yyyy-MM-dd');
-  const dateLabel = isToday(entryDate) ? 'Today' : format(entryDate, 'MMM d');
+  const dateLabel = isToday(entryDate) ? t('date.today') : format(entryDate, 'MMM d');
 
   // Sort accounts so base-currency running accounts come first, then cash accounts, then everything else (e.g. USD).
   // Priority: base-currency running account (0) -> cash type (1) -> other (2). Stable within each tier.
@@ -181,32 +183,32 @@ export function FastEntry() {
 
   const handleSave = async () => {
     if (isSaveAnimationPreview) {
-      triggerSaveFeedback(mode === 'expense' ? 'Expense logged' : mode === 'income' ? 'Income logged' : 'Transfer sent', `${amountStr === '0' ? '250' : amountStr} ${selectedAccount?.currency ?? baseCurrency}`, mode === 'transfer' ? 'Transfer' : selectedCategory?.name ?? 'Food & dining', mode === 'transfer' ? `${selectedAccount?.name ?? 'EGP Cash'} → ${toAccount?.name ?? 'EGP Bank'}` : selectedAccount?.name ?? 'EGP Cash');
+      triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : mode === 'income' ? t('feedback.incomeLogged') : t('feedback.transferSent'), `${amountStr === '0' ? '250' : amountStr} ${selectedAccount?.currency ?? baseCurrency}`, mode === 'transfer' ? t('feedback.transferTitle') : selectedCategory?.name ?? 'Food & dining', mode === 'transfer' ? `${selectedAccount?.name ?? 'EGP Cash'} → ${toAccount?.name ?? 'EGP Bank'}` : selectedAccount?.name ?? 'EGP Cash');
       return;
     }
     try {
       const payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, mode, sourceAccount: selectedAccount });
       await createTxMutation.mutateAsync({ householdId, ...payload });
       const amount = Number(amountStr);
-      triggerSaveFeedback(mode === 'expense' ? 'Expense logged' : mode === 'income' ? 'Income logged' : 'Transfer sent', `${amount} ${selectedAccount!.currency}`, mode === 'transfer' ? 'Transfer' : selectedCategory?.name ?? mode, mode === 'transfer' ? `${selectedAccount!.name} → ${toAccount!.name}` : selectedAccount!.name);
+      triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : mode === 'income' ? t('feedback.incomeLogged') : t('feedback.transferSent'), `${amount} ${selectedAccount!.currency}`, mode === 'transfer' ? t('feedback.transferTitle') : selectedCategory?.name ?? mode, mode === 'transfer' ? `${selectedAccount!.name} → ${toAccount!.name}` : selectedAccount!.name);
       if (mode === 'expense') localStorage.setItem('ledger_last_used_account', selectedAccount!.id);
       setAmountStr('0');
       setToAmountStr('0');
       setDescription('');
       if (mode !== 'transfer') setSelectedCategoryId(null);
     } catch (error) {
-      enqueueSnackbar(error instanceof Error ? error.message : 'Error occurred saving transaction', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : t('save.errorToast'), { variant: 'error' });
     }
   };
   const currentCurrencySymbol = selectedAccount?.currency ?? baseCurrency;
   const isSaving = createTxMutation.isPending;
-  const saveLabel = mode === 'expense' ? 'Save Expense' : mode === 'income' ? 'Save Income' : 'Save Transaction';
+  const saveLabel = mode === 'expense' ? t('save.expense') : mode === 'income' ? t('save.income') : t('save.transaction');
 
   if (accountsLoading || categoriesLoading) {
     return (
       <Box sx={{ py: 0.5, width: '100%', maxWidth: 520, mx: 'auto' }}>
         <Stack spacing={3}>
-          <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
+          <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
           <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: '20px' }} />
           <Skeleton variant="rectangular" width="100%" height={250} sx={{ borderRadius: '20px' }} />
         </Stack>
@@ -218,10 +220,10 @@ export function FastEntry() {
     return (
       <Box sx={{ py: 0.5, width: '100%', maxWidth: 520, mx: 'auto' }}>
         <Stack spacing={3}>
-          <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
+          <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
           <EmptyLayout
-            title="No accounts to log entries against"
-            description="Add an account first — you'll need one to record expenses, income, or transfers."
+            title={t('empty.title')}
+            description={t('empty.description')}
           />
         </Stack>
       </Box>
@@ -233,7 +235,7 @@ export function FastEntry() {
       <Stack spacing={2.5}>
         
         {/* Page Header */}
-        <PageHeader title="Add transaction" subtitle="Log expenses, income & transfers" />
+        <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
 
         {/* Keep the entry type visible before the amount on every viewport. */}
         <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
@@ -244,7 +246,7 @@ export function FastEntry() {
               variant={mode === m ? 'segmentedSelected' : 'segmented'}
               sx={{ flex: 1 }}
             >
-              {m.toUpperCase()}
+              {t(`modes.${m}`)}
             </Button>
           ))}
         </Stack>
@@ -274,7 +276,7 @@ export function FastEntry() {
 
         <AccountPicker
           accounts={sortedAccounts}
-          label={mode === 'transfer' ? 'Source Account' : 'From Account'}
+          label={mode === 'transfer' ? t('pickers.sourceAccount') : t('pickers.fromAccount')}
           onSelect={handleSelectSourceAccount}
           selectedAccountId={selectedAccountId}
         />
@@ -284,9 +286,9 @@ export function FastEntry() {
           <AccountPicker
             accounts={eligibleDestinationAccounts}
             emptyMessage={selectedAccountId
-              ? 'No other accounts available.'
-              : 'Please select a Source Account first.'}
-            label="Destination Account"
+              ? t('pickers.noOtherAccounts')
+              : t('pickers.selectSourceFirst')}
+            label={t('pickers.destinationAccount')}
             onSelect={setToAccountId}
             selectedAccountId={toAccountId}
           />
@@ -296,7 +298,7 @@ export function FastEntry() {
         <Stack direction="row" spacing={1.5} sx={{ width: '100%' }}>
           <TextField
             fullWidth
-            placeholder="Note (optional)"
+            placeholder={t('pickers.notePlaceholder')}
             value={description}
             onChange={event => setDescription(event.target.value)}
             slotProps={{
