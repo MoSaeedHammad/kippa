@@ -236,13 +236,13 @@ export function AiAssistant() {
             <Typography variant="assistantMessage" sx={{ whiteSpace: 'pre-wrap' }}>{message.content}</Typography>
           </Paper>
         ) : (<>
-          <Paper variant="assistantMessageAvatar" sx={{ mt: 0.25, mr: 1.5 }}>
+          <Paper variant="assistantMessageAvatar" sx={{ mt: 0.25, me: 1.5 }}>
             <NotesIcon sx={{ fontSize: 16 }} />
           </Paper>
           <Stack spacing={1.5} sx={{ width: 'calc(100% - 44px)', maxWidth: 620 }}>
             <Paper variant="assistantReply">
               <Typography component="div" variant="assistantMessage"><Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown></Typography>
-              {streaming && <Box component="span" sx={{ display: 'inline-block', width: 6, height: 16, ml: 0.5, bgcolor: 'primary.main', verticalAlign: 'text-bottom', animation: 'kipCursor 900ms steps(1) infinite', '@keyframes kipCursor': { '50%': { opacity: 0 } } }} />}
+              {streaming && <Box component="span" sx={{ display: 'inline-block', width: 6, height: 16, ms: 0.5, bgcolor: 'primary.main', verticalAlign: 'text-bottom', animation: 'kipCursor 900ms steps(1) infinite', '@keyframes kipCursor': { '50%': { opacity: 0 } } }} />}
             </Paper>
             {message.charts?.map((chart, index) => <AiChart key={`${message.id}-chart-${index}`} chart={chart} />)}
           </Stack>

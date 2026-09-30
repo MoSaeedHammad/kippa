@@ -24,7 +24,7 @@ export function EntryKeypad(props: Props) {
       </Paper>}
       {crossCurrency && source > 0 && destination > 0 && <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 1.5 }}>{t('keypad.rate', { source: sourceCurrency, rate: (destination / source).toFixed(2), destination: destinationCurrency })}</Typography>}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>{KEYS.map((key) => <Button key={key} onClick={() => onKeyPress(key)} disableRipple fullWidth variant={key === 'back' ? 'keypadBack' : 'keypad'}>{key === 'back' ? <BackspaceIcon /> : key}</Button>)}</Box>
-      <Fab variant="extended" color="primary" aria-label={saveLabel} onClick={onSave} disabled={saving} sx={{ display: { xs: 'flex', lg: 'none' }, position: 'fixed', right: 18, bottom: 96, zIndex: (theme) => theme.zIndex.appBar + 1, minWidth: 112, gap: 1 }}><CheckCircleIcon fontSize="small" />{saving ? t('save.saving') : t('save.save')}</Fab>
+      <Fab variant="extended" color="primary" aria-label={saveLabel} onClick={onSave} disabled={saving} sx={{ display: { xs: 'flex', lg: 'none' }, position: 'fixed', insetInlineEnd: 18, bottom: 96, zIndex: (theme) => theme.zIndex.appBar + 1, minWidth: 112, gap: 1 }}><CheckCircleIcon fontSize="small" />{saving ? t('save.saving') : t('save.save')}</Fab>
     </Box>
   );
 }

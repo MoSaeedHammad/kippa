@@ -5,6 +5,7 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -134,6 +135,11 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { userProfile, householdId } = useAppContext();
+  const theme = useTheme();
+  // Keep the paper caret ('&::before' right: 18, mirrored by the emotion rtl
+  // cache) glued to the trigger edge: MUI Menu anchors are physical, so the
+  // horizontal origin must flip with direction.
+  const menuHorizontal = theme.direction === 'rtl' ? 'left' : 'right';
   const isScoped = userProfile
     ? (userProfile.memberships?.[householdId]?.accessLevel ?? 'full') !== 'full'
     : false;
@@ -179,8 +185,8 @@ export function QuickNavMenu({ anchorEl, open, onClose }: QuickNavMenuProps) {
           },
         },
       }}
-      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      transformOrigin={{ horizontal: menuHorizontal, vertical: 'top' }}
+      anchorOrigin={{ horizontal: menuHorizontal, vertical: 'bottom' }}
     >
       {sections.map((section, sIdx) => (
         <div key={section.titleKey}>

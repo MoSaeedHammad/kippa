@@ -285,7 +285,7 @@ export function PendingTransactions() {
                 sx={{
                   width: '100%', minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.25,
                   display: 'flex', alignItems: 'center', gap: 1.5, border: 0,
-                  bgcolor: 'transparent', color: 'text.primary', textAlign: 'left', cursor: 'pointer',
+                  bgcolor: 'transparent', color: 'text.primary', textAlign: 'start', cursor: 'pointer',
                   opacity: (itemStates[item.id] ?? 'idle') === 'idle' ? 1 : 0.6,
                   '&:hover': { bgcolor: 'action.hover' },
                 }}
@@ -305,7 +305,7 @@ export function PendingTransactions() {
                   </Typography>
                 </Box>
               </Box>
-              {index < pending.length - 1 && <Divider sx={{ ml: 8.5 }} />}
+              {index < pending.length - 1 && <Divider sx={{ ms: 8.5 }} />}
             </Box>
           ))}
         </Card>
@@ -358,7 +358,7 @@ export function PendingTransactions() {
                     </Button>
                   )}
                 </Box>
-                {index < resolved.length - 1 && <Divider sx={{ ml: 8.5 }} />}
+                {index < resolved.length - 1 && <Divider sx={{ ms: 8.5 }} />}
               </Box>
             );
           })}

@@ -117,7 +117,7 @@ function AddCardDialogInner({ preselectAccountId, onClose }: { preselectAccountI
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         {!isBankStep && (
-          <IconButton size="small" onClick={goBackToBank} sx={{ mr: 0.5 }}>
+          <IconButton size="small" onClick={goBackToBank} sx={{ me: 0.5 }}>
             <ArrowBackIcon fontSize="small" />
           </IconButton>
         )}

@@ -151,7 +151,7 @@ export function SideNav() {
                 event.stopPropagation();
                 setExpanded(current => ({ ...current, [item.path]: !current[item.path] }));
               }}
-              sx={{ p: 0.75, mr: -0.75, color: 'text.primary', cursor: 'pointer' }}
+              sx={{ p: 0.75, me: -0.75, color: 'text.primary', cursor: 'pointer' }}
             >
               <ExpandLessIcon sx={{ fontSize: 17, transform: isExpanded ? 'none' : 'rotate(180deg)', transition: 'transform 160ms ease' }} />
             </Box>
@@ -163,10 +163,10 @@ export function SideNav() {
             spacing={0.25}
             sx={{
               position: 'relative',
-              ml: 2.75,
+              ms: 2.75,
               mb: 0.75,
-              pl: 2.25,
-              '&::before': { content: '""', position: 'absolute', top: 2, bottom: 10, left: 0, width: '1px', bgcolor: 'divider' },
+              ps: 2.25,
+              '&::before': { content: '""', position: 'absolute', top: 2, bottom: 10, insetInlineStart: 0, width: '1px', bgcolor: 'divider' },
             }}
           >
             {item.children.map(child => {
@@ -183,7 +183,7 @@ export function SideNav() {
                     py: 0.5,
                     borderRadius: 2,
                     color: 'text.primary',
-                    '&::before': { content: '""', position: 'absolute', left: -18, top: '50%', width: 12, height: '1px', bgcolor: 'divider' },
+                    '&::before': { content: '""', position: 'absolute', insetInlineStart: -18, top: '50%', width: 12, height: '1px', bgcolor: 'divider' },
                     '&.Mui-selected': { bgcolor: 'transparent', color: 'primary.main' },
                     '&.Mui-selected:hover': { bgcolor: 'action.hover' },
                   }}
@@ -245,8 +245,8 @@ export function SideNav() {
           minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
-          pr: 0.5,
-          mr: -0.5,
+          pe: 0.5,
+          me: -0.5,
           scrollbarWidth: 'thin',
           scrollbarColor: 'transparent transparent',
           '&:hover': { scrollbarColor: 'divider transparent' },

@@ -10,6 +10,7 @@ import {
   Avatar,
   Tooltip,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import { HomeIcon } from '@/components/AppIcon';
 import { LogoutIcon } from '@/components/AppIcon';
@@ -80,6 +81,11 @@ export function ProfileMenu({
   const { privacyMode, setPrivacyMode } = usePrivacyMode();
   const { t } = useTranslation('appShell');
   const { language, setLanguage } = useLanguage();
+  const theme = useTheme();
+  // MUI Popover/Menu anchors are physical and not RTL-aware, while the emotion
+  // rtl cache mirrors the paper caret ('&::before' right: 18). Flip the origin
+  // with the caret so it stays glued to the trigger edge in both directions.
+  const menuHorizontal = theme.direction === 'rtl' ? 'left' : 'right';
 
   const handleClose = () => {
     onClose();
@@ -120,8 +126,8 @@ export function ProfileMenu({
           },
         },
       }}
-      transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-      anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      transformOrigin={{ horizontal: menuHorizontal, vertical: 'top' }}
+      anchorOrigin={{ horizontal: menuHorizontal, vertical: 'bottom' }}
     >
       {/* User details */}
       <Box sx={{ px: 2.5, py: 2 }}>
@@ -289,7 +295,7 @@ export function ProfileMenu({
               <Icon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary={label} />
-            {selected && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ml: 'auto' }} />}
+            {selected && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
           </MenuItem>
         );
       })}
@@ -341,7 +347,7 @@ export function ProfileMenu({
           primary={privacyMode ? t('profileMenu.privacyModeOn') : t('profileMenu.privacyMode')}
           secondary={t('profileMenu.hideBalances')}
         />
-        {privacyMode && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ml: 'auto' }} />}
+        {privacyMode && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
       </MenuItem>
 
       <Divider sx={{ my: 1 }} />

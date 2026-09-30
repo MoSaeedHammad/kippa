@@ -289,7 +289,7 @@ export function AuditLog() {
                 fullWidth
                 slotProps={{
                   input: {
-                    startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: '20px' }} />,
+                    startAdornment: <SearchIcon sx={{ color: 'text.secondary', me: 1, fontSize: '20px' }} />,
                   },
                 }}
                 sx={{

@@ -156,7 +156,7 @@ export function BudgetBreakdownCard() {
                           </Stack>
                           <Stack direction="row" alignItems="center" spacing={1}>
                             <LinearProgress variant="determinate" value={Math.min(100, percent)} sx={{ flex: 1, '& .MuiLinearProgress-bar': { bgcolor: statusColor } }} />
-                            <Typography sx={{ minWidth: 34, textAlign: 'right', fontSize: 10.5, fontWeight: 700, color: 'text.secondary' }}>{Math.round(percent)}%</Typography>
+                            <Typography sx={{ minWidth: 34, textAlign: 'end', fontSize: 10.5, fontWeight: 700, color: 'text.secondary' }}>{Math.round(percent)}%</Typography>
                           </Stack>
                           <Box sx={{ display: { xs: 'grid', md: 'contents' }, gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1.5 }}>
                             {[

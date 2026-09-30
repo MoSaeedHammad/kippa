@@ -39,7 +39,7 @@ export function HouseholdMembersCard({ busy, loading, members, onDecide, onAcces
                       </Button>
                     )
                   }>
-                    <Avatar src={member.photoURL || undefined} sx={{ width: 36, height: 36, mr: 1.5 }}>{member.displayName?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+                    <Avatar src={member.photoURL || undefined} sx={{ width: 36, height: 36, me: 1.5 }}>{member.displayName?.charAt(0)?.toUpperCase() || '?'}</Avatar>
                     <ListItemText
                       primary={member.displayName}
                       secondary={member.isOwner ? member.email : `${member.email} · ${t(`accessLevels.${member.accessLevel ?? 'full'}`)}`}
@@ -64,7 +64,7 @@ export function HouseholdMembersCard({ busy, loading, members, onDecide, onAcces
                         <Button size="small" variant="outlined" color="error" onClick={() => onDecide(request.uid, 'reject')} disabled={busy}>{t('membersCard.reject')}</Button>
                       </Stack>
                     }>
-                      <Avatar src={request.photoURL || undefined} sx={{ width: 36, height: 36, mr: 1.5 }}>{request.displayName?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+                      <Avatar src={request.photoURL || undefined} sx={{ width: 36, height: 36, me: 1.5 }}>{request.displayName?.charAt(0)?.toUpperCase() || '?'}</Avatar>
                       <ListItemText
                         primary={request.displayName}
                         secondary={request.requestedLevel === 'sharedBalanceOnly'

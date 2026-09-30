@@ -117,7 +117,7 @@ export function MyAccountsCard() {
                             <Typography sx={{ fontSize: 11, lineHeight: '16px', fontWeight: 600, color: 'text.secondary', textTransform: 'capitalize' }}>{acc.type}</Typography>
                           </Box>
                         </Stack>
-                        <Typography noWrap sx={{ fontSize: 15, lineHeight: '22px', fontWeight: 800, color: bal < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                        <Typography noWrap sx={{ fontSize: 15, lineHeight: '22px', fontWeight: 800, color: bal < 0 ? 'error.main' : 'text.primary', fontVariantNumeric: 'tabular-nums', textAlign: 'end' }}>
                           <Money amount={bal} code={acc.currency} maxDigits={2} />
                         </Typography>
                       </Stack>

@@ -33,7 +33,7 @@ export function BudgetAllocationDialog({ allocations, categories, cycle, cycles,
             {cycle && <Chip label={cycle.status.toUpperCase()} size="small" color={cycle.status === 'open' ? 'success' : cycle.status === 'planned' ? 'primary' : 'default'} variant="outlined" />}
           </Box>
         </Box>
-        <Box sx={{ textAlign: 'right' }}><Typography variant="sectionLabel">{t('allocationDialog.totalBudget')}</Typography><Typography variant="h3" color="primary.main"><Money amount={totalBudget} code={currency} /></Typography></Box>
+        <Box sx={{ textAlign: 'end' }}><Typography variant="sectionLabel">{t('allocationDialog.totalBudget')}</Typography><Typography variant="h3" color="primary.main"><Money amount={totalBudget} code={currency} /></Typography></Box>
       </DialogTitle>
       <DialogContent>
         {cycle && (isLoading ? <Skeleton variant="rectangular" width="100%" height={300} /> : <BudgetAllocationsConfig key={`${cycle.id}-${allocations.length}`} householdId={householdId} activeCycle={cycle} categories={categories} dbAllocations={allocations} cycles={cycles} onSave={onClose} saveRef={saveRef} onSavingStatusChange={onSavingChange} onTotalBudgetChange={onTotalChange} />)}

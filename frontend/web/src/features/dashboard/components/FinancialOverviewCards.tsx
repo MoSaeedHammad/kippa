@@ -76,7 +76,7 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
               <MetricCapsule icon={<WorkIcon fontSize="small" />} label={t('overview.received')} value={data.income.actual} currency={baseCurrency} positive />
             </Stack>
 
-            <Box sx={{ mt: 'auto', pt: 3, pl: 1.5, borderLeft: '2px solid', borderColor: 'primary.main' }}>
+            <Box sx={{ mt: 'auto', pt: 3, ps: 1.5, borderInlineStart: '2px solid', borderColor: 'primary.main' }}>
               <Typography sx={{ color: 'text.secondary', fontSize: 10.5 }}>{t('overview.receivedThisCycle')}</Typography>
               <Typography sx={{ color: 'text.primary', fontSize: 15, fontWeight: 650 }}>{t('overview.incomeEntries', { count: receivedIncomeCount })}</Typography>
             </Box>
