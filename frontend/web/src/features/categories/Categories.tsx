@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   Box, 
   Card, 
   CardContent, 
@@ -26,6 +27,7 @@ import {
 import { useAppContext } from '@/hooks/useAppContext';
 
 export function Categories() {
+  const { t } = useTranslation('categories');
   const { householdId } = useAppContext();
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
@@ -49,7 +51,7 @@ export function Categories() {
     setNewCatName('');
   };
 
-  const renderCategoryGroup = (type: 'income' | 'expense', title: string) => {
+  const renderCategoryGroup = (type: 'income' | 'expense') => {
     const items = categories.filter(category => category.type === type);
     return (
       <Card>
@@ -57,8 +59,8 @@ export function Categories() {
           <Box sx={{ mb: 2 }}>
             <CardHeading
               icon={<CategoryIcon variant="Bulk" />}
-              title={title}
-              subtitle={`${items.length} configured`}
+              title={t(`groups.${type}`)}
+              subtitle={t('groups.configured', { count: items.length })}
               trailing={
                 <Typography sx={{ color: type === 'income' ? 'success.main' : 'text.secondary', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {type}
@@ -73,7 +75,7 @@ export function Categories() {
             </Grid>
           ) : items.length === 0 ? (
             <Box sx={{ py: 4, textAlign: 'center', borderRadius: '12px', bgcolor: 'action.hover' }}>
-              <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>No {type} categories yet</Typography>
+              <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>{t(`groups.empty_${type}`)}</Typography>
             </Box>
           ) : (
             <Grid container spacing={1}>
@@ -102,36 +104,36 @@ export function Categories() {
   return (
     <Container maxWidth="xl" sx={{ py: 1, px: { xs: 2, sm: 3, lg: 5 } }}>
       <Stack spacing={3}>
-        <PageHeader title="Categories" subtitle="Organize income and spending for reports and statements" />
+        <PageHeader title={t('page.title')} subtitle={t('page.subtitle')} />
 
         <Grid container spacing={{ xs: 2, lg: 3 }} alignItems="flex-start">
           <Grid size={{ xs: 12, md: 8 }}>
-            <Stack spacing={2}>{renderCategoryGroup('income', 'Income categories')}{renderCategoryGroup('expense', 'Expense categories')}</Stack>
+            <Stack spacing={2}>{renderCategoryGroup('income')}{renderCategoryGroup('expense')}</Stack>
           </Grid>
 
           <Grid size={{ xs: 12, md: 4 }}>
             <Card sx={{ position: { md: 'sticky' }, top: { md: 96 } }}>
               <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                <Typography sx={{ fontSize: 15, fontWeight: 750, color: 'text.primary' }}>Add a category</Typography>
-                <Typography sx={{ color: 'text.secondary', fontSize: 11.5, mt: 0.5, mb: 2.5 }}>New categories become available immediately in entry and budgeting.</Typography>
+                <Typography sx={{ fontSize: 15, fontWeight: 750, color: 'text.primary' }}>{t('addCard.title')}</Typography>
+                <Typography sx={{ color: 'text.secondary', fontSize: 11.5, mt: 0.5, mb: 2.5 }}>{t('addCard.subtitle')}</Typography>
                 <Stack spacing={2}>
               <TextField
                 fullWidth
-                label="Category name"
-                placeholder="e.g. Subscriptions"
+                label={t('addCard.nameLabel')}
+                placeholder={t('addCard.namePlaceholder')}
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
               />
               <FormControl fullWidth>
-                <InputLabel id="cat-type-label">Type</InputLabel>
+                <InputLabel id="cat-type-label">{t('addCard.type')}</InputLabel>
                 <Select
                   labelId="cat-type-label"
                   value={newCatType}
-                  label="Type"
+                  label={t('addCard.type')}
                   onChange={e => setNewCatType(e.target.value as 'income' | 'expense')}
                 >
-                  <MenuItem value="expense">Expense</MenuItem>
-                  <MenuItem value="income">Income</MenuItem>
+                  <MenuItem value="expense">{t('addCard.expense')}</MenuItem>
+                  <MenuItem value="income">{t('addCard.income')}</MenuItem>
                 </Select>
               </FormControl>
               <Button
@@ -141,7 +143,7 @@ export function Categories() {
                 loading={createCategoryMutation.isPending}
                 sx={{ borderRadius: '10px', fontWeight: 700 }}
               >
-                Create Category
+                {t('addCard.create')}
               </Button>
                 </Stack>
               </CardContent>

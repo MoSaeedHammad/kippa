@@ -1,1 +1,28 @@
-{}
+{
+  "page": {
+    "title": "Categories",
+    "subtitle": "Organize income and spending for reports and statements"
+  },
+  "groups": {
+    "income": "Income categories",
+    "expense": "Expense categories",
+    "configured_zero": "{{count}} configured",
+    "configured_one": "{{count}} configured",
+    "configured_two": "{{count}} configured",
+    "configured_few": "{{count}} configured",
+    "configured_many": "{{count}} configured",
+    "configured_other": "{{count}} configured",
+    "empty_income": "No income categories yet",
+    "empty_expense": "No expense categories yet"
+  },
+  "addCard": {
+    "title": "Add a category",
+    "subtitle": "New categories become available immediately in entry and budgeting.",
+    "nameLabel": "Category name",
+    "namePlaceholder": "e.g. Subscriptions",
+    "type": "Type",
+    "expense": "Expense",
+    "income": "Income",
+    "create": "Create Category"
+  }
+}

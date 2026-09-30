@@ -1,1 +1,28 @@
-{}
+{
+  "page": {
+    "title": "الفئات",
+    "subtitle": "نظّم الإيرادات والمصروفات للتقارير وكشوف الحساب"
+  },
+  "groups": {
+    "income": "فئات الإيرادات",
+    "expense": "فئات المصروفات",
+    "configured_zero": "لا فئات مُهيأة",
+    "configured_one": "فئة واحدة مُهيأة",
+    "configured_two": "فئتان مُهيأتين",
+    "configured_few": "{{count}} فئات مُهيأة",
+    "configured_many": "{{count}} فئة مُهيأة",
+    "configured_other": "{{count}} فئة مُهيأة",
+    "empty_income": "لا توجد فئات إيرادات بعد",
+    "empty_expense": "لا توجد فئات مصروفات بعد"
+  },
+  "addCard": {
+    "title": "إضافة فئة",
+    "subtitle": "تصبح الفئات الجديدة متاحة فورًا في الإدخال وإعداد الميزانية.",
+    "nameLabel": "اسم الفئة",
+    "namePlaceholder": "مثال: الاشتراكات",
+    "type": "النوع",
+    "expense": "مصروف",
+    "income": "الإيرادات",
+    "create": "إنشاء الفئة"
+  }
+}
