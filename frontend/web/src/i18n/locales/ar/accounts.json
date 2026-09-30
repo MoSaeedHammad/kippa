@@ -1,1 +1,36 @@
-{}
+{
+  "page": {
+    "title": "الحسابات والبطاقات",
+    "subtitle": "أدر الحسابات والنقد والمحافظ والبطاقات"
+  },
+  "connected_zero": "لا توجد حسابات مرتبطة",
+  "connected_one": "حساب واحد مرتبط",
+  "connected_two": "حسابان مرتبطان",
+  "connected_few": "{{count}} حسابات مرتبطة",
+  "connected_many": "{{count}} حسابًا مرتبطًا",
+  "connected_other": "{{count}} حساب مرتبط",
+  "empty": {
+    "title": "لا توجد حسابات بعد",
+    "description": "أنشئ أول حساب لتبدأ تتبع الأرصدة والبطاقات."
+  },
+  "editAria": "تعديل {{name}}",
+  "addCard": "إضافة بطاقة",
+  "addAnotherCard": "إضافة بطاقة أخرى",
+  "types": {
+    "running": "حساب جاري",
+    "savings": "حساب توفير",
+    "cash": "نقد",
+    "wallet": "محفظة"
+  },
+  "form": {
+    "accountType": "نوع الحساب",
+    "addTitle": "إضافة حساب جديد",
+    "addSubtitle": "اربط النقد أو محفظة أو رصيد بنكي.",
+    "accountName": "اسم الحساب",
+    "create": "إنشاء الحساب",
+    "editTitle": "تعديل الحساب",
+    "isActive": "الحساب نشط",
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات"
+  }
+}

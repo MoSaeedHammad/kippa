@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -42,6 +43,7 @@ import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalan
 import { AddAccountCard, EditAccountDialog } from './components/AccountForms';
 
 export function Accounts() {
+  const { t } = useTranslation('accounts');
   const { householdId } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -123,15 +125,15 @@ export function Accounts() {
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2} flexWrap="wrap" useFlexGap>
           <Box>
             <Typography variant="h2" sx={{ fontSize: 24, fontWeight: 800, color: 'text.primary' }}>
-              Accounts & Cards
+              {t('page.title')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 13, mt: 0.5 }}>
-              Manage accounts, cash, wallets and cards
+              {t('page.subtitle')}
             </Typography>
           </Box>
           {!isLoading && (
             <Chip
-              label={`${visibleAccounts.length} ${visibleAccounts.length === 1 ? 'account' : 'accounts'} connected`}
+              label={t('connected', { count: visibleAccounts.length })}
               sx={{ bgcolor: 'action.hover', color: 'primary.main' }}
             />
           )}
@@ -154,8 +156,8 @@ export function Accounts() {
             ) : visibleAccounts.length === 0 ? (
               <EmptyLayout
                 icon={<AccountBalanceIcon sx={{ fontSize: 28 }} />}
-                title="No accounts yet"
-                description="Create your first account to begin tracking balances and cards."
+                title={t('empty.title')}
+                description={t('empty.description')}
               />
             ) : (
               visibleAccounts.map(acc => {
@@ -190,7 +192,7 @@ export function Accounts() {
                             <Typography sx={{ fontSize: 14, fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap' }}>
                               <Money amount={bal} code={acc.currency} maxDigits={2} />
                             </Typography>
-                            <IconButton aria-label={`Edit ${acc.name}`} onClick={() => handleOpenEdit(acc)}>
+                            <IconButton aria-label={t('editAria', { name: acc.name })} onClick={() => handleOpenEdit(acc)}>
                               <EditIcon sx={{ fontSize: 18 }} />
                             </IconButton>
                           </Stack>
@@ -217,7 +219,7 @@ export function Accounts() {
                               </Box>
                             )}
                             <Button startIcon={<AddIcon />} onClick={() => setAddCardForAccount(acc.id)} sx={{ color: 'text.secondary' }}>
-                              {linked.length > 0 ? 'Add another card' : 'Add card'}
+                              {linked.length > 0 ? t('addAnotherCard') : t('addCard')}
                             </Button>
                           </Box>
                         )}

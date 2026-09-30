@@ -1,1 +1,36 @@
-{}
+{
+  "page": {
+    "title": "Accounts & Cards",
+    "subtitle": "Manage accounts, cash, wallets and cards"
+  },
+  "connected_zero": "{{count}} accounts connected",
+  "connected_one": "{{count}} account connected",
+  "connected_two": "{{count}} accounts connected",
+  "connected_few": "{{count}} accounts connected",
+  "connected_many": "{{count}} accounts connected",
+  "connected_other": "{{count}} accounts connected",
+  "empty": {
+    "title": "No accounts yet",
+    "description": "Create your first account to begin tracking balances and cards."
+  },
+  "editAria": "Edit {{name}}",
+  "addCard": "Add card",
+  "addAnotherCard": "Add another card",
+  "types": {
+    "running": "Running Bank",
+    "savings": "Savings Bank",
+    "cash": "Cash",
+    "wallet": "Wallet"
+  },
+  "form": {
+    "accountType": "Account Type",
+    "addTitle": "Add new account",
+    "addSubtitle": "Connect cash, a wallet, or a bank balance.",
+    "accountName": "Account Name",
+    "create": "Create Account",
+    "editTitle": "Edit Account",
+    "isActive": "Account is Active",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes"
+  }
+}
