@@ -62,7 +62,7 @@ export function RecurringConfirmationsCard() {
                     }
                   }}
                 >
-                  {t('recurring.actions.confirm')}
+                  {draft.type === 'expense' ? t('recurring.actions.confirmPaid') : t('recurring.actions.confirmReceived')}
                 </Button>
                 <Button
                   size="small" variant="outlined" color="error"

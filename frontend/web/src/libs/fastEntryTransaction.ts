@@ -25,3 +25,35 @@ export function buildFastEntryTransaction(input: Input) {
     ...(crossCurrency ? { conversionDetails: { fromCurrency: input.sourceAccount.currency, toCurrency: destination.currency, fromAmount: amount, toAmount: destinationAmount, effectiveRate: destinationAmount / amount, rateSource: 'manual' as const } } : {}),
   };
 }
+
+/** A share of one entry amount assigned to one account. */
+export type SplitAllocation = { accountId: string; amount: number };
+
+/**
+ * Builds the ledger lines for an expense/income entry split across several
+ * accounts: one signed line per allocation (negative for expense), every
+ * allocation positive, unique, and the total equal to the entry amount.
+ */
+export function buildSplitEntryLines(input: {
+  totalAmount: number;
+  currency: string;
+  isIncome: boolean;
+  allocations: SplitAllocation[];
+}): { accountId: string; signedAmount: number; currency: string }[] {
+  if (!input.allocations.length) throw new Error('Add at least one account to split between');
+  const seen = new Set<string>();
+  let sum = 0;
+  for (const allocation of input.allocations) {
+    if (!allocation.accountId) throw new Error('Choose an account for every split row');
+    if (seen.has(allocation.accountId)) throw new Error('Each account may appear only once in the split');
+    if (!Number.isFinite(allocation.amount) || allocation.amount <= 0) throw new Error('Split amounts must be positive');
+    seen.add(allocation.accountId);
+    sum += allocation.amount;
+  }
+  if (Math.abs(sum - input.totalAmount) > 0.01) throw new Error('The split amounts must add up to the entry amount');
+  return input.allocations.map((allocation) => ({
+    accountId: allocation.accountId,
+    signedAmount: input.isIncome ? allocation.amount : -allocation.amount,
+    currency: input.currency,
+  }));
+}

@@ -69,5 +69,10 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "yearly": "Yearly"
+  },
+  "split": {
+    "label": "Split between accounts",
+    "single": "Single account",
+    "across": "Split across accounts"
   }
 }

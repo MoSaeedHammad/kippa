@@ -156,7 +156,9 @@
     "expense": "Expense",
     "actions": {
       "confirm": "Confirm",
-      "skip": "Skip"
+      "skip": "Skip",
+      "confirmPaid": "Confirm paid",
+      "confirmReceived": "Confirm received"
     },
     "toasts": {
       "confirmed": "Occurrence recorded",

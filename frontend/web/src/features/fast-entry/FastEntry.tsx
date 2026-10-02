@@ -37,6 +37,9 @@ import { EntryKeypad } from './components/EntryKeypad';
 import { buildFastEntryTransaction, type EntryMode } from '@/libs/fastEntryTransaction';
 import { useProposeTransferMutation } from '@/features/transactions/hooks/useTransferApprovals';
 import { useUpsertRecurringTransactionRuleMutation } from '@/features/transactions/hooks/useRecurringTransactions';
+import { AllocationsEditor } from '@/features/pending-transactions/components/AllocationsEditor';
+import type { AllocationRow } from '@/features/pending-transactions/hooks/usePendingReviewState';
+import { buildSplitEntryLines } from '@/libs/fastEntryTransaction';
 import type { RecurringFrequency } from '@/libs/recurringTransactions';
 import { useSaveFeedback } from './hooks/useSaveFeedback';
 import { useFastEntryFormState } from './hooks/useFastEntryFormState';
@@ -191,6 +194,8 @@ export function FastEntry() {
   const proposeTransferMutation = useProposeTransferMutation();
   const upsertRecurringRuleMutation = useUpsertRecurringTransactionRuleMutation();
   const [repeat, setRepeat] = useState<'none' | RecurringFrequency>('none');
+  const [splitEnabled, setSplitEnabled] = useState(false);
+  const [splitRows, setSplitRows] = useState<AllocationRow[]>([]);
 
   const handleSave = async () => {
     if (isSaveAnimationPreview) {
@@ -239,7 +244,17 @@ export function FastEntry() {
         setDescription('');
         return;
       }
-      const payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, mode, sourceAccount: selectedAccount });
+      let payload: ReturnType<typeof buildFastEntryTransaction>;
+      if (splitEnabled && (mode === 'expense' || mode === 'income')) {
+        const amount = Number(amountStr);
+        const lines = buildSplitEntryLines({ totalAmount: amount, currency: selectedAccount!.currency, isIncome: mode === 'income', allocations: splitRows.map((row) => ({ accountId: row.accountId, amount: Number(row.amount) })) });
+        payload = {
+          transaction: { date, budgetCycleId: activeCycle?.id ?? null, createdBy: userProfile!.uid, type: mode, description: description || (mode === 'income' ? 'Income' : null), categoryId: selectedCategory!.id },
+          lines,
+        };
+      } else {
+        payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, mode, sourceAccount: selectedAccount });
+      }
       await createTxMutation.mutateAsync({ householdId, ...payload });
       const amount = Number(amountStr);
       triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : t('feedback.incomeLogged'), `${amount} ${selectedAccount!.currency}`, selectedCategory?.name ?? mode, selectedAccount!.name);
@@ -248,6 +263,8 @@ export function FastEntry() {
       setToAmountStr('0');
       setDescription('');
       setSelectedCategoryId(null);
+      setSplitEnabled(false);
+      setSplitRows([]);
     } catch (error) {
       enqueueSnackbar(error instanceof Error ? error.message : t('save.errorToast'), { variant: 'error' });
     }
@@ -324,6 +341,37 @@ export function FastEntry() {
             selectedCategoryId={selectedCategoryId}
             totalCount={sortedCategories.length}
           />
+        )}
+
+        {/* Split between accounts (Only for expense/income) */}
+        {(mode === 'expense' || mode === 'income') && (
+          <Stack spacing={1.5}>
+            <FormControl fullWidth>
+              <InputLabel id="fast-entry-split-label">{t('split.label')}</InputLabel>
+              <Select
+                labelId="fast-entry-split-label"
+                value={splitEnabled ? 'yes' : 'no'}
+                label={t('split.label')}
+                onChange={(event) => {
+                  const enabled = event.target.value === 'yes';
+                  setSplitEnabled(enabled);
+                  setSplitRows(enabled && selectedAccount ? [{ accountId: selectedAccount.id, amount: amountStr }] : []);
+                }}
+              >
+                <MenuItem value="no">{t('split.single')}</MenuItem>
+                <MenuItem value="yes">{t('split.across')}</MenuItem>
+              </Select>
+            </FormControl>
+            {splitEnabled && (
+              <AllocationsEditor
+                accounts={sortedAccounts.filter((account) => account.currency === selectedAccount?.currency)}
+                rows={splitRows}
+                total={Number(amountStr) || 0}
+                currency={selectedAccount?.currency ?? baseCurrency}
+                onChange={setSplitRows}
+              />
+            )}
+          </Stack>
         )}
 
         {/* Repeat (Only for expense/income) — creates a recurring rule */}

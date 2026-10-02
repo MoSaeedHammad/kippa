@@ -156,7 +156,9 @@
     "expense": "مصروف",
     "actions": {
       "confirm": "تأكيد",
-      "skip": "تجاهل"
+      "skip": "تجاهل",
+      "confirmPaid": "تأكيد الدفع",
+      "confirmReceived": "تأكيد الاستلام"
     },
     "toasts": {
       "confirmed": "تم تسجيل الحدث",
