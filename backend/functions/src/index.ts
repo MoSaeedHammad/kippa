@@ -22,6 +22,7 @@ export {
   restoreDiscardedPendingFinancialMessage,
 } from './features/message-ingestion/messageIngestion.js';
 export { glmProxy } from './features/ai/glmProxy.js';
+export { upsertCategoryRule } from './features/categories/categoryRules.js';
 export {
   proposeSharedBalanceEntry,
   decideSharedBalanceEntry,

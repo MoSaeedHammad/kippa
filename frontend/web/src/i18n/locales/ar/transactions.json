@@ -24,7 +24,8 @@
     "transaction": "المعاملة",
     "accountInfo": "معلومات الحساب",
     "amount": "المبلغ",
-    "actions": "الإجراءات"
+    "actions": "الإجراءات",
+    "issuedBy": "أصدرها"
   },
   "empty": {
     "title": "لا توجد معاملات مطابقة",

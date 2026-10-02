@@ -8,6 +8,7 @@ import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
 import { extractMessage, extractSender } from '../../domain/message-ingestion/ingestBody.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
+import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
 import { getAccessLevel, getMemberProfileInHousehold, requireFullHouseholdMember, requireHouseholdMember } from '../../libs/householdAccess.js';
@@ -90,6 +91,17 @@ async function resolveSuggestions(
   const accounts = accountsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Account);
   const cards = cardsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Card);
   return pickSuggestions(accounts, cards, parsed);
+}
+
+/** Loads merchant-pattern rules and suggests a category for the message text. */
+async function resolveCategorySuggestion(
+  householdId: string,
+  text: { description: string; counterparty?: string | null },
+): Promise<string | null> {
+  const rulesSnapshot = await getFirestore().collection(`households/${householdId}/categoryRules`).get();
+  if (rulesSnapshot.empty) return null;
+  const rules = rulesSnapshot.docs.map((doc) => ({ ...doc.data() }) as { pattern: string; categoryId: string });
+  return matchCategoryByPattern(rules, text);
 }
 
 function installmentDate(loan: Loan, installmentNumber: number): string {
@@ -316,6 +328,9 @@ export const ingestFinancialMessage = onRequest(
     const suggestions = await resolveSuggestions(credential.householdId, parsedResult.parsed);
     const loanSuggestion = await resolveLoanSuggestion(credential.householdId, parsedResult.parsed, suggestions.accountId);
     const parsed = parsedResult.parsed;
+    const suggestedCategoryId = parsed.kind === 'transfer'
+      ? null
+      : await resolveCategorySuggestion(credential.householdId, { description: parsed.description, counterparty: parsed.counterparty ?? null });
 
     // ── Cross-currency transfer merge ──────────────────────────────────
     // Phone Banking Transfers arrive as two SMS (one per leg). When the
@@ -421,6 +436,7 @@ export const ingestFinancialMessage = onRequest(
       suggestedLoanId: loanSuggestion?.loanId ?? null,
       suggestedLoanName: loanSuggestion?.loanName ?? null,
       suggestedLoanInstallmentNumber: loanSuggestion?.installmentNumber ?? null,
+      suggestedCategoryId: suggestedCategoryId ?? null,
       conversionRequired: suggestions.conversionRequired || null,
       destinationAmount: null,
       destinationCurrency: null,
@@ -530,6 +546,15 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     }
   }
 
+  // Merchant-pattern fallback: when the client sent no category, use the
+  // suggestion stored at ingest time, or re-derive from current rules.
+  let effectiveCategoryId = categoryId;
+  if (pendingForLoanCheck.kind !== 'transfer' && !suggestedLoanId && !effectiveCategoryId) {
+    effectiveCategoryId = pendingForLoanCheck.suggestedCategoryId
+      || (await resolveCategorySuggestion(householdId, { description: pendingForLoanCheck.description, counterparty: pendingForLoanCheck.counterparty ?? null }))
+      || '';
+  }
+
   await db.runTransaction(async (transaction) => {
     const loanRef = suggestedLoanId ? db.doc(`households/${householdId}/loans/${suggestedLoanId}`) : null;
     const paymentLockRef = suggestedLoanId && suggestedInstallment
@@ -562,8 +587,8 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       }
       if (paymentLockSnapshot?.exists) throw new HttpsError('already-exists', 'This loan installment is already recorded.');
     } else if (pending.kind !== 'transfer') {
-      if (!categoryId) throw new HttpsError('invalid-argument', 'Category is required.');
-      const categorySnapshot = await transaction.get(db.doc(`households/${householdId}/categories/${categoryId}`));
+      if (!effectiveCategoryId) throw new HttpsError('invalid-argument', 'Category is required.');
+      const categorySnapshot = await transaction.get(db.doc(`households/${householdId}/categories/${effectiveCategoryId}`));
       const category = categorySnapshot.data() as Category | undefined;
       if (!category?.isActive) throw new HttpsError('failed-precondition', 'Choose an active category.');
       if (category.type !== pending.kind) {
@@ -612,7 +637,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       type: pending.kind,
       date: pending.date,
       description: pending.description,
-      categoryId: categoryId || null,
+      categoryId: effectiveCategoryId || null,
       budgetCycleId: activeCycleId,
       createdBy: uid,
       createdAt: now,

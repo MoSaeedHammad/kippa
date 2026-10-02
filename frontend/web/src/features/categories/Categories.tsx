@@ -1,54 +1,208 @@
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, 
-  Card, 
-  CardContent, 
-  Container, 
-  Stack, 
-  Typography, 
-  Button, 
-  TextField, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  IconButton,
+  MenuItem,
+  Select,
   Skeleton,
-  Grid
+  Stack,
+  TextField,
+  Typography,
+  InputLabel,
+  FormControl,
 } from '@mui/material';
-import { CategoryIcon } from '@/components/AppIcon';
+import { CategoryIcon, EditIcon, DeleteOutlineIcon, TuneIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { PageHeader } from '@/features/shared/components/PageHeader';
-import { 
-  useCategories, 
-  useCreateCategoryMutation 
+import {
+  useCategories,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
 } from '@/hooks/useFinance';
-
+import type { Category, CategoryRule } from '@kippa/domain';
 import { useAppContext } from '@/hooks/useAppContext';
+import {
+  useAddCategoryRuleMutation,
+  useCategoryRules,
+  useRemoveCategoryRuleMutation,
+} from './hooks/useCategoryRules';
+
+function CategoryRow({ category, rules }: { category: Category; rules: CategoryRule[] }) {
+  const { t } = useTranslation('categories');
+  const { enqueueSnackbar } = useSnackbar();
+  const { householdId } = useAppContext();
+  const updateMutation = useUpdateCategoryMutation();
+  const addRuleMutation = useAddCategoryRuleMutation();
+  const removeRuleMutation = useRemoveCategoryRuleMutation();
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [name, setName] = useState(category.name);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [patternsOpen, setPatternsOpen] = useState(false);
+  const [pattern, setPattern] = useState('');
+
+  const categoryRules = rules.filter((rule) => rule.categoryId === category.id);
+
+  const rename = async () => {
+    try {
+      await updateMutation.mutateAsync({
+        householdId,
+        categoryId: category.id,
+        updates: { name: name.trim() },
+      });
+      enqueueSnackbar(t('row.renamed'), { variant: 'success' });
+      setRenameOpen(false);
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('row.renameFailed'), { variant: 'error' });
+    }
+  };
+
+  const deactivate = async () => {
+    try {
+      await updateMutation.mutateAsync({
+        householdId,
+        categoryId: category.id,
+        updates: { isActive: false },
+      });
+      enqueueSnackbar(t('row.deactivated'), { variant: 'success' });
+      setDeactivateOpen(false);
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('row.deactivateFailed'), { variant: 'error' });
+    }
+  };
+
+  const addPattern = async () => {
+    try {
+      await addRuleMutation.mutateAsync({ householdId, categoryId: category.id, pattern: pattern.trim() });
+      enqueueSnackbar(t('row.ruleAdded'), { variant: 'success' });
+      setPattern('');
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('row.ruleAddFailed'), { variant: 'error' });
+    }
+  };
+
+  const removePattern = async (ruleId: string) => {
+    try {
+      await removeRuleMutation.mutateAsync({ householdId, ruleId });
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('row.ruleRemoveFailed'), { variant: 'error' });
+    }
+  };
+
+  return (
+    <Box sx={{ borderRadius: '10px', bgcolor: 'action.hover', border: '1px solid', borderColor: 'transparent' }}>
+      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minHeight: 46, px: 1.25, py: 0.75 }}>
+        <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: category.type === 'income' ? 'success.main' : 'primary.main', flexShrink: 0 }} />
+        <Typography sx={{ color: 'text.primary', fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+          {category.name}
+        </Typography>
+        <IconButton size="small" aria-label={t('row.patternsAria')} onClick={() => setPatternsOpen((open) => !open)}>
+          <TuneIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label={t('row.renameAria')} onClick={() => { setName(category.name); setRenameOpen(true); }}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label={t('row.deactivateAria')} onClick={() => setDeactivateOpen(true)}>
+          <DeleteOutlineIcon fontSize="small" />
+        </IconButton>
+      </Stack>
+
+      {patternsOpen && (
+        <Box sx={{ px: 1.25, pb: 1.25 }}>
+          <Divider sx={{ mb: 1 }} />
+          <Typography variant="fieldHint" color="text.secondary">{t('row.patternsHint')}</Typography>
+          {categoryRules.map((rule) => (
+            <Stack key={rule.id} direction="row" alignItems="center" spacing={1} sx={{ mt: 0.75 }}>
+              <Chip label={rule.pattern} size="small" variant="filter" />
+              <IconButton size="small" aria-label={t('row.removeRuleAria')} onClick={() => removePattern(rule.id)}>
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Stack>
+          ))}
+          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+            <TextField
+              size="small"
+              fullWidth
+              label={t('row.patternLabel')}
+              placeholder={t('row.patternPlaceholder')}
+              value={pattern}
+              onChange={(event) => setPattern(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 60 } }}
+            />
+            <Button variant="outlined" disabled={pattern.trim().length < 2 || addRuleMutation.isPending} onClick={addPattern}>
+              {t('row.addPattern')}
+            </Button>
+          </Stack>
+        </Box>
+      )}
+
+      <Dialog open={renameOpen} onClose={() => setRenameOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>{t('row.renameTitle')}</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus fullWidth margin="normal" label={t('addCard.nameLabel')} value={name}
+            onChange={(event) => setName(event.target.value)} slotProps={{ htmlInput: { maxLength: 40 } }} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameOpen(false)}>{t('row.cancel')}</Button>
+          <Button variant="contained" disabled={!name.trim() || updateMutation.isPending} onClick={rename}>{t('row.save')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deactivateOpen} onClose={() => setDeactivateOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>{t('row.deactivateTitle')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">{t('row.deactivateText', { name: category.name })}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeactivateOpen(false)}>{t('row.cancel')}</Button>
+          <Button variant="contained" color="error" disabled={updateMutation.isPending} onClick={deactivate}>{t('row.deactivateConfirm')}</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
 
 export function Categories() {
   const { t } = useTranslation('categories');
   const { householdId } = useAppContext();
+  const { enqueueSnackbar } = useSnackbar();
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
 
   // Queries & Mutations
   const { data: categories = [], isLoading } = useCategories(householdId);
+  const { data: rules = [] } = useCategoryRules(householdId);
   const createCategoryMutation = useCreateCategoryMutation();
 
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return;
 
-    await createCategoryMutation.mutateAsync({
-      householdId,
-      category: {
-        name: newCatName,
-        type: newCatType,
-        isActive: true
-      }
-    });
-
-    setNewCatName('');
+    try {
+      await createCategoryMutation.mutateAsync({
+        householdId,
+        category: {
+          name: newCatName,
+          type: newCatType,
+          isActive: true
+        }
+      });
+      setNewCatName('');
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.createFailed'), { variant: 'error' });
+    }
   };
 
   const renderCategoryGroup = (type: 'income' | 'expense') => {
@@ -81,17 +235,7 @@ export function Categories() {
             <Grid container spacing={1}>
               {items.map(category => (
                 <Grid key={category.id} size={{ xs: 12, sm: 6 }}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1.25}
-                    sx={{ minHeight: 46, px: 1.25, py: 0.75, borderRadius: '10px', bgcolor: 'action.hover', border: '1px solid', borderColor: 'transparent' }}
-                  >
-                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: type === 'income' ? 'success.main' : 'primary.main', flexShrink: 0 }} />
-                    <Typography sx={{ color: 'text.primary', fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {category.name}
-                    </Typography>
-                  </Stack>
+                  <CategoryRow category={category} rules={rules} />
                 </Grid>
               ))}
             </Grid>

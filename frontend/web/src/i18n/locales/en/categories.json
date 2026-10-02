@@ -28,5 +28,31 @@
   "type": {
     "income": "Income",
     "expense": "Expense"
+  },
+  "row": {
+    "renameAria": "Rename category",
+    "deactivateAria": "Delete category",
+    "patternsAria": "Merchant patterns",
+    "renameTitle": "Rename category",
+    "renamed": "Category renamed",
+    "renameFailed": "Could not rename the category",
+    "deactivateTitle": "Delete category?",
+    "deactivateText": "“{{name}}” will be hidden from pickers and stop matching bank messages. Old transactions keep their label.",
+    "deactivated": "Category deleted",
+    "deactivateFailed": "Could not delete the category",
+    "deactivateConfirm": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "patternsHint": "When a bank message contains one of these phrases (any capitalization), this category is suggested automatically.",
+    "patternLabel": "Merchant phrase",
+    "patternPlaceholder": "e.g. Talabat",
+    "addPattern": "Add",
+    "ruleAdded": "Pattern added",
+    "ruleAddFailed": "Could not add the pattern",
+    "removeRuleAria": "Remove pattern",
+    "ruleRemoveFailed": "Could not remove the pattern"
+  },
+  "toasts": {
+    "createFailed": "Could not create the category"
   }
 }

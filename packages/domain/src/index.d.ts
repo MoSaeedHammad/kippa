@@ -295,6 +295,20 @@ export type Category = {
   createdAt: string;
 };
 
+/**
+ * Merchant-pattern rule that auto-assigns a category to ingested bank
+ * messages: when `pattern` (case-insensitive substring) matches the message
+ * description or counterparty, `categoryId` is suggested at approval.
+ */
+export type CategoryRule = {
+  id: string;
+  householdId: string;
+  pattern: string;
+  categoryId: string;
+  createdBy: string;
+  createdAt: string;
+};
+
 export type BudgetAllocation = {
   id: string;
   householdId: string;
@@ -416,6 +430,8 @@ export type PendingFinancialMessage = {
   suggestedDestinationAccountId?: string | null;
   /** Strictly matched active loan; approval records the next installment without a category. */
   suggestedLoanId?: string | null;
+  /** Category suggested by a merchant-pattern rule match (overridable at approval). */
+  suggestedCategoryId?: string | null;
   suggestedLoanName?: string | null;
   suggestedLoanInstallmentNumber?: number | null;
   /** Amount on the destination leg of a cross-currency transfer (from the credit SMS). */

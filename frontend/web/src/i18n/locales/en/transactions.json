@@ -24,7 +24,8 @@
     "transaction": "Transaction",
     "accountInfo": "Account Info",
     "amount": "Amount",
-    "actions": "Actions"
+    "actions": "Actions",
+    "issuedBy": "Issued by"
   },
   "empty": {
     "title": "No matching transactions",

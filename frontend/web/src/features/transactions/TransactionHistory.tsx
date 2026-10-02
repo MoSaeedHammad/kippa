@@ -39,6 +39,7 @@ import { EditTransactionDialog } from './components/EditTransactionDialog';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { useTransactionHistoryUi } from './hooks/useTransactionHistoryUi';
 import { TransactionHistoryRow } from './components/TransactionHistoryRow';
+import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 
 export function TransactionHistory() {
   const { t } = useTranslation('transactions');
@@ -64,6 +65,10 @@ export function TransactionHistory() {
 
   // Queries & Mutations
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts(householdId);
+  const { data: members = [] } = useSharedBalanceMembers(householdId);
+  // The "Issued by" column only earns its space when several people share the space.
+  const memberNames = new Map(members.map((member) => [member.uid, member.displayName]));
+  const showIssuer = members.length > 1;
   const { data: categories = [], isLoading: categoriesLoading } = useCategories(householdId);
   const { data: cycles = [] } = useCycles(householdId);
   const { data: activeCycle } = useActiveCycle(householdId);
@@ -225,6 +230,7 @@ export function TransactionHistory() {
                 <TableCell align="center" sx={{ width: 64, py: 1.75 }}>{t('table.type')}</TableCell>
                 <TableCell sx={{ py: 1.75 }}>{t('table.transaction')}</TableCell>
                 <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.accountInfo')}</TableCell>
+                {showIssuer && <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.issuedBy')}</TableCell>}
                 <TableCell align="right" sx={{ width: { xs: 120, sm: 160 }, py: 1.75 }}>{t('table.amount')}</TableCell>
                 <TableCell align="center" sx={{ width: { xs: 92, sm: 112 }, py: 1.75 }}>{t('table.actions')}</TableCell>
               </TableRow>
@@ -232,7 +238,7 @@ export function TransactionHistory() {
             <TableBody>
               {filteredTxs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} sx={{ p: 2, borderBottom: 0 }}>
+                  <TableCell colSpan={showIssuer ? 6 : 5} sx={{ p: 2, borderBottom: 0 }}>
                     <EmptyLayout
                       icon={<SearchIcon sx={{ fontSize: 28 }} />}
                       title={t('empty.title')}
@@ -241,7 +247,7 @@ export function TransactionHistory() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTxs.slice(0, visibleCount).map((transaction) => <TransactionHistoryRow key={transaction.id} transaction={transaction} accounts={accounts} categories={categories} ledgerLines={ledgerLines} baseCurrency={baseCurrency} maskDigits={maskDigits} onEdit={setEditingTx} onVoid={handleVoid} />)
+                filteredTxs.slice(0, visibleCount).map((transaction) => <TransactionHistoryRow key={transaction.id} transaction={transaction} accounts={accounts} categories={categories} ledgerLines={ledgerLines} baseCurrency={baseCurrency} maskDigits={maskDigits} onEdit={setEditingTx} onVoid={handleVoid} issuedByName={showIssuer ? (memberNames.get(transaction.createdBy) ?? transaction.createdBy.slice(0, 6)) : undefined} />)
               )}
             </TableBody>
           </Table>

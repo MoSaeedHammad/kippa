@@ -112,6 +112,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Merchant-pattern category rules are managed only via the
+      // upsertCategoryRule callable.
+      match /categoryRules/{ruleId} {
+        allow read: if isFullHouseholdMember(householdId);
+        allow write: if false;
+      }
+
       // Any member (any access level) registers push tokens and own settings,
       // otherwise shared-balance-only members could never be notified.
       match /fcmTokens/{tokenId} {
@@ -133,6 +140,7 @@ service cloud.firestore {
         allow read, write: if collectionName != 'pendingFinancialMessages'
           && collectionName != 'sharedBalanceEntries'
           && collectionName != 'recurringSharedEntryRules'
+          && collectionName != 'categoryRules'
           && collectionName != 'fcmTokens'
           && collectionName != 'notificationSettings'
           && collectionName != 'aiConversations'

@@ -113,7 +113,7 @@ export function PendingTransactions() {
   const openReview = (item: PendingFinancialMessage) => {
     if ((itemStates[item.id] ?? 'idle') !== 'idle') return;
     setSelected(item);
-    setCategoryId('');
+    setCategoryId(item.suggestedCategoryId ?? '');
     setAccountId(item.suggestedAccountId ?? '');
     setDestinationAccountId(item.suggestedDestinationAccountId ?? '');
     setConfirmDiscard(false);

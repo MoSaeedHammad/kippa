@@ -28,5 +28,31 @@
   "type": {
     "income": "الإيرادات",
     "expense": "المصروفات"
+  },
+  "row": {
+    "renameAria": "إعادة تسمية الفئة",
+    "deactivateAria": "حذف الفئة",
+    "patternsAria": "أنماط التاجر",
+    "renameTitle": "إعادة تسمية الفئة",
+    "renamed": "تمت إعادة تسمية الفئة",
+    "renameFailed": "تعذر تعديل اسم الفئة",
+    "deactivateTitle": "حذف الفئة؟",
+    "deactivateText": "سيتم إخفاء «{{name}}» من القوائم وتوقف مطابقتها لرسائل البنك، وتبقى المعاملات القديمة كما هي.",
+    "deactivated": "تم حذف الفئة",
+    "deactivateFailed": "تعذر حذف الفئة",
+    "deactivateConfirm": "حذف",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "patternsHint": "عند احتواء رسالة البنك على إحدى هذه العبارات (بأي حالة أحرف)، يتم اقتراح هذه الفئة تلقائيًا.",
+    "patternLabel": "عبارة التاجر",
+    "patternPlaceholder": "مثال: طلبات",
+    "addPattern": "إضافة",
+    "ruleAdded": "تمت إضافة النمط",
+    "ruleAddFailed": "تعذر إضافة النمط",
+    "removeRuleAria": "إزالة النمط",
+    "ruleRemoveFailed": "تعذر إزالة النمط"
+  },
+  "toasts": {
+    "createFailed": "تعذر إنشاء الفئة"
   }
 }
