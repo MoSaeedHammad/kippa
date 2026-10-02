@@ -31,6 +31,8 @@
     "editTitle": "Edit Account",
     "isActive": "Account is Active",
     "cancel": "Cancel",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "owner": "Account owner",
+    "noOwner": "No owner (anyone can move money)"
   }
 }

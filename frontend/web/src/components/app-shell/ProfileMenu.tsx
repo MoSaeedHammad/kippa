@@ -295,7 +295,7 @@ export function ProfileMenu({
               <Icon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary={label} />
-            {selected && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
+            {selected && <CheckIcon fontSize="small" sx={{ color: 'primary.main', marginInlineStart: 'auto' }} />}
           </MenuItem>
         );
       })}
@@ -329,7 +329,7 @@ export function ProfileMenu({
           sx={{ ...menuItemStyle, py: 0.75 }}
         >
           <ListItemText primary={label} />
-          {language === value && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
+          {language === value && <CheckIcon fontSize="small" sx={{ color: 'primary.main', marginInlineStart: 'auto' }} />}
         </MenuItem>
       ))}
 
@@ -347,7 +347,7 @@ export function ProfileMenu({
           primary={privacyMode ? t('profileMenu.privacyModeOn') : t('profileMenu.privacyMode')}
           secondary={t('profileMenu.hideBalances')}
         />
-        {privacyMode && <CheckIcon fontSize="small" sx={{ color: 'primary.main', ms: 'auto' }} />}
+        {privacyMode && <CheckIcon fontSize="small" sx={{ color: 'primary.main', marginInlineStart: 'auto' }} />}
       </MenuItem>
 
       <Divider sx={{ my: 1 }} />

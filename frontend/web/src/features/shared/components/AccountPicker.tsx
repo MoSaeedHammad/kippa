@@ -84,7 +84,7 @@ export function AccountPicker({
                   <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
                     {account.type}
                   </Typography>
-                  {isSelected && <CheckCircleIcon sx={{ ms: 'auto', fontSize: 17, color: 'primary.main' }} />}
+                  {isSelected && <CheckCircleIcon sx={{ marginInlineStart: 'auto', fontSize: 17, color: 'primary.main' }} />}
                 </Box>
                 <Typography
                   variant="sectionLabel"

@@ -41,6 +41,7 @@ import { Money } from '@/components/Money';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { ForeignBalanceTooltip } from '@/features/shared/components/ForeignBalanceTooltip';
 import { AddAccountCard, EditAccountDialog } from './components/AccountForms';
+import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 
 export function Accounts() {
   const { t } = useTranslation('accounts');
@@ -54,6 +55,7 @@ export function Accounts() {
 
   // Queries & Mutations
   const { data: accounts = [], isLoading } = useAccounts(householdId);
+  const { data: members = [] } = useSharedBalanceMembers(householdId);
   const { data: cards = [] } = useCards(householdId);
   const { data: ledgerLines = [] } = useLedgerLines(householdId);
   const { data: transactions = [] } = useTransactions(householdId);
@@ -91,7 +93,7 @@ export function Accounts() {
     setEditingAccount(null);
   };
 
-  const handleCreateAccount = async (draft: { name: string; type: AccountType; currency: CurrencyCode }) => {
+  const handleCreateAccount = async (draft: { name: string; type: AccountType; currency: CurrencyCode; ownerUid: string | null }) => {
     const nextOrder = accounts.length > 0 ? Math.max(...accounts.map(a => a.sortOrder)) + 1 : 1;
 
     await createAccountMutation.mutateAsync({
@@ -231,7 +233,7 @@ export function Accounts() {
             )}
           </Stack>
 
-          <AddAccountCard baseCurrency={baseCurrency} busy={createAccountMutation.isPending} onCreate={handleCreateAccount} />
+          <AddAccountCard baseCurrency={baseCurrency} busy={createAccountMutation.isPending} members={members} onCreate={handleCreateAccount} />
         </Box>
       </Stack>
 
@@ -243,7 +245,7 @@ export function Accounts() {
       />
       {detailCard && <CardDetail card={detailCard} onClose={() => setDetailCard(null)} />}
 
-      {editingAccount && <EditAccountDialog account={editingAccount} busy={updateAccountMutation.isPending} onClose={() => setEditingAccount(null)} onSave={handleUpdateAccount} />}
+      {editingAccount && <EditAccountDialog account={editingAccount} busy={updateAccountMutation.isPending} members={members} onClose={() => setEditingAccount(null)} onSave={handleUpdateAccount} />}
     </Box>
   );
 }

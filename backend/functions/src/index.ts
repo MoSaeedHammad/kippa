@@ -3,6 +3,7 @@ import { initializeApp } from 'firebase-admin/app';
 initializeApp();
 
 export { onTransactionCreated } from './features/transactions/onTransactionCreated.js';
+export { proposeTransfer, decideDraftTransfer } from './features/transactions/transferApprovals.js';
 export { dailyReminderCron } from './features/notifications/dailyReminderCron.js';
 export {
   createHousehold,

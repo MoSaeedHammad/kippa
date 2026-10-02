@@ -150,7 +150,7 @@ export function SideNav() {
                 event.stopPropagation();
                 setExpanded(current => ({ ...current, [item.path]: !current[item.path] }));
               }}
-              sx={{ p: 0.75, me: -0.75, color: 'text.primary', cursor: 'pointer' }}
+              sx={{ p: 0.75, marginInlineEnd: -0.75, color: 'text.primary', cursor: 'pointer' }}
             >
               <ExpandLessIcon sx={{ fontSize: 17, transform: isExpanded ? 'none' : 'rotate(180deg)', transition: 'transform 160ms ease' }} />
             </Box>
@@ -162,9 +162,9 @@ export function SideNav() {
             spacing={0.25}
             sx={{
               position: 'relative',
-              ms: 2.75,
+              marginInlineStart: 2.75,
               mb: 0.75,
-              ps: 2.25,
+              paddingInlineStart: 2.25,
               '&::before': { content: '""', position: 'absolute', top: 2, bottom: 10, insetInlineStart: 0, width: '1px', bgcolor: 'divider' },
             }}
           >
@@ -245,8 +245,8 @@ export function SideNav() {
           minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
-          pe: 0.5,
-          me: -0.5,
+          paddingInlineEnd: 0.5,
+          marginInlineEnd: -0.5,
           scrollbarWidth: 'thin',
           scrollbarColor: 'transparent transparent',
           '&:hover': { scrollbarColor: 'divider transparent' },

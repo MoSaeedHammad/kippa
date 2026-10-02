@@ -88,6 +88,12 @@ export type Account = {
   createdAt: string;
   /** Marks the virtual shared-balance account that receives mirror entries. */
   isSharedBalance?: boolean;
+  /**
+   * Member who owns this account within the space. Null/unset = unowned
+   * (behaves as today). Transfers into or out of an owned account need the
+   * owner's approval when someone else initiates them.
+   */
+  ownerUid?: string | null;
 };
 
 export type CardKind = 'debit' | 'credit';
@@ -154,6 +160,24 @@ export type FinanceTransaction = {
   originalCharge?: { currency: CurrencyCode; amount: number; rate: number } | null;
   /** Set when this transaction is the ledger mirror of an approved shared-balance entry. */
   sharedBalanceEntryId?: string | null;
+  /**
+   * Present while a transfer awaits owner approvals (status 'draft'). The
+   * ledger lines are written only when every required owner has approved.
+   */
+  transferDraft?: {
+    sourceAccountId: string;
+    destinationAccountId: string;
+    amount: number;
+    currency: CurrencyCode;
+    destinationAmount: number;
+    destinationCurrency: CurrencyCode;
+    /** One entry per owner whose approval is required. */
+    requiredApprovals: string[];
+    /** Owners who already approved. */
+    approvals: { uid: string; decidedAt: string }[];
+  } | null;
+  /** Set when this draft transaction was materialized from a recurring rule. */
+  recurringRuleId?: string | null;
 };
 
 export type SharedBalanceEntryKind = 'iou' | 'split' | 'repayment';

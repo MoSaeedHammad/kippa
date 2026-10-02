@@ -113,7 +113,7 @@ const SCOPED_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: Na
     ],
   },
   {
-    titleKey: 'sharedAccount',
+    titleKey: 'spaces',
     items: [
       { labelKey: 'mySpace', icon: <HomeIcon fontSize="small" />, path: '/household' },
     ],

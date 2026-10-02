@@ -99,7 +99,7 @@ export function BudgetPulseCard() {
         <DashboardCardHeading icon={<BarChartIcon variant="Bulk" />} title={t('pulse.title')} trailing={<Chip label={getStatusLabel(data.saving.status)} color={data.saving.status === 'on-track' ? 'success' : data.saving.status === 'warning' ? 'warning' : 'error'} />} />
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-          <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>{remainingPercent}<Box component="span" sx={{ color: 'text.secondary', fontSize: '0.62em', ms: 0.75 }}>%</Box></Typography>
+          <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>{remainingPercent}<Box component="span" sx={{ color: 'text.secondary', fontSize: '0.62em', marginInlineStart: 0.75 }}>%</Box></Typography>
           <Typography sx={{ maxWidth: 150, color: 'text.secondary', fontSize: 10.5, lineHeight: 1.45 }}>
             {data.saving.status === 'on-track' ? t('pulse.goodShape') : t('pulse.ahead')}
           </Typography>

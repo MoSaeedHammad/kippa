@@ -22,7 +22,7 @@ export function ActiveCycleCard({ cycle, daysInfo, onCloseCycle, isEditingBudget
           label={t('activeCard.active')}
           size="small"
           icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />}
-          sx={{ fontWeight: 700, fontSize: 10, height: 24, borderRadius: 0.75, bgcolor: (theme) => alpha(theme.palette.success.main, 0.08), color: 'success.main', alignSelf: 'flex-start', mb: 1.5, '& .MuiChip-icon': { display: 'block', ms: 1, me: -0.5 } }}
+          sx={{ fontWeight: 700, fontSize: 10, height: 24, borderRadius: 0.75, bgcolor: (theme) => alpha(theme.palette.success.main, 0.08), color: 'success.main', alignSelf: 'flex-start', mb: 1.5, '& .MuiChip-icon': { display: 'block', marginInlineStart: 1, marginInlineEnd: -0.5 } }}
         />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
           <Box>

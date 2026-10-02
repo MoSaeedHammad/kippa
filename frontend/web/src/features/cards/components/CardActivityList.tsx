@@ -32,7 +32,7 @@ export function CardActivityList({ card, categories, groups, mask, onLoadMore, o
                   {charge.description && <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.25 }}>{charge.description}</Typography>}
                   <Typography variant="fieldHint" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>{charge.date}</Typography>
                 </Box>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, ms: 1 }}>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, marginInlineStart: 1 }}>
                   <Typography variant="sectionLabel" color={charge.paid ? 'text.disabled' : 'text.primary'} sx={{ textDecoration: charge.paid ? 'line-through' : 'none' }}>−{mask(`${card.currency} ${charge.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`)}</Typography>
                   {charge.paid ? <CheckCircleIcon color="success" sx={{ fontSize: 18 }} /> : card.kind === 'credit' && <Button size="small" onClick={() => onPay(charge)}>{t('activity.pay')}</Button>}
                 </Stack>

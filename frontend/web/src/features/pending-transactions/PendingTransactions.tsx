@@ -38,6 +38,8 @@ import { useMessageConnections } from './hooks/useMessageConnections';
 import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
 import { pendingForViewerCount } from '@/libs/approvals';
 import { SharedBalanceApprovalsCard } from './components/SharedBalanceApprovalsCard';
+import { TransferApprovalsCard } from './components/TransferApprovalsCard';
+import { useDraftTransfers } from '@/features/transactions/hooks/useTransferApprovals';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 import { usePendingReviewState } from './hooks/usePendingReviewState';
 type PendingItemState = 'idle' | 'approving' | 'discarding' | 'settled';
@@ -75,6 +77,7 @@ export function PendingTransactions() {
   const { data: categories = [] } = useCategories(householdId);
   const { data: members = [] } = useSharedBalanceMembers(householdId);
   const { data: sharedEntries = [] } = useSharedBalanceEntries(householdId);
+  const { data: draftTransfers = [] } = useDraftTransfers(householdId);
   const approveMutation = useApprovePendingFinancialMessageMutation();
   const discardMutation = useDiscardPendingFinancialMessageMutation();
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
@@ -89,7 +92,12 @@ export function PendingTransactions() {
   const isLoading = previewMode ? false : remoteLoading;
   const viewerUid = userProfile?.uid ?? '';
   const pendingShared = sharedEntries.filter((entry) => entry.status === 'pending');
-  const totalPendingCount = pending.length + pendingForViewerCount(pendingShared, viewerUid);
+  const transfersAwaitingViewer = draftTransfers.filter((draft) => {
+    const required = draft.transferDraft?.requiredApprovals ?? [];
+    const decided = draft.transferDraft?.approvals.map((approval) => approval.uid) ?? [];
+    return required.includes(viewerUid) && !decided.includes(viewerUid);
+  }).length;
+  const totalPendingCount = pending.length + pendingForViewerCount(pendingShared, viewerUid) + transfersAwaitingViewer;
 
 
   const availableCategories = useMemo(() => {
@@ -266,14 +274,17 @@ export function PendingTransactions() {
       </Tabs>
 
       {tab === 'review' && (
-        <SharedBalanceApprovalsCard entries={pendingShared} />
+        <>
+          <SharedBalanceApprovalsCard entries={pendingShared} />
+          <TransferApprovalsCard members={members} />
+        </>
       )}
 
       {tab === 'review' && (isLoading ? (
         <Stack spacing={1}>
           {[0, 1, 2].map((item) => <Skeleton key={item} variant="rounded" height={76} />)}
         </Stack>
-      ) : pending.length === 0 && pendingShared.length === 0 ? (
+      ) : pending.length === 0 && pendingShared.length === 0 && draftTransfers.length === 0 ? (
         <EmptyLayout
           icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
           title={t('reviewTab.emptyTitle')}
@@ -316,7 +327,7 @@ export function PendingTransactions() {
                   </Typography>
                 </Box>
               </Box>
-              {index < pending.length - 1 && <Divider sx={{ ms: 8.5 }} />}
+              {index < pending.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
             </Box>
           ))}
         </Card>
@@ -373,7 +384,7 @@ export function PendingTransactions() {
                     </Button>
                   )}
                 </Box>
-                {index < resolved.length - 1 && <Divider sx={{ ms: 8.5 }} />}
+                {index < resolved.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
               </Box>
             );
           })}

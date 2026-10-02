@@ -102,7 +102,7 @@ export function SharedBalanceEntryItem({ entry, viewerUid, busy, onApprove, onRe
           </Stack>
         </Stack>
       </ListItem>
-      <Divider sx={{ ms: 8.5 }} component="li" />
+      <Divider sx={{ marginInlineStart: 8.5 }} component="li" />
     </>
   );
 }

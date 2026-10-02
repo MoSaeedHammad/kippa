@@ -33,7 +33,8 @@
     "transferSent": "تم إرسال التحويل",
     "transferTitle": "تحويل",
     "entrySavedAria": "تم حفظ الإدخال",
-    "tapAnywhere": "اضغط في أي مكان للمتابعة"
+    "tapAnywhere": "اضغط في أي مكان للمتابعة",
+    "transferPending": "أُرسلت للموافقة"
   },
   "keypad": {
     "sourceAmount": "مبلغ المصدر",

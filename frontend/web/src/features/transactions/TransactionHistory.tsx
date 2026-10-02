@@ -159,7 +159,7 @@ export function TransactionHistory() {
             fullWidth
             slotProps={{
               input: {
-                startAdornment: <SearchIcon sx={{ color: 'text.secondary', me: 1, fontSize: 20 }} />,
+                startAdornment: <SearchIcon sx={{ color: 'text.secondary', marginInlineEnd: 1, fontSize: 20 }} />,
               },
             }}
             sx={{

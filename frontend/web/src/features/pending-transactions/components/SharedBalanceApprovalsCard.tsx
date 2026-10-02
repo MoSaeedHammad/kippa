@@ -110,7 +110,7 @@ export function SharedBalanceApprovalsCard({ entries }: { entries: SharedBalance
                 </StackDirectionRow>
               )}
             </Box>
-            {index < items.length - 1 && <Divider sx={{ ms: 8.5 }} />}
+            {index < items.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
           </Box>
         );
       })}

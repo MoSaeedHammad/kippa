@@ -31,6 +31,7 @@ import { CategoryChips, CategoryDialog } from './components/CategoryPicker';
 import { SaveFeedbackOverlay } from './components/SaveFeedbackOverlay';
 import { EntryKeypad } from './components/EntryKeypad';
 import { buildFastEntryTransaction, type EntryMode } from '@/libs/fastEntryTransaction';
+import { useProposeTransferMutation } from '@/features/transactions/hooks/useTransferApprovals';
 import { useSaveFeedback } from './hooks/useSaveFeedback';
 import { useFastEntryFormState } from './hooks/useFastEntryFormState';
 
@@ -181,21 +182,45 @@ export function FastEntry() {
     }
   };
 
+  const proposeTransferMutation = useProposeTransferMutation();
+
   const handleSave = async () => {
     if (isSaveAnimationPreview) {
       triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : mode === 'income' ? t('feedback.incomeLogged') : t('feedback.transferSent'), `${amountStr === '0' ? '250' : amountStr} ${selectedAccount?.currency ?? baseCurrency}`, mode === 'transfer' ? t('feedback.transferTitle') : selectedCategory?.name ?? 'Food & dining', mode === 'transfer' ? `${selectedAccount?.name ?? 'EGP Cash'} → ${toAccount?.name ?? 'EGP Bank'}` : selectedAccount?.name ?? 'EGP Cash');
       return;
     }
     try {
+      if (mode === 'transfer') {
+        const result = await proposeTransferMutation.mutateAsync({
+          householdId,
+          sourceAccountId: selectedAccount!.id,
+          destinationAccountId: toAccount!.id,
+          amount: Number(amountStr),
+          destinationAmount: toAmountStr !== amountStr && Number(toAmountStr) > 0 ? Number(toAmountStr) : null,
+          date,
+          description,
+        });
+        const amount = Number(amountStr);
+        triggerSaveFeedback(
+          result.status === 'pending' ? t('feedback.transferPending') : t('feedback.transferSent'),
+          `${amount} ${selectedAccount!.currency}`,
+          t('feedback.transferTitle'),
+          `${selectedAccount!.name} → ${toAccount!.name}`,
+        );
+        setAmountStr('0');
+        setToAmountStr('0');
+        setDescription('');
+        return;
+      }
       const payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, mode, sourceAccount: selectedAccount });
       await createTxMutation.mutateAsync({ householdId, ...payload });
       const amount = Number(amountStr);
-      triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : mode === 'income' ? t('feedback.incomeLogged') : t('feedback.transferSent'), `${amount} ${selectedAccount!.currency}`, mode === 'transfer' ? t('feedback.transferTitle') : selectedCategory?.name ?? mode, mode === 'transfer' ? `${selectedAccount!.name} → ${toAccount!.name}` : selectedAccount!.name);
+      triggerSaveFeedback(mode === 'expense' ? t('feedback.expenseLogged') : t('feedback.incomeLogged'), `${amount} ${selectedAccount!.currency}`, selectedCategory?.name ?? mode, selectedAccount!.name);
       if (mode === 'expense') localStorage.setItem('ledger_last_used_account', selectedAccount!.id);
       setAmountStr('0');
       setToAmountStr('0');
       setDescription('');
-      if (mode !== 'transfer') setSelectedCategoryId(null);
+      setSelectedCategoryId(null);
     } catch (error) {
       enqueueSnackbar(error instanceof Error ? error.message : t('save.errorToast'), { variant: 'error' });
     }

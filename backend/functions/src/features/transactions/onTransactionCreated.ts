@@ -39,7 +39,7 @@ export const onTransactionCreated = onDocumentCreated(
   async (event) => {
     const householdId = event.params.householdId;
     const txn = event.data?.data() as FinanceTransaction | undefined;
-    if (!txn || txn.status === 'voided') return;
+    if (!txn || txn.status === 'voided' || txn.status === 'draft') return;
     // Mirror transactions of approved shared-balance entries already pushed
     // their own notification at proposal time; never double-notify.
     if (txn.sharedBalanceEntryId) return;

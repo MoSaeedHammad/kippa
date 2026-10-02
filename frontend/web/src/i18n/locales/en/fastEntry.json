@@ -33,7 +33,8 @@
     "transferSent": "Transfer sent",
     "transferTitle": "Transfer",
     "entrySavedAria": "Entry saved",
-    "tapAnywhere": "Tap anywhere to continue"
+    "tapAnywhere": "Tap anywhere to continue",
+    "transferPending": "Sent for approval"
   },
   "keypad": {
     "sourceAmount": "Source Amount",

@@ -124,5 +124,20 @@
       "declined": "Entry declined",
       "failed": "Could not update this entry"
     }
+  },
+  "transfers": {
+    "title": "Account transfers",
+    "subtitle": "Transfers between accounts owned by different members wait for every owner",
+    "typeChip": "Transfer",
+    "waitingFor": "Waiting for {{names}}",
+    "actions": {
+      "approve": "Approve",
+      "decline": "Decline"
+    },
+    "toasts": {
+      "approved": "Transfer approved",
+      "declined": "Transfer declined",
+      "failed": "Could not decide this transfer"
+    }
   }
 }
