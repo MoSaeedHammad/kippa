@@ -148,5 +148,20 @@
     "amount": "المبلغ",
     "remaining": "المتبقي {{amount}} {{currency}}",
     "addAccount": "إضافة حساب"
+  },
+  "recurring": {
+    "title": "القيود المتكررة",
+    "subtitle": "أكد أو تجاهل كل حدث من الدخل والمصروفات المتكررة",
+    "income": "إيراد",
+    "expense": "مصروف",
+    "actions": {
+      "confirm": "تأكيد",
+      "skip": "تجاهل"
+    },
+    "toasts": {
+      "confirmed": "تم تسجيل الحدث",
+      "skipped": "تم تجاهل الحدث",
+      "failed": "تعذر تحديد قرار هذا الحدث"
+    }
   }
 }

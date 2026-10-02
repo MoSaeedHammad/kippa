@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,7 +8,11 @@ import {
   InputAdornment,
   Stack,
   TextField,
-  Skeleton
+  Skeleton,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from '@mui/material';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -32,6 +36,8 @@ import { SaveFeedbackOverlay } from './components/SaveFeedbackOverlay';
 import { EntryKeypad } from './components/EntryKeypad';
 import { buildFastEntryTransaction, type EntryMode } from '@/libs/fastEntryTransaction';
 import { useProposeTransferMutation } from '@/features/transactions/hooks/useTransferApprovals';
+import { useUpsertRecurringTransactionRuleMutation } from '@/features/transactions/hooks/useRecurringTransactions';
+import type { RecurringFrequency } from '@/libs/recurringTransactions';
 import { useSaveFeedback } from './hooks/useSaveFeedback';
 import { useFastEntryFormState } from './hooks/useFastEntryFormState';
 
@@ -183,6 +189,8 @@ export function FastEntry() {
   };
 
   const proposeTransferMutation = useProposeTransferMutation();
+  const upsertRecurringRuleMutation = useUpsertRecurringTransactionRuleMutation();
+  const [repeat, setRepeat] = useState<'none' | RecurringFrequency>('none');
 
   const handleSave = async () => {
     if (isSaveAnimationPreview) {
@@ -190,6 +198,25 @@ export function FastEntry() {
       return;
     }
     try {
+      if (repeat !== 'none' && (mode === 'expense' || mode === 'income')) {
+        await upsertRecurringRuleMutation.mutateAsync({
+          householdId,
+          action: 'create',
+          type: mode,
+          amount: Number(amountStr),
+          accountId: selectedAccount!.id,
+          categoryId: selectedCategoryId ?? null,
+          description,
+          frequency: repeat,
+          anchorDate: date,
+        });
+        triggerSaveFeedback(t('feedback.recurringCreated'), `${Number(amountStr)} ${selectedAccount!.currency}`, selectedCategory?.name ?? mode, selectedAccount!.name);
+        setAmountStr('0');
+        setDescription('');
+        setSelectedCategoryId(null);
+        setRepeat('none');
+        return;
+      }
       if (mode === 'transfer') {
         const result = await proposeTransferMutation.mutateAsync({
           householdId,
@@ -297,6 +324,24 @@ export function FastEntry() {
             selectedCategoryId={selectedCategoryId}
             totalCount={sortedCategories.length}
           />
+        )}
+
+        {/* Repeat (Only for expense/income) — creates a recurring rule */}
+        {(mode === 'expense' || mode === 'income') && (
+          <FormControl fullWidth>
+            <InputLabel id="fast-entry-repeat-label">{t('repeat.label')}</InputLabel>
+            <Select
+              labelId="fast-entry-repeat-label"
+              value={repeat}
+              label={t('repeat.label')}
+              onChange={(event) => setRepeat(event.target.value as 'none' | RecurringFrequency)}
+            >
+              <MenuItem value="none">{t('repeat.none')}</MenuItem>
+              <MenuItem value="weekly">{t('repeat.weekly')}</MenuItem>
+              <MenuItem value="monthly">{t('repeat.monthly')}</MenuItem>
+              <MenuItem value="yearly">{t('repeat.yearly')}</MenuItem>
+            </Select>
+          </FormControl>
         )}
 
         <AccountPicker

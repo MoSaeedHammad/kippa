@@ -34,7 +34,8 @@
     "transferTitle": "تحويل",
     "entrySavedAria": "تم حفظ الإدخال",
     "tapAnywhere": "اضغط في أي مكان للمتابعة",
-    "transferPending": "أُرسلت للموافقة"
+    "transferPending": "أُرسلت للموافقة",
+    "recurringCreated": "تم إنشاء قيد متكرر"
   },
   "keypad": {
     "sourceAmount": "مبلغ المصدر",
@@ -61,5 +62,12 @@
   "empty": {
     "title": "لا توجد حسابات لتسجيل الإدخالات عليها",
     "description": "أضف حسابًا أولًا — ستحتاجه لتسجيل المصروفات أو الإيرادات أو التحويلات."
+  },
+  "repeat": {
+    "label": "التكرار",
+    "none": "مرة واحدة",
+    "weekly": "أسبوعيًا",
+    "monthly": "شهريًا",
+    "yearly": "سنويًا"
   }
 }

@@ -7,7 +7,8 @@ export type NotificationType =
   | 'pending_financial_message'
   | 'card_payment_detected'
   | 'shared_balance'
-  | 'recurring_shared_entry';
+  | 'recurring_shared_entry'
+  | 'recurring_transaction';
 
 export interface NotificationPayloadInput {
   type: NotificationType;

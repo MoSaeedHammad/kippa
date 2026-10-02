@@ -119,6 +119,12 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Recurring income/expense rules are managed only via callables.
+      match /recurringTransactionRules/{ruleId} {
+        allow read: if isHouseholdMember(householdId);
+        allow write: if false;
+      }
+
       // Any member (any access level) registers push tokens and own settings,
       // otherwise shared-balance-only members could never be notified.
       match /fcmTokens/{tokenId} {
@@ -141,6 +147,7 @@ service cloud.firestore {
           && collectionName != 'sharedBalanceEntries'
           && collectionName != 'recurringSharedEntryRules'
           && collectionName != 'categoryRules'
+          && collectionName != 'recurringTransactionRules'
           && collectionName != 'fcmTokens'
           && collectionName != 'notificationSettings'
           && collectionName != 'aiConversations'

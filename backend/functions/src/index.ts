@@ -4,6 +4,8 @@ initializeApp();
 
 export { onTransactionCreated } from './features/transactions/onTransactionCreated.js';
 export { proposeTransfer, decideDraftTransfer } from './features/transactions/transferApprovals.js';
+export { upsertRecurringTransactionRule, confirmRecurringTransaction } from './features/transactions/recurringTransactions.js';
+export { recurringTransactionsCron } from './features/transactions/recurringTransactionsCron.js';
 export { dailyReminderCron } from './features/notifications/dailyReminderCron.js';
 export {
   createHousehold,

@@ -99,5 +99,20 @@
   "analyticsPlaceholder": {
     "title": "No analytics data yet",
     "description": "Once you have at least one completed statement with transactions, trends and insights will appear here."
+  },
+  "recurring": {
+    "title": "Recurring income & expenses",
+    "subtitle": "Occurrences wait for confirmation in Approvals",
+    "next": "Next {{date}}",
+    "noNext": "No upcoming occurrence",
+    "frequency": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "failed": "Could not update the rule"
   }
 }

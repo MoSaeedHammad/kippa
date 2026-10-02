@@ -178,6 +178,40 @@ export type FinanceTransaction = {
   } | null;
   /** Set when this draft transaction was materialized from a recurring rule. */
   recurringRuleId?: string | null;
+  /** Embedded facts for confirming a recurring draft (ledger line written at confirm time). */
+  recurringDraft?: {
+    amount: number;
+    currency: CurrencyCode;
+    accountId: string;
+    categoryId: string | null;
+  } | null;
+};
+
+/**
+ * A recurring income or expense. The daily cron materializes due occurrences
+ * as draft transactions; a full member confirms (posts) or skips (voids)
+ * each one in the Approvals page.
+ */
+export type RecurringTransactionRule = {
+  id: string;
+  householdId: string;
+  type: 'income' | 'expense';
+  amount: number;
+  currency: CurrencyCode;
+  accountId: string;
+  categoryId: string | null;
+  description: string;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  anchorDate: string;
+  endDate?: string | null;
+  maxOccurrences?: number | null;
+  status: 'active' | 'paused' | 'cancelled';
+  createdBy: string;
+  occurrencesCreated: number;
+  lastOccurrenceDate?: string | null;
+  resumedDate?: string | null;
+  createdAt: number;
+  updatedAt: number;
 };
 
 export type SharedBalanceEntryKind = 'iou' | 'split' | 'repayment';

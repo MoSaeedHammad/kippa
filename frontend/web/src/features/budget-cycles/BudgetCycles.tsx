@@ -31,6 +31,7 @@ import {
 import { CycleAnalytics } from '@/features/budget-cycles/CycleAnalytics';
 import { useAppContext } from '@/hooks/useAppContext';
 import { PageHeader } from '@/features/shared/components/PageHeader';
+import { RecurringTransactionRulesCard } from './components/RecurringTransactionRulesCard';
 import { CloseCycleDialog, CreateCycleDialog, type NewCycleValues } from './components/CycleDialogs';
 import { ActiveCycleCard, CycleHistoryCard, type CycleHistoryStats } from './components/CycleCards';
 import { getDaysInfo } from './cycleUtils';
@@ -197,6 +198,8 @@ export function BudgetCycles() {
               }}
             >
               <AddIcon sx={{ fontSize: 22 }} />
+
+      {householdId && <RecurringTransactionRulesCard />}
             </IconButton>
           }
         />

@@ -39,6 +39,8 @@ import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useShar
 import { pendingForViewerCount } from '@/libs/approvals';
 import { SharedBalanceApprovalsCard } from './components/SharedBalanceApprovalsCard';
 import { TransferApprovalsCard } from './components/TransferApprovalsCard';
+import { RecurringConfirmationsCard } from './components/RecurringConfirmationsCard';
+import { useRecurringDrafts } from '@/features/transactions/hooks/useRecurringTransactions';
 import { useDraftTransfers } from '@/features/transactions/hooks/useTransferApprovals';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 import { usePendingReviewState } from './hooks/usePendingReviewState';
@@ -78,6 +80,7 @@ export function PendingTransactions() {
   const { data: members = [] } = useSharedBalanceMembers(householdId);
   const { data: sharedEntries = [] } = useSharedBalanceEntries(householdId);
   const { data: draftTransfers = [] } = useDraftTransfers(householdId);
+  const { data: recurringDrafts = [] } = useRecurringDrafts(householdId);
   const approveMutation = useApprovePendingFinancialMessageMutation();
   const discardMutation = useDiscardPendingFinancialMessageMutation();
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
@@ -97,7 +100,7 @@ export function PendingTransactions() {
     const decided = draft.transferDraft?.approvals.map((approval) => approval.uid) ?? [];
     return required.includes(viewerUid) && !decided.includes(viewerUid);
   }).length;
-  const totalPendingCount = pending.length + pendingForViewerCount(pendingShared, viewerUid) + transfersAwaitingViewer;
+  const totalPendingCount = pending.length + pendingForViewerCount(pendingShared, viewerUid) + transfersAwaitingViewer + recurringDrafts.length;
 
 
   const availableCategories = useMemo(() => {
@@ -287,6 +290,7 @@ export function PendingTransactions() {
         <>
           <SharedBalanceApprovalsCard entries={pendingShared} />
           <TransferApprovalsCard members={members} />
+          <RecurringConfirmationsCard />
         </>
       )}
 
@@ -294,7 +298,7 @@ export function PendingTransactions() {
         <Stack spacing={1}>
           {[0, 1, 2].map((item) => <Skeleton key={item} variant="rounded" height={76} />)}
         </Stack>
-      ) : pending.length === 0 && pendingShared.length === 0 && draftTransfers.length === 0 ? (
+      ) : pending.length === 0 && pendingShared.length === 0 && draftTransfers.length === 0 && recurringDrafts.length === 0 ? (
         <EmptyLayout
           icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
           title={t('reviewTab.emptyTitle')}

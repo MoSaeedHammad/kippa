@@ -148,5 +148,20 @@
     "amount": "Amount",
     "remaining": "Remaining {{amount}} {{currency}}",
     "addAccount": "Add account"
+  },
+  "recurring": {
+    "title": "Recurring entries",
+    "subtitle": "Confirm or skip each occurrence of your recurring income and expenses",
+    "income": "Income",
+    "expense": "Expense",
+    "actions": {
+      "confirm": "Confirm",
+      "skip": "Skip"
+    },
+    "toasts": {
+      "confirmed": "Occurrence recorded",
+      "skipped": "Occurrence skipped",
+      "failed": "Could not decide this occurrence"
+    }
   }
 }
