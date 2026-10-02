@@ -5,7 +5,7 @@ import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, SharedBalanceEntry, UserProfile } from '@kippa/domain';
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
-import { extractMessage, extractSender } from '../../domain/message-ingestion/ingestBody.js';
+import { extractMessage, extractSender, extractSmsDate } from '../../domain/message-ingestion/ingestBody.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
 import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
@@ -50,6 +50,9 @@ type IngestBody = {
   source?: unknown;
   idempotencyKey?: unknown;
   receivedAt?: unknown;
+  receivedStamp?: unknown;
+  sentStamp?: unknown;
+  from?: unknown;
 };
 
 const MAX_MESSAGE_LENGTH = 5_000;
@@ -227,11 +230,22 @@ export const ingestFinancialMessage = onRequest(
       response.set('Allow', 'POST').status(405).json({ error: 'method_not_allowed' });
       return;
     }
+    // The gateway app may send the token as `Authorization: Bearer <id>.<secret>`,
+    // a bare Authorization value, a dedicated header, or a ?token= query param —
+    // accept any of them so forwarder misconfiguration cannot block ingestion.
     const authHeader = request.get('authorization') ?? '';
-    const token = authHeader.match(/^Bearer\s+(.+)$/i)?.[1];
-    const [credentialId, suppliedSecret] = token?.split('.', 2) ?? [];
+    const candidates = [
+      authHeader.match(/^Bearer\s+(.+)$/i)?.[1] ?? null,
+      authHeader.trim() || null,
+      request.get('x-webhook-token'),
+      request.get('x-ingest-token'),
+      typeof request.query.token === 'string' ? request.query.token : null,
+    ].filter((value): value is string => !!value && !!value.trim());
+    const [credentialId, suppliedSecret] = candidates[0]?.split('.', 2) ?? [];
     if (!credentialId || !suppliedSecret) {
-      response.status(401).json({ error: 'unauthorized' });
+      console.warn('ingest rejected: missing or malformed token',
+        { hasAuthHeader: !!authHeader, hasQueryToken: !!request.query.token });
+      response.status(401).json({ error: 'unauthorized', reason: 'missing_token' });
       return;
     }
 
@@ -240,7 +254,13 @@ export const ingestFinancialMessage = onRequest(
     const credentialSnapshot = await credentialRef.get();
     const credential = credentialSnapshot.data() as IngestionCredential | undefined;
     if (!credential || !credential.enabled || !credentialMatches(credential, suppliedSecret)) {
-      response.status(401).json({ error: 'unauthorized' });
+      console.warn('ingest rejected: credential check failed', {
+        credentialId: credentialId.slice(0, 8),
+        credentialExists: !!credential,
+        enabled: !!credential?.enabled,
+        secretMatches: credential ? credentialMatches(credential, suppliedSecret) : false,
+      });
+      response.status(401).json({ error: 'unauthorized', reason: 'credential_check' });
       return;
     }
 
@@ -266,6 +286,12 @@ export const ingestFinancialMessage = onRequest(
     const source = cleanSource((request.body as IngestBody).source);
     const sender = extractSender(request.body);
     const parsedResult = parseFinancialMessage(message, source, sender);
+    // Forwarders carry the real SMS timestamp (receivedStamp); trust it over
+    // the arrival date so approvals book the transaction on the SMS day.
+    if (parsedResult.outcome === 'matched') {
+      const smsDate = extractSmsDate(request.body);
+      if (smsDate) parsedResult.parsed.date = smsDate;
+    }
     const idempotencyKey = (request.body as IngestBody).idempotencyKey;
     const dedupeMaterial = typeof idempotencyKey === 'string' && idempotencyKey.trim()
       ? idempotencyKey.trim().slice(0, 256)
