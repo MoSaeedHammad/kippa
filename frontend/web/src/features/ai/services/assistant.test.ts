@@ -17,7 +17,7 @@ describe('assistant provider errors', () => {
 
   it('distinguishes daily quota exhaustion from a temporary rate limit', () => {
     const error = new APICallError({ message: 'You exceeded your current quota.', url: 'https://example.invalid', requestBodyValues: {}, statusCode: 429, responseBody: JSON.stringify({ error: { status: 'RESOURCE_EXHAUSTED', details: [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] }] } }) });
-    const classified = classifyProviderError(error);
+    const classified = classifyProviderError(error, 'gemini');
     expect(classified.kind).toBe('quota');
     expect(classified.retryAfterMs).toBeGreaterThan(60_000);
     expect(classified.message).not.toContain('RESOURCE_EXHAUSTED');

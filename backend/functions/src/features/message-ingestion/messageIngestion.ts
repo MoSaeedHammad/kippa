@@ -9,6 +9,7 @@ import { extractMessage, extractSender } from '../../domain/message-ingestion/in
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
 import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
+import { validateAccountAllocations, type AccountAllocation } from '../../domain/message-ingestion/allocations.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
 import { getAccessLevel, getMemberProfileInHousehold, requireFullHouseholdMember, requireHouseholdMember } from '../../libs/householdAccess.js';
@@ -489,6 +490,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     destinationAccountId?: unknown;
     convertedAmount?: unknown;
     sharedBalanceTag?: unknown;
+    accountAllocations?: unknown;
   };
   const householdId = assertString(data.householdId, 'householdId');
   const pendingId = assertString(data.pendingId, 'pendingId');
@@ -508,6 +510,13 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       if (!result.ok) throw new HttpsError('invalid-argument', result.error);
       return result.value;
     })();
+  // Optional split of the message amount across several accounts. Full
+  // validation happens once the pending doc and settled amount are known.
+  const accountAllocations: AccountAllocation[] | null = data.accountAllocations == null
+    ? null
+    : Array.isArray(data.accountAllocations)
+      ? (data.accountAllocations as AccountAllocation[])
+      : null;
   const profile = await requireFullHouseholdMember(uid, householdId);
   const db = getFirestore();
   const pendingRef = db.doc(`households/${householdId}/pendingFinancialMessages/${pendingId}`);
@@ -630,6 +639,28 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
 
     const settled = settledAmounts(pending.amount, pending.currency, conversionRequired ? convertedAmount : null, account!.currency);
 
+    // Split across accounts: validated against the settled total; mutually
+    // exclusive with the foreign-currency conversion flow.
+    let allocations: AccountAllocation[] | null = null;
+    if (accountAllocations && accountAllocations.length > 0) {
+      if (pending.kind === 'transfer') {
+        throw new HttpsError('invalid-argument', 'Use the destination account for transfers instead of allocations.');
+      }
+      if (conversionRequired) {
+        throw new HttpsError('invalid-argument', 'Foreign-currency charges cannot be split across accounts.');
+      }
+      const result = validateAccountAllocations(accountAllocations, settled.amount);
+      if (!result.ok) throw new HttpsError('invalid-argument', result.error);
+      for (const allocation of result.value) {
+        const allocationSnapshot = await transaction.get(db.doc(`households/${householdId}/accounts/${allocation.accountId}`));
+        const allocationAccount = allocationSnapshot.data() as Account | undefined;
+        if (!allocationAccount?.isActive || allocationAccount.currency !== account!.currency) {
+          throw new HttpsError('failed-precondition', 'Every allocation account must be active and in the message currency.');
+        }
+      }
+      allocations = result.value;
+    }
+
     const now = new Date().toISOString();
     transaction.create(transactionRef, {
       id: transactionId,
@@ -648,11 +679,21 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       originalCharge: settled.originalCharge,
       importedFrom: { kind: 'financial-message', pendingId, provider: pending.provider, source: pending.source },
     });
-    transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
-      id: `${transactionId}_source`, householdId, transactionId, accountId,
-      signedAmount: pending.kind === 'income' ? settled.amount : -settled.amount,
-      currency: settled.currency, createdAt: now,
-    });
+    if (allocations) {
+      allocations.forEach((allocation, index) => {
+        transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source_${index}`), {
+          id: `${transactionId}_source_${index}`, householdId, transactionId, accountId: allocation.accountId,
+          signedAmount: pending.kind === 'income' ? allocation.amount : -allocation.amount,
+          currency: settled.currency, createdAt: now,
+        });
+      });
+    } else {
+      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
+        id: `${transactionId}_source`, householdId, transactionId, accountId,
+        signedAmount: pending.kind === 'income' ? settled.amount : -settled.amount,
+        currency: settled.currency, createdAt: now,
+      });
+    }
     if (pending.kind === 'transfer' && destinationAccount) {
       transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_destination`), {
         id: `${transactionId}_destination`, householdId, transactionId,

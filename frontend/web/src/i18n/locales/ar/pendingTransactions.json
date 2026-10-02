@@ -68,7 +68,10 @@
     "discardPermanently": "إهمال نهائي",
     "discard": "إهمال",
     "approving": "جارٍ الموافقة…",
-    "approve": "موافقة"
+    "approve": "موافقة",
+    "splitLabel": "التوزيع على الحسابات",
+    "splitSingle": "حساب واحد",
+    "splitAcross": "توزيع على عدة حسابات"
   },
   "connectionsDialog": {
     "title": "ربط تحويل الرسائل",
@@ -139,5 +142,11 @@
       "declined": "تم رفض التحويل",
       "failed": "تعذر تحديد قرار هذا التحويل"
     }
+  },
+  "allocations": {
+    "account": "الحساب",
+    "amount": "المبلغ",
+    "remaining": "المتبقي {{amount}} {{currency}}",
+    "addAccount": "إضافة حساب"
   }
 }

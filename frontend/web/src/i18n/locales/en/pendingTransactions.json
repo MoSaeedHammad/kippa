@@ -68,7 +68,10 @@
     "discardPermanently": "Discard permanently",
     "discard": "Discard",
     "approving": "Approving…",
-    "approve": "Approve"
+    "approve": "Approve",
+    "splitLabel": "Split between accounts",
+    "splitSingle": "Single account",
+    "splitAcross": "Split across accounts"
   },
   "connectionsDialog": {
     "title": "Connect SMS forwarding",
@@ -139,5 +142,11 @@
       "declined": "Transfer declined",
       "failed": "Could not decide this transfer"
     }
+  },
+  "allocations": {
+    "account": "Account",
+    "amount": "Amount",
+    "remaining": "Remaining {{amount}} {{currency}}",
+    "addAccount": "Add account"
   }
 }
