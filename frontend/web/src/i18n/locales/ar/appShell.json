@@ -10,11 +10,12 @@
     "sharedBalance": "الرصيد المشترك",
     "activityLog": "سجل النشاط",
     "bankAccounts": "الحسابات البنكية",
-    "mySpace": "فضائي",
+    "mySpace": "إعدادات الفضاء",
     "categories": "الفئات",
     "notifications": "الإشعارات",
     "kip": "Kip",
-    "loans": "القروض"
+    "loans": "القروض",
+    "spaces": "الفضاءات"
   },
   "nav": {
     "dashboard": "لوحة التحكم",
@@ -36,19 +37,21 @@
     "accountsAndCards": "الحسابات والبطاقات",
     "accountOverview": "نظرة عامة على الحسابات",
     "reconciliation": "المطابقة",
-    "mySpace": "فضائي",
+    "mySpace": "إعدادات الفضاء",
     "membersAndSettings": "الأعضاء والإعدادات",
     "notifications": "الإشعارات",
     "activityHistory": "سجل النشاط",
     "bankAccounts": "الحسابات البنكية",
     "activityLog": "سجل النشاط",
-    "remindersAndAlerts": "التذكيرات والتنبيهات"
+    "remindersAndAlerts": "التذكيرات والتنبيهات",
+    "allSpaces": "كل الفضاءات"
   },
   "sections": {
     "money": "المال",
     "planning": "التخطيط",
     "sharedAccount": "الحساب المشترك",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "spaces": "الفضاءات"
   },
   "bottomNav": {
     "pendingAria_zero": "الموافقات، لا عناصر تتطلب انتباهك",

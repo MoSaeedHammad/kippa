@@ -3,6 +3,7 @@ import type { Household, HouseholdMember, RecurringSharedEntryRule, RecurringFre
 import { functions } from '@/config/firebase';
 import { dbLib } from '@/libs/db';
 import { computeSharedBalance } from '@/libs/sharedBalance';
+import type { SpaceAccountsSummary } from '@/libs/spaceSummary';
 
 function requireFunctions() {
   if (!functions) throw new Error('Firebase Functions is not configured.');
@@ -100,13 +101,14 @@ export function nextOccurrenceAfter(
   return current;
 }
 
-/** One hub row per shared account. */
+/** One hub row per space. */
 export type SharedAccountSummary = {
   household: Household;
   members: HouseholdMember[];
   balance: number;
   pendingForMe: number;
   lastActivity: string;
+  accountsSummary: SpaceAccountsSummary;
 };
 
 /**
@@ -114,13 +116,14 @@ export type SharedAccountSummary = {
  * accounts — no entries at all — sink to the bottom).
  */
 export function summarizeSharedAccounts(
-  input: { household: Household; entries: SharedBalanceEntry[]; members: HouseholdMember[] }[],
+  input: { household: Household; entries: SharedBalanceEntry[]; members: HouseholdMember[]; accountsSummary: SpaceAccountsSummary }[],
   viewerUid: string,
 ): SharedAccountSummary[] {
   return input
-    .map(({ household, entries, members }) => ({
+    .map(({ household, entries, members, accountsSummary }) => ({
       household,
       members,
+      accountsSummary,
       balance: computeSharedBalance(entries, viewerUid),
       pendingForMe: entries.filter((entry) => entry.status === 'pending' && entry.createdBy !== viewerUid).length,
       lastActivity: entries.reduce((latest, entry) => (entry.updatedAt > latest ? entry.updatedAt : latest), ''),

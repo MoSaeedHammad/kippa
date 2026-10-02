@@ -76,6 +76,7 @@ describe('summarizeSharedAccounts', () => {
           household: household('hh2', 'Quiet'),
           entries: [entry({ id: 'e1', householdId: 'hh2', fromUid: 'user-b', amount: 100, status: 'approved' })],
           members: [],
+          accountsSummary: { accountsCount: 0, balances: [] },
         },
         {
           household: household('hh1', 'Busy'),
@@ -84,6 +85,7 @@ describe('summarizeSharedAccounts', () => {
             entry({ id: 'e3', fromUid: 'user-a', amount: 20, status: 'approved', updatedAt: '2026-04-01T00:00:00Z' }),
           ],
           members: [],
+          accountsSummary: { accountsCount: 0, balances: [] },
         },
       ],
       'user-a',

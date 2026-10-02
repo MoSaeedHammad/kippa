@@ -9,7 +9,9 @@ export const ledgerLib = {
   // Accounts
   async getAccounts(householdId: string): Promise<Account[]> {
     const list = await dbLib.getDocs(householdId, 'accounts');
-    return (list as Account[]).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    return (list as Account[])
+      .filter((account) => !account.isSharedBalance)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   },
 
   async createAccount(

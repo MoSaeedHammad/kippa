@@ -16,6 +16,7 @@ import { AccountBalanceIcon,
   SwapHorizIcon,
 } from '@/components/AppIcon';
 import { ReceiptLongIcon } from '@/components/AppIcon';
+import { SwitchAccountIcon } from '@/components/AppIcon';
 import { CategoryIcon } from '@/components/AppIcon';
 import { HomeIcon } from '@/components/AppIcon';
 import { NotificationsActiveIcon } from '@/components/AppIcon';
@@ -74,7 +75,6 @@ const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavK
     items: [
       { labelKey: 'bankAccounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
       { labelKey: 'transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
-      { labelKey: 'sharedBalance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
       { labelKey: 'categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
     ],
   },
@@ -87,8 +87,10 @@ const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavK
     ],
   },
   {
-    titleKey: 'sharedAccount',
+    titleKey: 'spaces',
     items: [
+      { labelKey: 'allSpaces', icon: <SwitchAccountIcon fontSize="small" />, path: '/shared-accounts' },
+      { labelKey: 'sharedBalance', icon: <SwapHorizIcon fontSize="small" />, path: '/shared-balance' },
       { labelKey: 'mySpace', icon: <HomeIcon fontSize="small" />, path: '/household' },
       { labelKey: 'activityLog', icon: <HistoryIcon fontSize="small" />, path: '/activity' },
     ],

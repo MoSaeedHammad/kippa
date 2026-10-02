@@ -25,6 +25,15 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { authLib } from '@/libs/auth';
 import { sharedBalanceLib } from '@/libs/sharedBalance';
 import { summarizeSharedAccounts, type SharedAccountSummary } from '@/libs/recurringSharedEntries';
+import { ledgerLib } from '@/libs/ledger';
+import { summarizeSpaceAccounts } from '@/libs/spaceSummary';
+
+function accountsLine(summary: { accountsSummary: ReturnType<typeof summarizeSpaceAccounts> }): string {
+  const { accountsCount, balances } = summary.accountsSummary;
+  if (accountsCount === 0) return 'No accounts yet';
+  const parts = balances.map((balance) => `${balance.currency} ${balance.amount.toLocaleString()}`);
+  return `${accountsCount} ${accountsCount === 1 ? 'account' : 'accounts'}${parts.length ? ` · ${parts.join(' · ')}` : ''}`;
+}
 
 function useSharedAccountSummaries(enabled: boolean) {
   const { userHouseholds, userProfile } = useAppContext();
@@ -35,11 +44,14 @@ function useSharedAccountSummaries(enabled: boolean) {
     queryFn: async (): Promise<SharedAccountSummary[]> => {
       const input = await Promise.all(
         userHouseholds.map(async (household) => {
-          const [entries, members] = await Promise.all([
+          const [entries, members, accounts, ledgerLines] = await Promise.all([
             sharedBalanceLib.getEntries(household.id),
             authLib.listHouseholdMembers(viewerUid, household.id).catch(() => []),
+            ledgerLib.getAccounts(household.id).catch(() => []),
+            ledgerLib.getLedgerLines(household.id).catch(() => []),
           ]);
-          return { household, entries, members };
+          const accountsSummary = summarizeSpaceAccounts(accounts, ledgerLines);
+          return { household, entries, members, accountsSummary };
         }),
       );
       return summarizeSharedAccounts(input, viewerUid);
@@ -48,7 +60,7 @@ function useSharedAccountSummaries(enabled: boolean) {
   });
 }
 
-export function SharedAccountsPage() {
+export function SpacesPage() {
   const { t } = useTranslation('sharedAccounts');
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -140,6 +152,9 @@ export function SharedAccountsPage() {
                 </Stack>
                 <Typography variant="cardSubtitle" color="text.secondary" sx={{ mt: 0.5 }}>
                   {memberNames || t('card.onlyYou')}
+                </Typography>
+                <Typography variant="cardSubtitle" color="text.secondary" sx={{ mt: 0.25 }}>
+                  {accountsLine(summary)}
                 </Typography>
                 <Stack direction="row" alignItems="flex-end" justifyContent="space-between" spacing={1} sx={{ mt: 1.5 }}>
                   <Box>

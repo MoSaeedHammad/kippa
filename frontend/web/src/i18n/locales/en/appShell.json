@@ -10,11 +10,12 @@
     "sharedBalance": "Shared balance",
     "activityLog": "Activity Log",
     "bankAccounts": "Bank Accounts",
-    "mySpace": "My space",
+    "mySpace": "Space settings",
     "categories": "Categories",
     "notifications": "Notifications",
     "kip": "Kip",
-    "loans": "Loans"
+    "loans": "Loans",
+    "spaces": "Spaces"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -36,19 +37,21 @@
     "accountsAndCards": "Accounts & cards",
     "accountOverview": "Account overview",
     "reconciliation": "Reconciliation",
-    "mySpace": "My space",
+    "mySpace": "Space settings",
     "membersAndSettings": "Members & settings",
     "notifications": "Notifications",
     "activityHistory": "Activity history",
     "bankAccounts": "Bank Accounts",
     "activityLog": "Activity Log",
-    "remindersAndAlerts": "Reminders & Alerts"
+    "remindersAndAlerts": "Reminders & Alerts",
+    "allSpaces": "All spaces"
   },
   "sections": {
     "money": "Money",
     "planning": "Planning",
     "sharedAccount": "Shared account",
-    "settings": "Settings"
+    "settings": "Settings",
+    "spaces": "Spaces"
   },
   "bottomNav": {
     "pendingAria_zero": "Approvals, {{count}} items require attention",

@@ -10,7 +10,7 @@
     "saving": "Saving…",
     "inviteHeading": "Invite",
     "inviteHelp": "Share the link and they request to join — you pick what they can see (Full or Shared balance only) when approving.",
-    "inviteLinkCaption": "Invite link — opens the join screen with this shared account pre-filled",
+    "inviteLinkCaption": "Invite link — opens the join screen with this space pre-filled",
     "copied": "Copied!",
     "copyInviteLink": "Copy invite link",
     "copyId": "Copy ID"
@@ -20,15 +20,15 @@
     "member": "Member"
   },
   "manageCard": {
-    "title": "Manage shared accounts",
+    "title": "Manage spaces",
     "subtitle": "Create a new space or join someone else's.",
     "createTab": "Create",
     "joinTab": "Join",
-    "createHelp": "Start a separate, brand-new shared account database container.",
-    "nameLabel": "Shared account name",
+    "createHelp": "Start a separate, brand-new space with its own accounts.",
+    "nameLabel": "Space name",
     "namePlaceholder": "e.g. Vacation home",
     "createButton": "Create",
-    "joinHelp": "Paste an Invite ID from a shared account owner. They’ll need to approve your request before you can join.",
+    "joinHelp": "Paste an Invite ID from a space owner. They’ll need to approve your request before you can join.",
     "inviteIdLabel": "Invite ID",
     "inviteIdPlaceholder": "Paste UUID here",
     "requestToJoin": "Request to Join",
@@ -36,7 +36,7 @@
     "requestDeclined": "Your request was declined by the owner.",
     "requestAgain": "Request Again",
     "approved": "You’re approved!",
-    "switchToAccount": "Switch to this shared account"
+    "switchToAccount": "Switch to this space"
   },
   "membersCard": {
     "title": "Members",
@@ -93,7 +93,7 @@
     "switched": "Switched space successfully!",
     "switchFailed": "Failed to switch space.",
     "nameRequired": "Please enter a space name",
-    "created": "Shared account \"{{name}}\" created and set as active!",
+    "created": "Space \"{{name}}\" created and set as active!",
     "createFailed": "Failed to create space",
     "inviteIdRequired": "Please enter a valid Invite ID",
     "requestSent": "Request sent — the space owner will review it.",

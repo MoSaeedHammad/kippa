@@ -26,7 +26,7 @@ const AuditLog = lazy(() => import('@/features/activity/AuditLog').then(m => ({ 
 const PendingTransactions = lazy(() => import('@/features/pending-transactions/PendingTransactions').then(m => ({ default: m.PendingTransactions })));
 const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ default: m.AiAssistant })));
 const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBalancePage').then(m => ({ default: m.SharedBalancePage })));
-const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SharedAccountsPage').then(m => ({ default: m.SharedAccountsPage })));
+const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SpacesPage').then(m => ({ default: m.SpacesPage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
 
 

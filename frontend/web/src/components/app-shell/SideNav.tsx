@@ -21,7 +21,6 @@ import {
   BarChartIcon,
   DashboardIcon,
   ExpandLessIcon,
-  HomeIcon,
   ReceiptLongIcon,
   SearchIcon,
   NotesIcon,
@@ -53,8 +52,6 @@ const menuItems: NavItem[] = [
     children: [
       { labelKey: 'allTransactions', path: '/transactions' },
       { labelKey: 'approvals', path: '/pending' },
-      { labelKey: 'spaces', path: '/shared-accounts' },
-      { labelKey: 'sharedBalance', path: '/shared-balance' },
       { labelKey: 'expenses', path: '/transactions?type=expense' },
       { labelKey: 'income', path: '/transactions?type=income' },
       { labelKey: 'transfers', path: '/transactions?type=transfer' },
@@ -70,10 +67,12 @@ const menuItems: NavItem[] = [
     ],
   },
   {
-    labelKey: 'mySpace',
-    path: '/household',
-    icon: HomeIcon,
+    labelKey: 'spaces',
+    path: '/shared-accounts',
+    icon: SwitchAccountIcon,
     children: [
+      { labelKey: 'allSpaces', path: '/shared-accounts' },
+      { labelKey: 'sharedBalance', path: '/shared-balance' },
       { labelKey: 'membersAndSettings', path: '/household' },
       { labelKey: 'notifications', path: '/notifications' },
       { labelKey: 'activityHistory', path: '/activity' },
@@ -81,17 +80,17 @@ const menuItems: NavItem[] = [
   },
 ];
 
-// Shared-balance-only members can only see the shared accounts, their
-// notifications, and the shared account page — everything else is blocked by
+// Shared-balance-only members can only see the spaces, shared balance,
+// and notifications — everything else is blocked by
 // the security rules anyway, so showing it would only lead to errors.
 const sharedBalanceOnlyMenu: NavItem[] = [
-  { labelKey: 'spaces', path: '/shared-accounts', icon: SwitchAccountIcon },
-  { labelKey: 'sharedBalance', path: '/shared-balance', icon: ReceiptLongIcon },
   {
-    labelKey: 'mySpace',
-    path: '/household',
-    icon: HomeIcon,
+    labelKey: 'spaces',
+    path: '/shared-accounts',
+    icon: SwitchAccountIcon,
     children: [
+      { labelKey: 'allSpaces', path: '/shared-accounts' },
+      { labelKey: 'sharedBalance', path: '/shared-balance' },
       { labelKey: 'membersAndSettings', path: '/household' },
       { labelKey: 'notifications', path: '/notifications' },
     ],

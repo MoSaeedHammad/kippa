@@ -22,6 +22,7 @@ const PAGE_TITLES: Record<string, PageTitleKey> = {
   '/transactions': 'transactions',
   '/pending': 'approvals',
   '/shared-balance': 'sharedBalance',
+  '/shared-accounts': 'spaces',
   '/activity': 'activityLog',
   '/accounts': 'bankAccounts',
   '/household': 'mySpace',
