@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
+import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
+import { pendingForViewerCount } from '@/libs/approvals';
 import { usePendingFinancialMessages } from '@/hooks/useFinance';
 
 type NavKey = keyof typeof appShellEn['nav'];
@@ -51,7 +53,9 @@ export function BottomNav() {
   const leftItems = isScoped ? SCOPED_LEFT_ITEMS : LEFT_ITEMS;
   const rightItems = isScoped ? SCOPED_RIGHT_ITEMS : RIGHT_ITEMS;
   const { data: pendingItems = [] } = usePendingFinancialMessages(isScoped ? '' : householdId);
-  const pendingCount = pendingItems.length;
+  const { data: sharedEntries = [] } = useSharedBalanceEntries(householdId);
+  const pendingCount = pendingItems.length
+    + pendingForViewerCount(sharedEntries, userProfile?.uid ?? '');
 
   const isEntry = pathname === '/entry';
   const isDark = theme.palette.mode === 'dark';

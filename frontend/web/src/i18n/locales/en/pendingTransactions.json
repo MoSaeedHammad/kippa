@@ -99,5 +99,30 @@
     "restoreFailed": "Could not restore this item",
     "discardFailed": "Could not discard this item"
   },
-  "undo": "Undo"
+  "undo": "Undo",
+  "sharedBalance": {
+    "title": "Shared balance",
+    "subtitle": "IOUs, splits and repayments between members",
+    "kinds": {
+      "iou": "IOU",
+      "split": "Split",
+      "repayment": "Repayment"
+    },
+    "status": {
+      "awaitsYou": "Waits for your approval",
+      "awaitsCounterparty": "Waiting for approval",
+      "approved": "Approved",
+      "rejected": "Declined",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "approve": "Approve",
+      "decline": "Decline"
+    },
+    "toasts": {
+      "approved": "Entry approved",
+      "declined": "Entry declined",
+      "failed": "Could not update this entry"
+    }
+  }
 }

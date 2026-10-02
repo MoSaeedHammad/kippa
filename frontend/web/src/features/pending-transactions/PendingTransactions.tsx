@@ -35,6 +35,9 @@ import {
 } from '@/hooks/useFinance';
 import type { PendingFinancialMessage } from '@kippa/domain';
 import { useMessageConnections } from './hooks/useMessageConnections';
+import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
+import { pendingForViewerCount } from '@/libs/approvals';
+import { SharedBalanceApprovalsCard } from './components/SharedBalanceApprovalsCard';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 import { usePendingReviewState } from './hooks/usePendingReviewState';
 type PendingItemState = 'idle' | 'approving' | 'discarding' | 'settled';
@@ -65,12 +68,13 @@ const PREVIEW_PENDING_ITEMS: PendingFinancialMessage[] = [
 
 export function PendingTransactions() {
   const { t } = useTranslation('pendingTransactions');
-  const { householdId } = useAppContext();
+  const { userProfile, householdId } = useAppContext();
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const { data: remotePending = [], isLoading: remoteLoading } = usePendingFinancialMessages(householdId);
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
   const { data: members = [] } = useSharedBalanceMembers(householdId);
+  const { data: sharedEntries = [] } = useSharedBalanceEntries(householdId);
   const approveMutation = useApprovePendingFinancialMessageMutation();
   const discardMutation = useDiscardPendingFinancialMessageMutation();
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
@@ -83,6 +87,9 @@ export function PendingTransactions() {
   const previewMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview-pending') === '1';
   const pending = previewMode ? PREVIEW_PENDING_ITEMS : remotePending;
   const isLoading = previewMode ? false : remoteLoading;
+  const viewerUid = userProfile?.uid ?? '';
+  const pendingShared = sharedEntries.filter((entry) => entry.status === 'pending');
+  const totalPendingCount = pending.length + pendingForViewerCount(pendingShared, viewerUid);
 
 
   const availableCategories = useMemo(() => {
@@ -223,7 +230,7 @@ export function PendingTransactions() {
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.subtitle')}
-        action={<Chip label={tab === 'review' ? t('page.pending', { count: pending.length }) : t('page.resolved', { count: resolved.length })} color={tab === 'review' && pending.length ? 'secondary' : 'default'} />}
+        action={<Chip label={tab === 'review' ? t('page.pending', { count: totalPendingCount }) : t('page.resolved', { count: resolved.length })} color={tab === 'review' && totalPendingCount ? 'secondary' : 'default'} />}
       />
 
       <Box
@@ -258,11 +265,15 @@ export function PendingTransactions() {
         <Tab value="history" label={t('tabs.history')} icon={<HistoryIcon fontSize="small" />} iconPosition="start" />
       </Tabs>
 
+      {tab === 'review' && (
+        <SharedBalanceApprovalsCard entries={pendingShared} />
+      )}
+
       {tab === 'review' && (isLoading ? (
         <Stack spacing={1}>
           {[0, 1, 2].map((item) => <Skeleton key={item} variant="rounded" height={76} />)}
         </Stack>
-      ) : pending.length === 0 ? (
+      ) : pending.length === 0 && pendingShared.length === 0 ? (
         <EmptyLayout
           icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
           title={t('reviewTab.emptyTitle')}
@@ -310,6 +321,10 @@ export function PendingTransactions() {
           ))}
         </Card>
       ))}
+
+      {tab === 'history' && (
+        <SharedBalanceApprovalsCard entries={sharedEntries.filter((entry) => entry.status !== 'pending')} />
+      )}
 
       {tab === 'history' && (historyLoading ? (
         <Stack spacing={1}>

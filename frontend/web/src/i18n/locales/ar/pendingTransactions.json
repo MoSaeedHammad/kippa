@@ -99,5 +99,30 @@
     "restoreFailed": "تعذر استعادة هذا العنصر",
     "discardFailed": "تعذر إهمال هذا العنصر"
   },
-  "undo": "تراجع"
+  "undo": "تراجع",
+  "sharedBalance": {
+    "title": "الرصيد المشترك",
+    "subtitle": "الديون والمشتركات والسداد بين الأعضاء",
+    "kinds": {
+      "iou": "دين",
+      "split": "مشتركة",
+      "repayment": "سداد"
+    },
+    "status": {
+      "awaitsYou": "بانتظار موافقتك",
+      "awaitsCounterparty": "بانتظار الموافقة",
+      "approved": "تمت الموافقة",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى"
+    },
+    "actions": {
+      "approve": "موافقة",
+      "decline": "رفض"
+    },
+    "toasts": {
+      "approved": "تمت الموافقة على البند",
+      "declined": "تم رفض البند",
+      "failed": "تعذر تحديث هذا البند"
+    }
+  }
 }
