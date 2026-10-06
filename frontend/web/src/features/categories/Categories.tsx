@@ -14,9 +14,12 @@ import {
   FormControl, 
   InputLabel,
   Skeleton,
-  Grid
+  Grid,
+  Paper,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import { CategoryIcon } from '@/components/AppIcon';
+import { CategoryIcon, EditIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { 
@@ -99,25 +102,27 @@ export function Categories() {
             <Grid container spacing={1}>
               {items.map(category => (
                 <Grid key={category.id} size={{ xs: 12, sm: 6 }}>
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1.25}
-                    sx={{ minHeight: 46, px: 1.25, py: 0.75, borderRadius: '10px', bgcolor: 'action.hover', border: '1px solid', borderColor: 'transparent' }}
+                  <Paper
+                    variant="categoryRow"
+                    data-category-type={type}
+                    sx={{ minHeight: 46, px: 1.25, py: 0.75, display: 'flex', alignItems: 'center', gap: 1.25 }}
                   >
-                    <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: type === 'income' ? 'success.main' : 'primary.main', flexShrink: 0 }} />
-                    <Typography sx={{ color: 'text.primary', fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <Box className="category-dot" />
+                    <Typography variant="cardSubtitle" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {category.name}
                     </Typography>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() => setRenameCategory({ id: category.id, name: category.name })}
-                      sx={{ ml: 'auto', flexShrink: 0 }}
-                    >
-                      Rename
-                    </Button>
-                  </Stack>
+                    <Tooltip title="Rename">
+                      <IconButton
+                        size="small"
+                        className="category-row-action"
+                        aria-label={`Rename ${category.name}`}
+                        onClick={() => setRenameCategory({ id: category.id, name: category.name })}
+                        sx={{ flexShrink: 0 }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Paper>
                 </Grid>
               ))}
             </Grid>

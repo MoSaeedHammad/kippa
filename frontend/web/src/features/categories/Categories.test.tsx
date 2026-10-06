@@ -29,7 +29,7 @@ describe('Categories rename', () => {
     const user = userEvent.setup();
     render(<Categories />);
 
-    await user.click(screen.getAllByRole('button', { name: 'Rename' })[1]);
+    await user.click(screen.getByRole('button', { name: 'Rename Subscriptions' }));
     const input = screen.getByLabelText('Category Name');
     expect(input).toHaveValue('Subscriptions');
     await user.clear(input);
@@ -47,7 +47,7 @@ describe('Categories rename', () => {
     const user = userEvent.setup();
     render(<Categories />);
 
-    await user.click(screen.getAllByRole('button', { name: 'Rename' })[0]);
+    await user.click(screen.getByRole('button', { name: 'Rename Salary' }));
     const input = screen.getByLabelText('Category Name');
     await user.clear(input);
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();

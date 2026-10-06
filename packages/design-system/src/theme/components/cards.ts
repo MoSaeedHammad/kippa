@@ -2,11 +2,23 @@ import { alpha, type Components, type Theme } from '@mui/material/styles';
 import { designTokens } from '../../foundations/tokens';
 import type { OverrideContext } from './types';
 
+declare module '@mui/material/Paper' {
+  interface PaperPropsVariantOverrides { categoryRow: true }
+}
+
 export const cardOverrides = ({ mode, tokens: t }: OverrideContext): Components<Theme> => {
   const highlight = mode === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,.045)' : 'inset 0 1px 0 rgba(255,255,255,.9)';
   const shadow = mode === 'dark' ? '0 12px 28px rgba(0,0,0,.16)' : '0 10px 26px rgba(24,53,34,.035)';
   return {
     MuiPaper: { styleOverrides: { root: { backgroundColor: mode === 'dark' ? 'rgba(14,17,16,.96)' : 'rgba(255,255,255,.92)', backgroundImage: 'none' } }, variants: [
+      { props: { variant: 'categoryRow' }, style: {
+        borderRadius: 10, border: '1px solid transparent', boxShadow: 'none',
+        backgroundColor: alpha(designTokens.color.primaryContainer, mode === 'dark' ? .12 : .06),
+        '.category-dot': { width: 7, height: 7, borderRadius: '50%', backgroundColor: designTokens.color.primaryContainer, flexShrink: 0 },
+        '&[data-category-type="income"] .category-dot': { backgroundColor: designTokens.color.success },
+        '.category-row-action': { width: 32, height: 32, color: designTokens.color.primaryContainer, opacity: 0, pointerEvents: 'none', transition: 'opacity .15s ease' },
+        '&:hover .category-row-action, &:focus-within .category-row-action': { opacity: 1, pointerEvents: 'auto' },
+      } },
       { props: { variant: 'amountPanel' }, style: { borderRadius: 24, border: '1px solid transparent', backgroundColor: designTokens.color.primary, color: designTokens.color.onPrimary, boxShadow: designTokens.shadow.lifted, transition: 'all .2s ease' } },
       { props: { variant: 'amountPanelInactive' }, style: { borderRadius: 24, border: `1px solid ${t.borderGray}`, backgroundColor: t.surfacePure, color: t.textSecondary, boxShadow: 'none', transition: 'all .2s ease' } },
       { props: { variant: 'assistantAvatar' }, style: { width: 44, height: 44, borderRadius: 14, display: 'grid', placeItems: 'center', backgroundColor: designTokens.color.primary, color: designTokens.color.onPrimary, boxShadow: designTokens.shadow.lifted } },
