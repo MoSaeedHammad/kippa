@@ -53,12 +53,19 @@ export const messageIngestionLib = {
     return (await callable({ householdId, pendingId })).data.item;
   },
 
+  async deleteCredential(credentialId: string): Promise<void> {
+    const callable = httpsCallable<{ credentialId: string }, { deleted: boolean }>(
+      requireFunctions(), 'deleteMessageIngestionCredential',
+    );
+    await callable({ credentialId });
+  },
+
   async createCredential(householdId: string): Promise<{ credentialId: string; token: string; endpoint: string }> {
     const callable = httpsCallable<
       { householdId: string; label: string },
       { credentialId: string; token: string; endpoint: string }
     >(requireFunctions(), 'createMessageIngestionCredential');
-    return (await callable({ householdId, label: 'iPhone Shortcut' })).data;
+    return (await callable({ householdId, label: 'Secure message connection' })).data;
   },
 
   async listCredentials(householdId: string): Promise<MessageIngestionCredential[]> {

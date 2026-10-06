@@ -2,16 +2,22 @@ import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogConte
 import type { Account, Category, PendingFinancialMessage } from '@kippa/domain';
 import { CheckCircleIcon, DeleteIcon } from '@/components/AppIcon';
 import { Money } from '@/components/Money';
+import { calculateCardPayment } from '@/libs/cardPayment';
+import { DEFAULT_CARD_FEE_RATE } from '@/libs/creditCardFees';
 
-type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled' };
+type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled' };
 
 export function PendingReviewDialog(props: Props) {
-  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onDestinationChange, onDiscard, state } = props;
+  const { accountId, accounts, busy, categories, categoryId, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onDestinationChange, onDiscard, state } = props;
   if (!item) return null;
   const transfer = item.kind === 'transfer';
   const crossCurrency = !!item.destinationCurrency && item.destinationCurrency !== item.currency;
   const halfPending = !!item.transferLeg;
   const loanPayment = !!item.suggestedLoanId;
+  const creditCardPurchase = !transfer && !loanPayment && item.kind === 'expense'
+    && accounts.find((account) => account.id === accountId)?.type === 'credit'
+    && item.currency === 'EGP';
+  const cardPayment = creditCardPurchase ? calculateCardPayment(item.amount, DEFAULT_CARD_FEE_RATE) : null;
   const canApprove = transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId);
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
@@ -27,6 +33,16 @@ export function PendingReviewDialog(props: Props) {
               {transfer && crossCurrency && <> → <Money amount={item.destinationAmount ?? 0} code={item.destinationCurrency ?? item.currency} maxDigits={2} /></>}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.description}</Typography>
+            {cardPayment?.valid && <Stack spacing={0.5} sx={{ mt: 1.25 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="sectionLabel" color="text.secondary">Bank fee (3%)</Typography>
+                <Typography variant="body2"><Money amount={cardPayment.feeAmount} code={item.currency} maxDigits={2} /></Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="sectionLabel" color="primary">Total</Typography>
+                <Typography variant="body2" color="primary"><Money amount={cardPayment.totalAmount} code={item.currency} maxDigits={2} /></Typography>
+              </Stack>
+            </Stack>}
             {loanPayment && <Chip color="success" label={`${item.suggestedLoanName ?? 'Loan'} · installment ${item.suggestedLoanInstallmentNumber}`} sx={{ mt: 1 }} />}
             {halfPending && <Typography variant="fieldHint" color="warning">Waiting for the other leg of this transfer…</Typography>}
           </Box>
@@ -41,7 +57,7 @@ export function PendingReviewDialog(props: Props) {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button color="inherit" startIcon={state === 'discarding' ? <CircularProgress size={18} /> : <DeleteIcon />} onClick={onDiscard} disabled={busy}>{state === 'discarding' ? 'Discarding…' : confirmDiscard ? 'Discard permanently' : 'Discard'}</Button>
+        <Button color="inherit" startIcon={state === 'discarding' ? <CircularProgress size={18} /> : <DeleteIcon />} onClick={onDiscard} disabled={busy}>{state === 'discarding' ? 'Discarding…' : 'Discard'}</Button>
         <Button variant="contained" startIcon={state === 'approving' ? <CircularProgress color="inherit" size={18} /> : <CheckCircleIcon />} onClick={onApprove} disabled={!canApprove || busy}>{state === 'approving' ? 'Approving…' : 'Approve'}</Button>
       </DialogActions>
     </Dialog>

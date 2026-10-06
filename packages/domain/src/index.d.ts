@@ -162,6 +162,8 @@ export type LedgerLine = {
   householdId: string;
   transactionId: string;
   accountId: string;
+  /** For credit purchases, signedAmount includes the fee; baseAmount is the message amount. */
+  cardFee?: { baseAmount: number; rate: number };
   signedAmount: number; // Positive is in, negative is out
   currency: CurrencyCode;
   createdAt: string;

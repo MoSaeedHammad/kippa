@@ -508,7 +508,7 @@ export function useUpdateTransactionMutation() {
       householdId: string;
       transactionId: string;
       transactionUpdates: Partial<FinanceTransaction>;
-      lineUpdates: { accountId: string; signedAmount: number; currency: CurrencyCode };
+      lineUpdates: { accountId: string; signedAmount: number; currency: CurrencyCode; cardFee?: LedgerLine['cardFee'] };
     }) => transactionsLib.updateTransaction(
       data.householdId,
       data.transactionId,
@@ -622,8 +622,8 @@ export function usePayCardMutation() {
   const auditUser = useAuditUser();
   const notifyOfflineSuccess = useOfflineSuccessNotifier();
   return useMutation({
-    mutationFn: (data: { householdId: string; card: Card; amount: number; settlesChargeIds?: string[]; settlesDescriptions?: string[]; budgetCycleId?: string | null }) =>
-      cardsLib.payCard(data.householdId, data.card, data.amount, auditUser, data.settlesChargeIds, data.budgetCycleId, data.settlesDescriptions),
+    mutationFn: (data: { householdId: string; card: Card; amount: number; fee?: { amount: number; rate: number }; settlesChargeIds?: string[]; settlesDescriptions?: string[]; budgetCycleId?: string | null }) =>
+      cardsLib.payCard(data.householdId, data.card, data.amount, auditUser, data.settlesChargeIds, data.budgetCycleId, data.settlesDescriptions, data.fee),
     onSuccess: (_, variables) => {
       notifyOfflineSuccess();
       queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) });

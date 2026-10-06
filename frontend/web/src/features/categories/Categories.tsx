@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 import { 
   Box, 
   Card, 
@@ -20,19 +21,24 @@ import { CardHeading } from '@/features/shared/components/CardHeading';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { 
   useCategories, 
-  useCreateCategoryMutation 
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
 } from '@/hooks/useFinance';
+import { CategoryNameDialog } from '@/features/budget-cycles/components/CategoryNameDialog';
 
 import { useAppContext } from '@/hooks/useAppContext';
 
 export function Categories() {
   const { householdId } = useAppContext();
+  const { enqueueSnackbar } = useSnackbar();
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
+  const [renameCategory, setRenameCategory] = useState<{ id: string; name: string } | null>(null);
 
   // Queries & Mutations
   const { data: categories = [], isLoading } = useCategories(householdId);
   const createCategoryMutation = useCreateCategoryMutation();
+  const updateCategoryMutation = useUpdateCategoryMutation();
 
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) return;
@@ -47,6 +53,20 @@ export function Categories() {
     });
 
     setNewCatName('');
+  };
+
+  const handleRenameCategory = async () => {
+    if (!renameCategory || !renameCategory.name.trim() || updateCategoryMutation.isPending) return;
+    try {
+      await updateCategoryMutation.mutateAsync({
+        householdId,
+        categoryId: renameCategory.id,
+        updates: { name: renameCategory.name.trim() },
+      });
+      setRenameCategory(null);
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : 'Could not rename category', { variant: 'error' });
+    }
   };
 
   const renderCategoryGroup = (type: 'income' | 'expense', title: string) => {
@@ -89,6 +109,14 @@ export function Categories() {
                     <Typography sx={{ color: 'text.primary', fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {category.name}
                     </Typography>
+                    <Button
+                      size="small"
+                      variant="text"
+                      onClick={() => setRenameCategory({ id: category.id, name: category.name })}
+                      sx={{ ml: 'auto', flexShrink: 0 }}
+                    >
+                      Rename
+                    </Button>
                   </Stack>
                 </Grid>
               ))}
@@ -149,6 +177,16 @@ export function Categories() {
           </Grid>
         </Grid>
       </Stack>
+      <CategoryNameDialog
+        open={!!renameCategory}
+        title="Rename Category"
+        confirmLabel="Save"
+        value={renameCategory?.name ?? ''}
+        loading={updateCategoryMutation.isPending}
+        onChange={(name) => setRenameCategory((current) => current ? { ...current, name } : current)}
+        onClose={() => { if (!updateCategoryMutation.isPending) setRenameCategory(null); }}
+        onConfirm={handleRenameCategory}
+      />
     </Container>
   );
 }

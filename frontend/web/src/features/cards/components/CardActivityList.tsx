@@ -28,6 +28,7 @@ export function CardActivityList({ card, categories, groups, mask, onLoadMore, o
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="sectionLabel" color={charge.paid ? 'text.disabled' : 'text.primary'} sx={{ textDecoration: charge.paid ? 'line-through' : 'none' }}>{category?.name ?? charge.txType}</Typography>
                   {charge.description && <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.25 }}>{charge.description}</Typography>}
+                  {charge.feeRate != null && charge.feeRate > 0 && <Typography variant="fieldHint" color="text.secondary">Includes {charge.feeRate}% bank fee</Typography>}
                   <Typography variant="fieldHint" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>{charge.date}</Typography>
                 </Box>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, ml: 1 }}>

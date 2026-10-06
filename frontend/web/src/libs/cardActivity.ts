@@ -1,7 +1,7 @@
 import type { BudgetCycle, FinanceTransaction, LedgerLine, TransactionType } from '@kippa/domain';
 import { getPostedLedgerLines } from './financeCalculations';
 
-export type CardCharge = { lineId: string; txId: string; date: string; description: string | null; amount: number; paid: boolean; txType: TransactionType; categoryId: string | null; budgetCycleId: string | null };
+export type CardCharge = { lineId: string; txId: string; date: string; description: string | null; amount: number; baseAmount?: number; feeRate?: number; paid: boolean; txType: TransactionType; categoryId: string | null; budgetCycleId: string | null };
 export type CardChargeGroup = { groupId: string; cycleName: string; cycleDateRange: string; startDate: string; charges: CardCharge[] };
 
 function formatDateRange(startDate: string, endDate?: string | null) {
@@ -38,7 +38,7 @@ export function calculateCardActivity(accountId: string, transactions: FinanceTr
       paid = true;
       remainingByCycle.set(cycleId, (remainingByCycle.get(cycleId) ?? 0) - amount);
     }
-    return [{ lineId: line.id, txId: transaction.id, date: transaction.date, description: transaction.description ?? null, amount, paid, txType: transaction.type, categoryId: transaction.categoryId ?? null, budgetCycleId: transaction.budgetCycleId ?? null }];
+    return [{ lineId: line.id, txId: transaction.id, date: transaction.date, description: transaction.description ?? null, amount, baseAmount: line.cardFee?.baseAmount ?? amount, feeRate: line.cardFee?.rate ?? 0, paid, txType: transaction.type, categoryId: transaction.categoryId ?? null, budgetCycleId: transaction.budgetCycleId ?? null }];
   });
 
   const groups = new Map<string, CardChargeGroup>();

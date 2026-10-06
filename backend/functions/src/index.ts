@@ -15,6 +15,7 @@ export {
   approvePendingFinancialMessage,
   createMessageIngestionCredential,
   discardPendingFinancialMessage,
+  deleteMessageIngestionCredential,
   ingestFinancialMessage,
   listMessageIngestionCredentials,
   listResolvedPendingFinancialMessages,

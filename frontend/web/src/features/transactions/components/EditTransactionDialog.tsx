@@ -84,6 +84,9 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           accountId: fields.accountId,
           signedAmount: signedAmount,
           currency,
+          ...(firstLine?.cardFee && fields.type === 'expense' && accounts.find(account => account.id === fields.accountId)?.type === 'credit' ? {
+            cardFee: { baseAmount: Number((amount / (1 + firstLine.cardFee.rate / 100)).toFixed(2)), rate: firstLine.cardFee.rate },
+          } : {}),
         },
       });
       enqueueSnackbar('Transaction updated successfully!', { variant: 'success' });
@@ -165,6 +168,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                 type="number"
                 fullWidth
                 label="Amount"
+                helperText={findPrimaryLedgerLine(transaction.id, ledgerLines)?.cardFee ? "Includes bank fees. Change the fee in the card payment dialog." : undefined}
                 value={fields.amount}
                 onChange={(e) => setField('amount', e.target.value)}
               />

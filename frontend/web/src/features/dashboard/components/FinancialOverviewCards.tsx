@@ -93,7 +93,7 @@ export function FinancialOverviewCard({ variant }: { variant: 'income' | 'expens
             <Box sx={{ mt: 3.5 }}>
               <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>Total expense</Typography>
               <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.055em', fontVariantNumeric: 'tabular-nums' }}>
-                <Money amount={data.spending.actual} code={baseCurrency} />
+                <Money amount={data.spending.actual} code={baseCurrency} maxDigits={2} />
               </Typography>
             </Box>
 

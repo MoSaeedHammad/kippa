@@ -6,6 +6,8 @@ import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancia
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
+import { calculateCreditCardLedgerAmount } from '../../domain/transactions/creditCardFee.js';
+import { getCredentialDeletionStatus } from '../../domain/message-ingestion/deleteCredential.js';
 
 type IngestionCredential = {
   id: string;
@@ -47,9 +49,9 @@ function sha256(value: string): string {
 }
 
 function cleanSource(value: unknown): string {
-  if (typeof value !== 'string') return 'ios-shortcut';
+  if (typeof value !== 'string') return 'message-automation';
   const cleaned = value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 64);
-  return cleaned || 'ios-shortcut';
+  return cleaned || 'message-automation';
 }
 
 function assertString(value: unknown, label: string, maxLength = 200): string {
@@ -168,8 +170,8 @@ export const createMessageIngestionCredential = onCall(async (request) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
   const householdId = assertString((request.data as { householdId?: unknown })?.householdId, 'householdId');
   const label = typeof (request.data as { label?: unknown })?.label === 'string'
-    ? (request.data as { label: string }).label.trim().slice(0, 80) || 'iPhone Shortcut'
-    : 'iPhone Shortcut';
+    ? (request.data as { label: string }).label.trim().slice(0, 80) || 'Secure message connection'
+    : 'Secure message connection';
   await requireHouseholdMember(uid, householdId);
 
   const runtimeProjectId = projectID.value();
@@ -215,7 +217,7 @@ export const listMessageIngestionCredentials = onCall(async (request) => {
       const credential = doc.data() as IngestionCredential;
       return {
         id: credential.id,
-        label: credential.label,
+        label: credential.label === 'iPhone Shortcut' ? 'Secure message connection' : credential.label,
         enabled: credential.enabled,
         createdAt: credential.createdAt,
         lastUsedAt: credential.lastUsedAt ?? null,
@@ -234,6 +236,28 @@ export const revokeMessageIngestionCredential = onCall(async (request) => {
   if (!credential || credential.ownerUid !== uid) throw new HttpsError('not-found', 'Connection not found.');
   await ref.set({ enabled: false, revokedAt: new Date().toISOString() }, { merge: true });
   return { revoked: true };
+});
+
+export const deleteMessageIngestionCredential = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+  const credentialId = assertString((request.data as { credentialId?: unknown })?.credentialId, 'credentialId');
+  const db = getFirestore();
+  const ref = db.doc(`messageIngestionCredentials/${credentialId}`);
+  const initialSnapshot = await ref.get();
+  const initialCredential = initialSnapshot.data() as IngestionCredential | undefined;
+  if (!initialCredential || initialCredential.ownerUid !== uid) throw new HttpsError('not-found', 'Connection not found.');
+  await requireHouseholdMember(uid, initialCredential.householdId);
+
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const credential = snapshot.data() as IngestionCredential | undefined;
+    const status = getCredentialDeletionStatus(credential, uid, initialCredential.householdId);
+    if (status === 'not-found') throw new HttpsError('not-found', 'Connection not found.');
+    if (status === 'active') throw new HttpsError('failed-precondition', 'Disable the connection before deleting it.');
+    transaction.delete(ref);
+  });
+  return { deleted: true };
 });
 
 export const ingestFinancialMessage = onRequest(
@@ -298,7 +322,7 @@ export const ingestFinancialMessage = onRequest(
       };
       await Promise.all([
         receiptRef.set(receipt),
-        credentialRef.set({ lastUsedAt: now }, { merge: true }),
+        credentialRef.update({ lastUsedAt: now }),
       ]);
       const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
       await sendToMany(
@@ -327,7 +351,7 @@ export const ingestFinancialMessage = onRequest(
       };
       await Promise.all([
         receiptRef.set(receipt),
-        credentialRef.set({ lastUsedAt: now }, { merge: true }),
+        credentialRef.update({ lastUsedAt: now }),
       ]);
       response.status(200).json({ accepted: false, ignored: true, reason: parsedResult.reason });
       return;
@@ -400,7 +424,7 @@ export const ingestFinancialMessage = onRequest(
           createdAt: now,
           updatedAt: now,
         } satisfies IngestionReceipt);
-        batch.set(credentialRef, { lastUsedAt: now }, { merge: true });
+        batch.update(credentialRef, { lastUsedAt: now });
         await batch.commit();
 
         const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
@@ -460,7 +484,7 @@ export const ingestFinancialMessage = onRequest(
     const batch = db.batch();
     batch.create(receiptRef, receipt);
     batch.create(db.doc(`households/${credential.householdId}/pendingFinancialMessages/${receiptId}`), pending);
-    batch.set(credentialRef, { lastUsedAt: now }, { merge: true });
+    batch.update(credentialRef, { lastUsedAt: now });
     await batch.commit();
     const tokens = await getTokensForUsers(credential.householdId, [credential.ownerUid]);
     const notifBody = pending.transferLeg
@@ -585,6 +609,13 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     const destCurrency = isCrossCurrency ? (pending.destinationCurrency as string) : pending.currency;
 
     const now = new Date().toISOString();
+    const sourceLedgerAmount = calculateCreditCardLedgerAmount({
+      amount: pending.amount,
+      currency: pending.currency,
+      accountType: account.type,
+      transactionType: pending.kind,
+      isLoanPayment,
+    });
     transaction.create(transactionRef, {
       id: transactionId,
       householdId,
@@ -603,7 +634,8 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     });
     transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
       id: `${transactionId}_source`, householdId, transactionId, accountId,
-      signedAmount: pending.kind === 'income' ? pending.amount : -pending.amount,
+      signedAmount: sourceLedgerAmount.signedAmount,
+      ...(sourceLedgerAmount.cardFee ? { cardFee: sourceLedgerAmount.cardFee } : {}),
       currency: pending.currency, createdAt: now,
     });
     if (pending.kind === 'transfer' && destinationAccount) {

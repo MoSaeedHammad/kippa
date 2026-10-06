@@ -54,7 +54,6 @@ it('shows the suggested account and commits a category selection', async () => {
         busy={false}
         categories={[category]}
         categoryId=""
-        confirmDiscard={false}
         destinationAccountId=""
         destinationAccounts={[]}
         item={item}
@@ -75,4 +74,33 @@ it('shows the suggested account and commits a category selection', async () => {
   await user.click(screen.getByRole('option', { name: 'Apple Music' }));
 
   expect(onCategoryChange).toHaveBeenCalledWith(category.id);
+});
+
+it('shows the bank fee and gross approval total for an EGP credit-card expense', () => {
+  render(
+    <PrivacyModeProvider>
+      <PendingReviewDialog
+        accountId={creditAccount.id}
+        accounts={[creditAccount]}
+        busy={false}
+        categories={[category]}
+        categoryId={category.id}
+        destinationAccountId=""
+        destinationAccounts={[]}
+        item={{ ...item, amount: 999.99 }}
+        onAccountChange={vi.fn()}
+        onApprove={vi.fn()}
+        onCategoryChange={vi.fn()}
+        onClose={vi.fn()}
+        onDestinationChange={vi.fn()}
+        onDiscard={vi.fn()}
+        state="idle"
+      />
+    </PrivacyModeProvider>,
+  );
+
+  expect(screen.getByText('Bank fee (3%)')).toBeInTheDocument();
+  expect(screen.getByText('EGP 30')).toBeInTheDocument();
+  expect(screen.getByText('Total')).toBeInTheDocument();
+  expect(screen.getByText('EGP 1,029.99')).toBeInTheDocument();
 });

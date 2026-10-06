@@ -72,7 +72,7 @@ export function PendingTransactions() {
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
   const { data: resolved = [], isLoading: historyLoading } = useResolvedPendingFinancialMessages(householdId);
   const [tab, setTab] = useState<'review' | 'history'>('review');
-  const { accountId, categoryId, confirmDiscard, destinationAccountId, selected, setAccountId, setCategoryId, setConfirmDiscard, setDestinationAccountId, setSelected } = usePendingReviewState();
+  const { accountId, categoryId, destinationAccountId, selected, setAccountId, setCategoryId, setDestinationAccountId, setSelected } = usePendingReviewState();
   const [itemStates, setItemStates] = useState<Record<string, PendingItemState>>({});
   const [setupOpen, setSetupOpen] = useState(false);
   const connections = useMessageConnections(householdId);
@@ -104,13 +104,11 @@ export function PendingTransactions() {
     setCategoryId('');
     setAccountId(item.suggestedAccountId ?? '');
     setDestinationAccountId(item.suggestedDestinationAccountId ?? '');
-    setConfirmDiscard(false);
   };
 
   const closeReview = () => {
     if (approveMutation.isPending || discardMutation.isPending) return;
     setSelected(null);
-    setConfirmDiscard(false);
   };
 
   const approve = async () => {
@@ -133,7 +131,6 @@ export function PendingTransactions() {
       setItemStates((current) => ({ ...current, [pendingId]: 'settled' }));
       enqueueSnackbar('Transaction approved', { variant: 'success' });
       setSelected(null);
-      setConfirmDiscard(false);
     } catch (error) {
       setItemStates((current) => ({ ...current, [pendingId]: 'idle' }));
       enqueueSnackbar(error instanceof Error ? error.message : 'Could not approve this item', { variant: 'error' });
@@ -141,15 +138,10 @@ export function PendingTransactions() {
   };
 
   const discard = async () => {
-    if (!selected) return;
-    if (!confirmDiscard) {
-      setConfirmDiscard(true);
-      return;
-    }
+    if (!selected || discardMutation.isPending || approveMutation.isPending) return;
     if (previewMode && selected.id.startsWith('preview-')) {
       enqueueSnackbar('Preview only — nothing was deleted', { variant: 'info' });
       setSelected(null);
-      setConfirmDiscard(false);
       return;
     }
     const discardedItem = selected;
@@ -179,7 +171,6 @@ export function PendingTransactions() {
         ),
       });
       setSelected(null);
-      setConfirmDiscard(false);
     } catch (error) {
       setItemStates((current) => ({ ...current, [discardedItem.id]: 'idle' }));
       enqueueSnackbar(error instanceof Error ? error.message : 'Could not discard this item', { variant: 'error' });
@@ -225,9 +216,9 @@ export function PendingTransactions() {
         <Stack direction="row" spacing={1.5} alignItems="center">
           <KeyIcon sx={{ color: 'primary.main' }} />
           <Box>
-            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>iPhone message connection</Typography>
+            <Typography sx={{ fontSize: 14, fontWeight: 750 }}>Secure message connection</Typography>
             <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-              {activeConnections ? `${activeConnections} active secure connection` : 'Connect the HSBC message automation securely'}
+              {activeConnections ? `${activeConnections} active secure connection` : 'Connect your bank message automation securely'}
             </Typography>
           </Box>
         </Stack>
@@ -280,7 +271,7 @@ export function PendingTransactions() {
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 800, flex: 1 }}>{item.description}</Typography>
                     <Typography sx={{ fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                      <Money amount={item.amount} code={item.currency} />
+                      <Money amount={item.amount} code={item.currency} maxDigits={2} />
                     </Typography>
                   </Stack>
                   <Typography noWrap sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.25 }}>
@@ -320,7 +311,7 @@ export function PendingTransactions() {
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 800, flex: 1 }}>{item.snapshot.description}</Typography>
                       <Typography sx={{ fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                        <Money amount={item.snapshot.amount} code={item.snapshot.currency} />
+                        <Money amount={item.snapshot.amount} code={item.snapshot.currency} maxDigits={2} />
                       </Typography>
                     </Stack>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
@@ -348,9 +339,9 @@ export function PendingTransactions() {
         </Card>
       ))}
 
-      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} />
+      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} />
 
-      <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} open={setupOpen} />
+      <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} onDelete={connections.remove} open={setupOpen} />
     </Stack>
   );
 }

@@ -1,7 +1,7 @@
 import { dbLib } from '@/libs/db';
 import { transactionsLib } from '@/libs/transactions';
 import { auditLogLib } from '@/libs/auditLog';
-import { Account, Card, CardStatement, CardStatementStatus } from '@kippa/domain';
+import { Account, Card, CardStatement, CardStatementStatus, FinanceTransaction, LedgerLine } from '@kippa/domain';
 
 type AuditUser = { uid: string; displayName: string; photoURL?: string };
 
@@ -146,7 +146,8 @@ export const cardsLib = {
   /**
    * Pay the card — creates a transfer paymentAccount → creditAccount.
    * No statement required. Works for any amount (a single charge, several, or all).
-   * The credit account balance simply drops by the paid amount.
+   * The optional fee is included in amount and recorded as a separate expense
+   * atomically with the payment, so it does not create a false credit balance.
    *
    * `settlesChargeIds` (optional) records which expense transaction(s) this
    * payment settles, so the UI can mark those charges as paid exactly instead
@@ -168,9 +169,19 @@ export const cardsLib = {
     auditUser?: AuditUser,
     settlesChargeIds?: string[],
     budgetCycleId?: string | null,
-    settlesDescriptions?: string[]
+    settlesDescriptions?: string[],
+    fee?: { amount: number; rate: number }
   ): Promise<string> {
-    if (amount <= 0) throw new Error('Payment amount must be greater than 0.');
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Payment amount must be a finite number greater than 0.');
+    if (fee && (!Number.isFinite(fee.amount) || fee.amount < 0)) {
+      throw new Error('Card fee amount must be a finite number greater than or equal to 0.');
+    }
+    if (fee && (!Number.isFinite(fee.rate) || fee.rate < 0 || fee.rate > 100)) {
+      throw new Error('Card fee rate must be a finite number between 0 and 100.');
+    }
+    if (fee && fee.amount >= amount) {
+      throw new Error('Card fee amount must be less than the total payment amount.');
+    }
     if (!card.paymentAccountId) throw new Error('Card has no paymentAccountId.');
 
     // Build a human-readable description: name the charge(s) when we know them.
@@ -184,23 +195,204 @@ export const cardsLib = {
       description = `Card payment — ${named}`;
     }
 
-    return transactionsLib.createTransaction(
-      householdId,
-      {
-        type: 'transfer',
-        date: new Date().toISOString().slice(0, 10),
+    if (!fee) {
+      return transactionsLib.createTransaction(
+        householdId,
+        {
+          type: 'transfer',
+          date: new Date().toISOString().slice(0, 10),
+          description,
+          createdBy: auditUser?.uid ?? 'system',
+          budgetCycleId: budgetCycleId ?? null,
+          settlesChargeIds: settlesChargeIds && settlesChargeIds.length > 0 ? settlesChargeIds : null,
+        },
+        [
+          { accountId: card.paymentAccountId, signedAmount: -amount, currency: card.currency },
+          { accountId: card.parentAccountId, signedAmount: amount, currency: card.currency },
+        ],
+        undefined,
+        auditUser
+      );
+    }
+
+    if (settlesChargeIds && settlesChargeIds.length > 0) {
+      const [rawTransactions, rawLines] = await Promise.all([
+        dbLib.getDocs(householdId, 'transactions'),
+        dbLib.getDocs(householdId, 'ledgerLines'),
+      ]);
+      const transactionById = new Map((rawTransactions as FinanceTransaction[]).map(transaction => [transaction.id, transaction]));
+      const linesByTransaction = new Map<string, LedgerLine[]>();
+      (rawLines as LedgerLine[]).forEach(line => {
+        const lines = linesByTransaction.get(line.transactionId) ?? [];
+        lines.push(line);
+        linesByTransaction.set(line.transactionId, lines);
+      });
+      const selectedIds = [...new Set(settlesChargeIds)];
+      const selectedLines = selectedIds.map((chargeId) => {
+        const transaction = transactionById.get(chargeId);
+        const line = linesByTransaction.get(chargeId)?.find(candidate =>
+          candidate.accountId === card.parentAccountId && candidate.signedAmount < 0
+        );
+        if (!transaction || transaction.status !== 'posted' || !line ||
+          line.currency !== card.currency || !Number.isFinite(line.signedAmount) ||
+          (line.cardFee && (!Number.isFinite(line.cardFee.baseAmount) || line.cardFee.baseAmount < 0))) {
+          throw new Error(`Selected card charge not found or invalid: ${chargeId}`);
+        }
+        return { transaction, line, baseCents: Math.round((line.cardFee?.baseAmount ?? Math.abs(line.signedAmount)) * 100) };
+      });
+      const baseTotalCents = Math.round((amount - fee.amount) * 100);
+      const originalBaseTotalCents = selectedLines.reduce((total, selected) => total + selected.baseCents, 0);
+      if (originalBaseTotalCents <= 0 || baseTotalCents < 0) {
+        throw new Error('Selected card charges have no valid base amount.');
+      }
+      const allocateCents = (totalCents: number): number[] => {
+        let cumulativeBase = 0;
+        let allocated = 0;
+        return selectedLines.map(selected => {
+          cumulativeBase += selected.baseCents;
+          const target = Math.round(totalCents * cumulativeBase / originalBaseTotalCents);
+          const share = target - allocated;
+          allocated = target;
+          return share;
+        });
+      };
+      const baseAllocations = allocateCents(baseTotalCents);
+      const feeAllocations = allocateCents(Math.round(fee.amount * 100));
+      const nowStr = new Date().toISOString();
+      const paymentTransactionId = crypto.randomUUID();
+      const paymentTransaction = {
+        id: paymentTransactionId,
+        householdId,
+        type: 'transfer' as const,
+        date: nowStr.slice(0, 10),
         description,
         createdBy: auditUser?.uid ?? 'system',
         budgetCycleId: budgetCycleId ?? null,
-        settlesChargeIds: settlesChargeIds && settlesChargeIds.length > 0 ? settlesChargeIds : null,
-      },
-      [
-        { accountId: card.paymentAccountId, signedAmount: -amount, currency: card.currency },
-        { accountId: card.parentAccountId, signedAmount: amount, currency: card.currency },
-      ],
-      undefined,
-      auditUser
-    );
+        settlesChargeIds: selectedIds,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+        status: 'posted' as const,
+      };
+      const paymentLines = [
+        { id: crypto.randomUUID(), householdId, transactionId: paymentTransactionId, accountId: card.paymentAccountId, signedAmount: -amount, currency: card.currency, createdAt: nowStr },
+        { id: crypto.randomUUID(), householdId, transactionId: paymentTransactionId, accountId: card.parentAccountId, signedAmount: amount, currency: card.currency, createdAt: nowStr },
+      ];
+      await dbLib.executeBatch(householdId, [
+        ...selectedLines.map((selected, index) => ({
+          type: 'set' as const,
+          collectionName: 'ledgerLines',
+          docId: selected.line.id,
+          data: {
+            ...selected.line,
+            signedAmount: -(baseAllocations[index] + feeAllocations[index]) / 100,
+            cardFee: { baseAmount: baseAllocations[index] / 100, rate: fee.rate },
+          },
+        })),
+        { type: 'set', collectionName: 'transactions', docId: paymentTransactionId, data: paymentTransaction },
+        ...paymentLines.map(line => ({ type: 'set' as const, collectionName: 'ledgerLines', docId: line.id, data: line })),
+      ]);
+      if (auditUser) {
+        auditLogLib.logAction(
+          householdId,
+          auditUser,
+          'transaction_created',
+          `${auditUser.displayName} logged transfer: ${amount} ${card.currency} — ${description}`,
+          { transactionId: paymentTransactionId, type: 'transfer', amount, currency: card.currency }
+        );
+      }
+      return paymentTransactionId;
+    }
+
+    if (fee.amount === 0) {
+      return transactionsLib.createTransaction(
+        householdId,
+        {
+          type: 'transfer',
+          date: new Date().toISOString().slice(0, 10),
+          description,
+          createdBy: auditUser?.uid ?? 'system',
+          budgetCycleId: budgetCycleId ?? null,
+          settlesChargeIds: settlesChargeIds && settlesChargeIds.length > 0 ? settlesChargeIds : null,
+        },
+        [
+          { accountId: card.paymentAccountId, signedAmount: -amount, currency: card.currency },
+          { accountId: card.parentAccountId, signedAmount: amount, currency: card.currency },
+        ],
+        undefined,
+        auditUser
+      );
+    }
+
+    const nowStr = new Date().toISOString();
+    const date = nowStr.slice(0, 10);
+    const feeTransactionId = crypto.randomUUID();
+    const feeLineId = crypto.randomUUID();
+    const paymentTransactionId = crypto.randomUUID();
+    const paymentLines = [
+      { id: crypto.randomUUID(), householdId, transactionId: paymentTransactionId, accountId: card.paymentAccountId, signedAmount: -amount, currency: card.currency, createdAt: nowStr },
+      { id: crypto.randomUUID(), householdId, transactionId: paymentTransactionId, accountId: card.parentAccountId, signedAmount: amount, currency: card.currency, createdAt: nowStr },
+    ];
+    const settledIds = [feeTransactionId, ...(settlesChargeIds ?? [])];
+    const feeDescription = `Card fee (${fee.rate}%) — ${settlesDescriptions?.[0] ?? card.name}`;
+    const feeTransaction = {
+      id: feeTransactionId,
+      householdId,
+      type: 'expense' as const,
+      date,
+      description: feeDescription,
+      categoryId: null,
+      budgetCycleId: budgetCycleId ?? null,
+      createdBy: auditUser?.uid ?? 'system',
+      createdAt: nowStr,
+      updatedAt: nowStr,
+      status: 'posted' as const,
+    };
+    const paymentTransaction = {
+      id: paymentTransactionId,
+      householdId,
+      type: 'transfer' as const,
+      date,
+      description,
+      createdBy: auditUser?.uid ?? 'system',
+      budgetCycleId: budgetCycleId ?? null,
+      settlesChargeIds: settledIds,
+      createdAt: nowStr,
+      updatedAt: nowStr,
+      status: 'posted' as const,
+    };
+
+    await dbLib.executeBatch(householdId, [
+      { type: 'set', collectionName: 'transactions', docId: feeTransactionId, data: feeTransaction },
+      { type: 'set', collectionName: 'ledgerLines', docId: feeLineId, data: {
+        id: feeLineId,
+        householdId,
+        transactionId: feeTransactionId,
+        accountId: card.parentAccountId,
+        signedAmount: -fee.amount,
+        currency: card.currency,
+        createdAt: nowStr,
+      } },
+      { type: 'set', collectionName: 'transactions', docId: paymentTransactionId, data: paymentTransaction },
+      ...paymentLines.map(line => ({ type: 'set' as const, collectionName: 'ledgerLines', docId: line.id, data: line })),
+    ]);
+
+    if (auditUser) {
+      auditLogLib.logAction(
+        householdId,
+        auditUser,
+        'transaction_created',
+        `${auditUser.displayName} logged expense: ${fee.amount} ${card.currency} — ${feeDescription}`,
+        { transactionId: feeTransactionId, type: 'expense', amount: fee.amount, currency: card.currency }
+      );
+      auditLogLib.logAction(
+        householdId,
+        auditUser,
+        'transaction_created',
+        `${auditUser.displayName} logged transfer: ${amount} ${card.currency} — ${description}`,
+        { transactionId: paymentTransactionId, type: 'transfer', amount, currency: card.currency }
+      );
+    }
+    return paymentTransactionId;
   },
 
   /**

@@ -1,7 +1,8 @@
+import { includeUnrecordedCardFees } from './creditCardFees';
 import { dbLib } from '@/libs/db';
 import { auditLogLib } from '@/libs/auditLog';
 import { detectBaseCurrency, currencySymbol } from '@/libs/currencyMeta';
-import { Account, Category, FinanceTransaction, Household, Reconciliation, NotificationSettings, CurrencyCode } from '@kippa/domain';
+import { Account, Category, FinanceTransaction, Household, Reconciliation, NotificationSettings, CurrencyCode, LedgerLine } from '@kippa/domain';
 
 type AuditUser = { uid: string; displayName: string; photoURL?: string };
 
@@ -136,10 +137,15 @@ export const ledgerLib = {
   },
 
   // Raw Lines & Transactions Fetchers
-  async getLedgerLines(householdId: string, _cycleId?: string): Promise<any[]> {
+  async getLedgerLines(householdId: string, _cycleId?: string): Promise<LedgerLine[]> {
     // Ledger lines don't have a budgetCycleId field — only transactions do.
     // Callers already match lines to transactions in-memory via transactionId.
-    return dbLib.getDocs(householdId, 'ledgerLines');
+    const [lines, accounts, transactions] = await Promise.all([
+      dbLib.getDocs(householdId, 'ledgerLines'),
+      dbLib.getDocs(householdId, 'accounts'),
+      dbLib.getDocs(householdId, 'transactions'),
+    ]);
+    return includeUnrecordedCardFees(accounts as Account[], transactions as FinanceTransaction[], lines as LedgerLine[]);
   },
 
   async getTransactions(householdId: string, cycleId?: string): Promise<FinanceTransaction[]> {

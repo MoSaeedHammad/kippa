@@ -82,7 +82,7 @@ export function TotalBalanceHeroCard() {
               </Box>
           </Typography>
           <Typography sx={{ color: 'text.primary', fontSize: { xs: 36, lg: 40 }, lineHeight: 1.05, fontWeight: 500, letterSpacing: '-0.055em', mt: 1, fontVariantNumeric: 'tabular-nums' }}>
-            <Money amount={data.totalBaseEquivalent} code={baseCurrency} />
+            <Money amount={data.totalBaseEquivalent} code={baseCurrency} maxDigits={2} />
           </Typography>
           </Box>
           

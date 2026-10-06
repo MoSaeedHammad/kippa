@@ -1,6 +1,7 @@
+import { withDefaultCardFee } from './creditCardFees';
 import { dbLib } from '@/libs/db';
 import { auditLogLib } from '@/libs/auditLog';
-import { FinanceTransaction, LedgerLine, ConversionDetails, CurrencyCode } from '@kippa/domain';
+import { FinanceTransaction, LedgerLine, ConversionDetails, CurrencyCode, Account } from '@kippa/domain';
 
 type AuditUser = { uid: string; displayName: string; photoURL?: string };
 
@@ -30,7 +31,12 @@ export const transactionsLib = {
       updatedAt: nowStr,
     };
 
-    const newLines: LedgerLine[] = lines.map(line => ({
+    const feeAdjustedLines = await Promise.all(lines.map(async line => {
+      if (transaction.type !== 'expense' || transaction.loanId || line.cardFee || line.signedAmount >= 0 || line.currency !== 'EGP') return line;
+      const account = await dbLib.getDoc(householdId, 'accounts', line.accountId) as Account | undefined;
+      return withDefaultCardFee(line, account, transaction.type);
+    }));
+    const newLines: LedgerLine[] = feeAdjustedLines.map(line => ({
       ...line,
       id: crypto.randomUUID(),
       householdId,
@@ -117,7 +123,7 @@ export const transactionsLib = {
     householdId: string,
     transactionId: string,
     transactionUpdates: Partial<FinanceTransaction>,
-    lineUpdates: { accountId: string; signedAmount: number; currency: CurrencyCode },
+    lineUpdates: { accountId: string; signedAmount: number; currency: CurrencyCode; cardFee?: LedgerLine['cardFee'] },
     auditUser?: AuditUser
   ): Promise<void> {
     const transaction = await dbLib.getDoc(householdId, 'transactions', transactionId) as FinanceTransaction | null;
@@ -149,8 +155,11 @@ export const transactionsLib = {
 
     if (txLines.length > 0) {
       const firstLine = txLines[0];
+      const firstLineWithoutFee = { ...firstLine };
+      delete firstLineWithoutFee.cardFee;
       const updatedLine: LedgerLine = {
-        ...firstLine,
+        ...firstLineWithoutFee,
+        ...(lineUpdates.cardFee ? { cardFee: lineUpdates.cardFee } : {}),
         accountId: lineUpdates.accountId,
         signedAmount: lineUpdates.signedAmount,
         currency: lineUpdates.currency

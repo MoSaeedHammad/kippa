@@ -28,6 +28,8 @@ import { useFormattedMoney } from '@/hooks/useFormattedMoney';
 import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { calculateCardActivity, type CardCharge } from '@/libs/cardActivity';
 import { CardActivityList } from './components/CardActivityList';
+import { DEFAULT_CARD_FEE_RATE } from '@/libs/creditCardFees';
+import { calculateCardPayment } from '@/libs/cardPayment';
 import { useCardPaymentState } from './hooks/useCardPaymentState';
 
 export function CardDetail({ card, onClose }: { card: Card; onClose: () => void }) {
@@ -41,7 +43,12 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
   const { data: allCycles = [] } = useCycles(householdId);
   const activeCycle = allCycles.find(c => c.status === 'open') || null;
 
-  const { amount: payAmount, label: payLabel, open: payOpen, setAmount: setPayAmount, setLabel: setPayLabel, setOpen: setPayOpen, setSettlesChargeIds: setPaySettlesChargeIds, setSettlesDescriptions: setPaySettlesDescriptions, settlesChargeIds: paySettlesChargeIds, settlesDescriptions: paySettlesDescriptions } = useCardPaymentState();
+  const { feeAmountOverride, setFeeAmountOverride, amount: payAmount, feeRate: payFeeRate, setFeeRate: setPayFeeRate, label: payLabel, open: payOpen, setAmount: setPayAmount, setLabel: setPayLabel, setOpen: setPayOpen, setSettlesChargeIds: setPaySettlesChargeIds, setSettlesDescriptions: setPaySettlesDescriptions, settlesChargeIds: paySettlesChargeIds, settlesDescriptions: paySettlesDescriptions } = useCardPaymentState();
+
+  const calculatedPayment = calculateCardPayment(payAmount, payFeeRate);
+  const payment = calculatedPayment.valid && feeAmountOverride != null
+    ? { ...calculatedPayment, feeAmount: feeAmountOverride, totalAmount: Number((calculatedPayment.baseAmount + feeAmountOverride).toFixed(2)) }
+    : calculatedPayment;
 
   const isCredit = card.kind === 'credit';
   const creditAccountId = card.parentAccountId;
@@ -64,8 +71,13 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
     const unpaid = charges.filter(c => !c.paid);
     const settlesIds = unpaid.map(c => c.txId);
     const descriptions = unpaid.map(c => c.description ?? c.txType);
-    setPayAmount(Number(totalDebt.toFixed(2)));
-    setPayLabel(`Pay all (${formatMoney(totalDebt, card.currency, 2)})`);
+    const baseAmount = unpaid.reduce((sum, charge) => sum + (charge.baseAmount ?? charge.amount), 0);
+    const feeAmount = totalDebt - baseAmount;
+    setPayAmount(Number(baseAmount.toFixed(2)));
+    setPayLabel('Pay all');
+    const rates = new Set(unpaid.map(charge => charge.feeRate ?? DEFAULT_CARD_FEE_RATE));
+    setPayFeeRate(rates.size === 1 ? [...rates][0] : baseAmount > 0 ? Number((feeAmount / baseAmount * 100).toFixed(6)) : DEFAULT_CARD_FEE_RATE);
+    setFeeAmountOverride(Number(feeAmount.toFixed(2)));
     setPaySettlesChargeIds(settlesIds);
     setPaySettlesDescriptions(descriptions);
     setPayOpen(true);
@@ -73,19 +85,22 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
 
   const openPayOne = (charge: CardCharge) => {
     const desc = charge.description ?? charge.txType;
-    setPayAmount(Number(charge.amount.toFixed(2)));
-    setPayLabel(`Pay ${desc} (${formatMoney(charge.amount, card.currency, 2)})`);
+    setPayAmount(Number((charge.baseAmount ?? charge.amount).toFixed(2)));
+    setPayLabel(`Pay ${desc}`);
+    setPayFeeRate(charge.feeRate ?? DEFAULT_CARD_FEE_RATE);
+    setFeeAmountOverride(charge.baseAmount != null ? Number((charge.amount - charge.baseAmount).toFixed(2)) : undefined);
     setPaySettlesChargeIds([charge.txId]);
     setPaySettlesDescriptions([desc]);
     setPayOpen(true);
   };
 
   const handlePay = async () => {
-    if (payAmount === '' || payAmount <= 0) return;
+    if (!payment.valid || payFeeRate === '' || payCard.isPending) return;
     try {
       await payCard.mutateAsync({
         householdId, card,
-        amount: Number(payAmount),
+        amount: payment.totalAmount,
+        fee: { amount: payment.feeAmount, rate: payFeeRate },
         settlesChargeIds: paySettlesChargeIds,
         settlesDescriptions: paySettlesDescriptions,
         budgetCycleId: activeCycle?.id ?? null,
@@ -291,21 +306,45 @@ export function CardDetail({ card, onClose }: { card: Card; onClose: () => void 
       </Dialog>
 
       {/* ── Pay Confirm Dialog ────────────────────────────────────── */}
-      <Dialog open={payOpen} onClose={() => setPayOpen(false)}>
+      <Dialog open={payOpen} onClose={() => { if (!payCard.isPending) setPayOpen(false); }} maxWidth="xs" fullWidth>
         <DialogTitle>{payLabel}</DialogTitle>
         <DialogContent>
-          <TextField
-            type="number"
-            label={`Amount (${card.currency})`}
-            value={typeof payAmount === 'number' ? maskDigits(String(payAmount)) : payAmount}
-            onChange={e => setPayAmount(e.target.value ? Number(e.target.value) : '')}
-            autoFocus
-            fullWidth
-          />
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              type="number"
+              label={`Message amount (${card.currency})`}
+              value={payAmount}
+              onChange={e => { setFeeAmountOverride(undefined); setPayAmount(e.target.value ? Number(e.target.value) : ''); }}
+              helperText="Enter the amount before bank fees."
+              slotProps={{ htmlInput: { min: 0.01, step: 0.01 } }}
+              disabled={payCard.isPending}
+              autoFocus
+              fullWidth
+            />
+            <TextField
+              type="number"
+              label="Bank fee (%)"
+              value={payFeeRate}
+              onChange={e => { setFeeAmountOverride(undefined); setPayFeeRate(e.target.value ? Number(e.target.value) : ''); }}
+              helperText="Default 3%. Set to 0 for no fee or if fees are already included."
+              slotProps={{ htmlInput: { min: 0, max: 100, step: 0.01 } }}
+              error={payFeeRate !== '' && (!Number.isFinite(payFeeRate) || payFeeRate < 0 || payFeeRate > 100)}
+              disabled={payCard.isPending}
+              fullWidth
+            />
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2">Bank fee</Typography>
+              <Typography variant="body2">{payment.valid ? formatMoney(payment.feeAmount, card.currency, 2) : '—'}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="sectionLabel">Total payment</Typography>
+              <Typography variant="sectionLabel">{payment.valid ? formatMoney(payment.totalAmount, card.currency, 2) : '—'}</Typography>
+            </Stack>
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPayOpen(false)}>Cancel</Button>
-          <Button variant="contained" disabled={payCard.isPending} onClick={handlePay}>
+          <Button disabled={payCard.isPending} onClick={() => setPayOpen(false)}>Cancel</Button>
+          <Button variant="contained" disabled={payCard.isPending || !payment.valid} onClick={handlePay}>
             {payCard.isPending ? 'Saving…' : 'Confirm'}
           </Button>
         </DialogActions>
