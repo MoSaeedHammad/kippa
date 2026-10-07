@@ -100,7 +100,8 @@
     "restored": "Pending item restored",
     "restoredForReview": "Pending item restored for review",
     "restoreFailed": "Could not restore this item",
-    "discardFailed": "Could not discard this item"
+    "discardFailed": "Could not discard this item",
+    "decideBatchFailed": "The bulk decision failed partway — review the remaining messages."
   },
   "undo": "Undo",
   "sharedBalance": {
@@ -165,5 +166,44 @@
       "skipped": "Occurrence skipped",
       "failed": "Could not decide this occurrence"
     }
+  },
+  "imported": {
+    "title": "Imported history",
+    "subtitle_zero": "{{count}} messages staged from your phone history.",
+    "subtitle_one": "{{count}} message staged from your phone history — approve all at once or review each one.",
+    "subtitle_two": "{{count}} messages staged from your phone history.",
+    "subtitle_few": "{{count}} messages staged from your phone history — approve all at once or review each one.",
+    "subtitle_many": "{{count}} messages staged from your phone history.",
+    "subtitle_other": "{{count}} messages staged from your phone history — approve all at once or review each one.",
+    "span": "{{from}} → {{to}}",
+    "approveAll": "Approve all",
+    "cancelAll": "Cancel all",
+    "approveTitle": "Approve all imported messages?",
+    "approveBody": "Each message will be posted with its suggested account and category. Messages that cannot be safely auto-approved stay pending for review.",
+    "cancelTitle": "Cancel all imported messages?",
+    "cancelBody": "Every staged message in this import will be discarded. You can restore them from the History tab.",
+    "confirm": "Confirm",
+    "back": "Back",
+    "progress": "Working… {{done}} / {{total}}",
+    "doneApproved_one": "Approved {{count}} imported transaction",
+    "doneApproved_other": "Approved {{count}} imported transactions",
+    "doneDiscarded_one": "Discarded {{count}} imported message",
+    "doneDiscarded_other": "Discarded {{count}} imported messages",
+    "needsReview_one": "{{count}} needs manual review — it stayed in the list",
+    "needsReview_other": "{{count}} need manual review — they stayed in the list",
+    "importButton": "Import old messages",
+    "reviewHint": "Tap a message to review it individually.",
+    "doneApproved_zero": "Approved {{count}} imported transactions",
+    "doneApproved_two": "Approved {{count}} imported transactions",
+    "doneApproved_few": "Approved {{count}} imported transactions",
+    "doneApproved_many": "Approved {{count}} imported transactions",
+    "doneDiscarded_zero": "Discarded {{count}} imported messages",
+    "doneDiscarded_two": "Discarded {{count}} imported messages",
+    "doneDiscarded_few": "Discarded {{count}} imported messages",
+    "doneDiscarded_many": "Discarded {{count}} imported messages",
+    "needsReview_zero": "{{count}} need manual review — they stayed in the list",
+    "needsReview_two": "{{count}} need manual review — they stayed in the list",
+    "needsReview_few": "{{count}} need manual review — they stayed in the list",
+    "needsReview_many": "{{count}} need manual review — they stayed in the list"
   }
 }

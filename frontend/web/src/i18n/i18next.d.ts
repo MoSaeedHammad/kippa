@@ -19,6 +19,7 @@ import type pendingTransactions from './locales/en/pendingTransactions.json';
 import type reconciliation from './locales/en/reconciliation.json';
 import type loans from './locales/en/loans.json';
 import type ai from './locales/en/ai.json';
+import type messageImport from './locales/en/messageImport.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -44,6 +45,7 @@ declare module 'i18next' {
       reconciliation: typeof reconciliation;
       loans: typeof loans;
       ai: typeof ai;
+      messageImport: typeof messageImport;
     };
   }
 }

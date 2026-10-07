@@ -12,8 +12,15 @@ function gitInfo(arg: string, fallback: string): string {
 
 // Baked into the bundle so a deployed build can be identified by branch,
 // commit, base and build time (see src/version.ts / ProfileMenu footer).
+// The patch segment auto-bumps with each change: major.minor come from
+// package.json, patch is the total number of commits on HEAD, so every
+// commit produces a new version without editing package.json.
+const pkgVersion = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version as string;
+const [pkgMajor, pkgMinor] = pkgVersion.split('.');
+const commitCount = Number(gitInfo('rev-list --count HEAD', '0'));
+const appVersion = commitCount > 0 ? `${pkgMajor}.${pkgMinor}.${commitCount}` : pkgVersion;
 const buildInfo = {
-  appVersion: JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version as string,
+  appVersion,
   gitBranch: gitInfo('rev-parse --abbrev-ref HEAD', 'unknown'),
   gitCommit: gitInfo('rev-parse --short HEAD', 'unknown'),
   gitBase: gitInfo('merge-base main HEAD', ''),

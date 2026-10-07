@@ -450,6 +450,7 @@ export type AuditAction =
   | 'household_left'
   | 'pending_message_discarded'
   | 'pending_message_restored'
+  | 'message_history_imported'
   | 'shared_balance_proposed'
   | 'shared_balance_approved'
   | 'shared_balance_rejected'
@@ -502,6 +503,10 @@ export type PendingFinancialMessage = {
   mergeKey?: string | null;
   /** True when a credit-card charge arrived in a currency different from the card's parent account; approval must supply the converted amount. */
   conversionRequired?: boolean | null;
+  /** Set when the message was staged by a bulk history import; groups the batch for approve-all / cancel-all. */
+  importBatchId?: string | null;
+  /** When the history import staged this message (ISO timestamp). */
+  importedAt?: string | null;
   createdAt: string;
   status: 'pending';
 };
@@ -514,6 +519,43 @@ export type ResolvedPendingFinancialMessage = {
   resolvedAt: string;
   resolvedBy: string;
   resolvedByDisplayName: string;
+};
+
+/**
+ * One raw message staged by the history import. `text` + `sender` mirror the
+ * live forwarder payload (`{"text": "<SMS text>", "sender": "<Sender>"}`) so
+ * the bank is auto-detected by the same parser; `dateMs` carries the export
+ * stamp when the client extracted one.
+ */
+export type HistoryImportMessage = {
+  text: string;
+  sender?: string;
+  /** Message timestamp in epoch milliseconds, when the export carries one. */
+  dateMs?: number;
+};
+
+export type ImportMessageHistoryResult = {
+  batchId: string;
+  received: number;
+  staged: number;
+  duplicates: number;
+  ignored: number;
+  unsupported: number;
+  /** Matched messages merged into the earlier leg of a two-message cross-currency transfer. */
+  merged: number;
+};
+
+export type DecideImportBatchSkip = {
+  pendingId: string;
+  reason: string;
+};
+
+export type DecideImportBatchResult = {
+  action: 'approve' | 'discard';
+  approved: number;
+  discarded: number;
+  skipped: DecideImportBatchSkip[];
+  hasMore: boolean;
 };
 
 export type MessageIngestionCredential = {

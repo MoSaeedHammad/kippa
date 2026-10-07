@@ -52,6 +52,7 @@ const menuItems: NavItem[] = [
     children: [
       { labelKey: 'allTransactions', path: '/transactions' },
       { labelKey: 'approvals', path: '/pending' },
+      { labelKey: 'importHistory', path: '/import-messages' },
       { labelKey: 'expenses', path: '/transactions?type=expense' },
       { labelKey: 'income', path: '/transactions?type=income' },
       { labelKey: 'transfers', path: '/transactions?type=transfer' },

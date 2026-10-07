@@ -15,7 +15,8 @@
     "notifications": "الإشعارات",
     "kip": "Kip",
     "loans": "القروض",
-    "spaces": "الفضاءات"
+    "spaces": "الفضاءات",
+    "importHistory": "استيراد السجل"
   },
   "nav": {
     "dashboard": "لوحة التحكم",
@@ -44,7 +45,8 @@
     "bankAccounts": "الحسابات البنكية",
     "activityLog": "سجل النشاط",
     "remindersAndAlerts": "التذكيرات والتنبيهات",
-    "allSpaces": "كل الفضاءات"
+    "allSpaces": "كل الفضاءات",
+    "importHistory": "استيراد السجل"
   },
   "sections": {
     "money": "المال",

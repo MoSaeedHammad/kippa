@@ -18,6 +18,7 @@ import pendingTransactionsEn from './locales/en/pendingTransactions.json';
 import reconciliationEn from './locales/en/reconciliation.json';
 import loansEn from './locales/en/loans.json';
 import aiEn from './locales/en/ai.json';
+import messageImportEn from './locales/en/messageImport.json';
 import commonAr from './locales/ar/common.json';
 import appShellAr from './locales/ar/appShell.json';
 import authAr from './locales/ar/auth.json';
@@ -38,6 +39,7 @@ import pendingTransactionsAr from './locales/ar/pendingTransactions.json';
 import reconciliationAr from './locales/ar/reconciliation.json';
 import loansAr from './locales/ar/loans.json';
 import aiAr from './locales/ar/ai.json';
+import messageImportAr from './locales/ar/messageImport.json';
 
 export const resources = {
   en: {
@@ -61,6 +63,7 @@ export const resources = {
     reconciliation: reconciliationEn,
     loans: loansEn,
     ai: aiEn,
+    messageImport: messageImportEn,
   },
   ar: {
     common: commonAr,
@@ -83,5 +86,6 @@ export const resources = {
     reconciliation: reconciliationAr,
     loans: loansAr,
     ai: aiAr,
+    messageImport: messageImportAr,
   },
 } as const;

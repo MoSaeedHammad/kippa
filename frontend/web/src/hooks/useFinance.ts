@@ -192,6 +192,30 @@ export function useRestoreDiscardedPendingFinancialMessageMutation() {
   });
 }
 
+export function useImportMessageHistoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: messageIngestionLib.importHistory,
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.pendingMessages(variables.householdId) });
+    },
+  });
+}
+
+export function useDecideImportBatchMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: messageIngestionLib.decideBatch,
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.pendingMessages(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.resolvedMessages(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.ledgerLines(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.loans(variables.householdId) });
+    },
+  });
+}
+
 /**
  * Returns a map of categoryId -> recency+frequency score for the given type,
  * based on transactions in the last 30 days. For sorting category chips

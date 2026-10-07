@@ -66,6 +66,7 @@ declare module '@mui/material/styles' {
     loanMeta: React.CSSProperties;
     cardTitle: React.CSSProperties;
     cardSubtitle: React.CSSProperties;
+    codeSnippet: React.CSSProperties;
   }
 
   interface TypographyVariantsOptions {
@@ -82,6 +83,7 @@ declare module '@mui/material/styles' {
     loanMeta?: React.CSSProperties;
     cardTitle?: React.CSSProperties;
     cardSubtitle?: React.CSSProperties;
+    codeSnippet?: React.CSSProperties;
   }
 }
 
@@ -100,5 +102,6 @@ declare module '@mui/material/Typography' {
     loanMeta: true;
     cardTitle: true;
     cardSubtitle: true;
+    codeSnippet: true;
   }
 }

@@ -3,10 +3,10 @@ import { Box, type SvgIconProps } from '@mui/material';
 import {
   Add, AddSquare, ArrowLeft, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
   Bank, Briefcase, Calendar, Card, CardPos, Category, Chart, CloseCircle, CloudRemove,
-  Convert, Copy, Discover, Edit2, Export, Eye, EyeSlash, Filter, Home2, InfoCircle, Key,
-  Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle, People,
-  Play, Profile2User, Receipt, SearchNormal1, Setting2, ShoppingCart, Sun, TickCircle,
-  TickSquare, Timer1, Trash,
+  Convert, Copy, Discover, DocumentUpload, Edit2, Export, Eye, EyeSlash, Filter, Home2,
+  InfoCircle, Key, Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle,
+  People, Play, Profile2User, Receipt, SearchNormal1, Setting2, ShoppingCart, Sun,
+  TickCircle, TickSquare, Timer1, Trash,
 } from 'iconsax-react';
 
 type IconsaxVariant = 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
@@ -87,6 +87,7 @@ export const EditIcon = createAppIcon(Edit2);
 export const EventIcon = createAppIcon(Calendar);
 export const ExpandLessIcon = createAppIcon(ArrowUp2);
 export const ExploreIcon = createAppIcon(Discover);
+export const DocumentUploadIcon = createAppIcon(DocumentUpload);
 export const GroupAddIcon = createAppIcon(People);
 export const HistoryIcon = createAppIcon(Backward);
 export const HomeIcon = createAppIcon(Home2);

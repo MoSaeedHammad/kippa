@@ -12,9 +12,9 @@ import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { useAppContext } from '@/hooks/useAppContext';
-import { AccountBalanceIcon,
-  SwapHorizIcon,
-} from '@/components/AppIcon';
+import { AccountBalanceIcon } from '@/components/AppIcon';
+import { DocumentUploadIcon } from '@/components/AppIcon';
+import { SwapHorizIcon } from '@/components/AppIcon';
 import { ReceiptLongIcon } from '@/components/AppIcon';
 import { SwitchAccountIcon } from '@/components/AppIcon';
 import { CategoryIcon } from '@/components/AppIcon';
@@ -75,6 +75,7 @@ const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavK
     items: [
       { labelKey: 'bankAccounts', icon: <AccountBalanceIcon fontSize="small" />, path: '/accounts' },
       { labelKey: 'transactions', icon: <ReceiptLongIcon fontSize="small" />, path: '/transactions' },
+      { labelKey: 'importHistory', icon: <DocumentUploadIcon fontSize="small" />, path: '/import-messages' },
       { labelKey: 'categories', icon: <CategoryIcon fontSize="small" />, path: '/categories' },
     ],
   },

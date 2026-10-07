@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type appShellEn from '@/i18n/locales/en/appShell.json';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { AppFooter } from '@/components/app-shell/AppFooter';
 import { TopBar } from '@/components/app-shell/TopBar';
 import { BottomNav } from '@/components/app-shell/BottomNav';
 import { SideNav } from '@/components/app-shell/SideNav';
@@ -21,6 +22,7 @@ const PAGE_TITLES: Record<string, PageTitleKey> = {
   '/cycles': 'statements',
   '/transactions': 'transactions',
   '/pending': 'approvals',
+  '/import-messages': 'importHistory',
   '/shared-balance': 'sharedBalance',
   '/shared-accounts': 'spaces',
   '/activity': 'activityLog',
@@ -88,6 +90,7 @@ export function AppShell() {
               <Outlet />
             </Suspense>
           </Container>
+          {pathname !== '/ai' && <AppFooter />}
         </Box>
 
         <BottomNav />

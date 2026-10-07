@@ -22,4 +22,5 @@ export const typography: ThemeOptions['typography'] = {
   loanMeta: { display: 'block', fontSize: '12px', lineHeight: '18px', fontWeight: 650, letterSpacing: 0 },
   cardTitle: { display: 'block', fontSize: '16px', lineHeight: '22px', fontWeight: 800, letterSpacing: '-0.012em' },
   cardSubtitle: { display: 'block', fontSize: '12px', lineHeight: '18px', fontWeight: 600, letterSpacing: 0 },
+  codeSnippet: { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '11px', lineHeight: '16px', fontWeight: 500, letterSpacing: 0 },
 };

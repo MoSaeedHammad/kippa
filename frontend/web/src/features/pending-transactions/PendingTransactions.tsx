@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -18,11 +19,12 @@ import {
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { PendingReviewDialog } from './components/PendingReviewDialog';
 import { MessageConnectionDialog } from './components/MessageConnectionDialog';
+import { ImportedBatchCard } from './components/ImportedBatchCard';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { Money } from '@/components/Money';
-import { CheckCircleIcon, HistoryIcon, KeyIcon } from '@/components/AppIcon';
+import { CheckCircleIcon, DocumentUploadIcon, HistoryIcon, KeyIcon } from '@/components/AppIcon';
 import { useAppContext } from '@/hooks/useAppContext';
 import {
   useAccounts,
@@ -34,6 +36,7 @@ import {
   useRestoreDiscardedPendingFinancialMessageMutation,
 } from '@/hooks/useFinance';
 import type { PendingFinancialMessage } from '@kippa/domain';
+import { groupImportedPending } from '@/libs/messageHistoryImport';
 import { useMessageConnections } from './hooks/useMessageConnections';
 import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
 import { pendingForViewerCount } from '@/libs/approvals';
@@ -72,6 +75,7 @@ const PREVIEW_PENDING_ITEMS: PendingFinancialMessage[] = [
 
 export function PendingTransactions() {
   const { t } = useTranslation('pendingTransactions');
+  const navigate = useNavigate();
   const { userProfile, householdId } = useAppContext();
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const { data: remotePending = [], isLoading: remoteLoading } = usePendingFinancialMessages(householdId);
@@ -93,6 +97,13 @@ export function PendingTransactions() {
   const previewMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview-pending') === '1';
   const pending = previewMode ? PREVIEW_PENDING_ITEMS : remotePending;
   const isLoading = previewMode ? false : remoteLoading;
+  // History-import stages arrive in batches with their own bulk
+  // approve-all / cancel-all actions; live bank messages keep the plain list.
+  const importBatches = useMemo(() => groupImportedPending(pending), [pending]);
+  const livePending = useMemo(
+    () => pending.filter((item) => !item.importBatchId),
+    [pending],
+  );
   const viewerUid = userProfile?.uid ?? '';
   const pendingShared = sharedEntries.filter((entry) => entry.status === 'pending');
   const transfersAwaitingViewer = draftTransfers.filter((draft) => {
@@ -276,9 +287,14 @@ export function PendingTransactions() {
             </Typography>
           </Box>
         </Stack>
-        <Button variant="outlined" onClick={() => setSetupOpen(true)}>
-          {activeConnections ? t('connection.manage') : t('connection.connect')}
-        </Button>
+        <Stack direction="row" spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap" useFlexGap>
+          <Button variant="outlined" onClick={() => setSetupOpen(true)}>
+            {activeConnections ? t('connection.manage') : t('connection.connect')}
+          </Button>
+          <Button variant="outlined" startIcon={<DocumentUploadIcon />} onClick={() => navigate('/import-messages')}>
+            {t('imported.importButton')}
+          </Button>
+        </Stack>
       </Box>
 
       <Tabs value={tab} onChange={(_, value: 'review' | 'history') => setTab(value)} variant="fullWidth">
@@ -291,6 +307,15 @@ export function PendingTransactions() {
           <SharedBalanceApprovalsCard entries={pendingShared} />
           <TransferApprovalsCard members={members} />
           <RecurringConfirmationsCard />
+          {importBatches.map((batch) => (
+            <ImportedBatchCard
+              key={batch.batchId}
+              householdId={householdId}
+              batchId={batch.batchId}
+              items={batch.items}
+              onOpenItem={openReview}
+            />
+          ))}
         </>
       )}
 
@@ -304,14 +329,14 @@ export function PendingTransactions() {
           title={t('reviewTab.emptyTitle')}
           description={t('reviewTab.emptyDescription')}
         />
-      ) : (
+      ) : livePending.length === 0 ? null : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
             <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{t('reviewTab.detectedTitle')}</Typography>
             <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25 }}>{t('reviewTab.detectedHint')}</Typography>
           </Box>
           <Divider />
-          {pending.map((item, index) => (
+          {livePending.map((item, index) => (
             <Box key={item.id}>
               <Box
                 component="button"
@@ -341,7 +366,7 @@ export function PendingTransactions() {
                   </Typography>
                 </Box>
               </Box>
-              {index < pending.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
+              {index < livePending.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
             </Box>
           ))}
         </Card>

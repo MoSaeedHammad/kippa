@@ -28,6 +28,7 @@ const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ 
 const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBalancePage').then(m => ({ default: m.SharedBalancePage })));
 const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SpacesPage').then(m => ({ default: m.SpacesPage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
+const MessageImport = lazy(() => import('@/features/message-import/MessageImport').then(m => ({ default: m.MessageImport })));
 
 
 export default function App() {
@@ -84,6 +85,7 @@ export default function App() {
                 <Route path="cycles" element={<BudgetCycles />} />
                 <Route path="transactions" element={<TransactionHistory />} />
                 <Route path="pending" element={<PendingTransactions />} />
+                <Route path="import-messages" element={<MessageImport />} />
                 <Route path="shared-accounts" element={<SharedAccountsPage />} />
                 <Route path="shared-balance" element={<SharedBalancePage />} />
                 <Route path="activity" element={<AuditLog />} />

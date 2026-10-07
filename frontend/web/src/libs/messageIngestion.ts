@@ -2,6 +2,9 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/config/firebase';
 import { dbLib } from '@/libs/db';
 import type {
+  DecideImportBatchResult,
+  HistoryImportMessage,
+  ImportMessageHistoryResult,
   MessageIngestionCredential,
   PendingFinancialMessage,
   ResolvedPendingFinancialMessage,
@@ -80,5 +83,29 @@ export const messageIngestionLib = {
       'revokeMessageIngestionCredential',
     );
     await callable({ credentialId });
+  },
+
+  /** Stages one chunk of messages extracted from a phone history export. */
+  async importHistory(data: {
+    householdId: string;
+    messages: HistoryImportMessage[];
+    batchId?: string;
+    from?: string;
+    to?: string;
+    source?: string;
+  }): Promise<ImportMessageHistoryResult> {
+    const callable = httpsCallable<typeof data, ImportMessageHistoryResult>(requireFunctions(), 'importMessageHistory');
+    return (await callable(data)).data;
+  },
+
+  /** Approves or discards a staged history import batch (100 items per call). */
+  async decideBatch(data: {
+    householdId: string;
+    batchId: string;
+    action: 'approve' | 'discard';
+    maxItems?: number;
+  }): Promise<DecideImportBatchResult> {
+    const callable = httpsCallable<typeof data, DecideImportBatchResult>(requireFunctions(), 'decideImportBatch');
+    return (await callable(data)).data;
   },
 };

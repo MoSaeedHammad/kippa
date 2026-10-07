@@ -15,7 +15,8 @@
     "notifications": "Notifications",
     "kip": "Kip",
     "loans": "Loans",
-    "spaces": "Spaces"
+    "spaces": "Spaces",
+    "importHistory": "Import history"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -44,7 +45,8 @@
     "bankAccounts": "Bank Accounts",
     "activityLog": "Activity Log",
     "remindersAndAlerts": "Reminders & Alerts",
-    "allSpaces": "All spaces"
+    "allSpaces": "All spaces",
+    "importHistory": "Import history"
   },
   "sections": {
     "money": "Money",

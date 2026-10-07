@@ -9,7 +9,8 @@ export const gitCommit: string = __GIT_COMMIT__;
 export const gitBaseCommit: string = __GIT_BASE__;
 export const buildTime: string = __BUILD_TIME__;
 
-/** One-line label, e.g. `v0.1.0 · feat/bank-misr-ingestion @ f3e136d`. */
+/** One-line label, e.g. `v0.1.437 · feat/bank-misr-ingestion @ f3e136d`. The patch
+ * number auto-bumps per commit (see vite.config.ts). */
 export const versionLabel = `v${appVersion} · ${gitBranch} @ ${gitCommit}`;
 
 /** Full details for tooltips and the console. */

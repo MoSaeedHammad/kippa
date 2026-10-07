@@ -7,6 +7,8 @@ import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage
 import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
 import { extractMessage, extractSender, extractSmsDate } from '../../domain/message-ingestion/ingestBody.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
+import { daysBetween, installmentDate, matchLoanSuggestion } from '../../domain/message-ingestion/loanSuggestion.js';
+import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferLegs.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
 import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
 import { validateAccountAllocations, type AccountAllocation } from '../../domain/message-ingestion/allocations.js';
@@ -61,13 +63,8 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function cleanSource(value: unknown): string {
-  if (typeof value !== 'string') return 'device';
-  const cleaned = value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 64);
-  return cleaned || 'device';
-}
-
-function assertString(value: unknown, label: string, maxLength = 200): string {
+/** Trims and validates a required client-supplied string argument. */
+export function assertString(value: unknown, label: string, maxLength = 200): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new HttpsError('invalid-argument', `${label} is required.`);
   }
@@ -75,6 +72,13 @@ function assertString(value: unknown, label: string, maxLength = 200): string {
     throw new HttpsError('invalid-argument', `${label} is too long.`);
   }
   return value.trim();
+}
+
+/** Normalizes a free-form source label into a safe doc/audit value. */
+export function cleanSource(value: unknown): string {
+  if (typeof value !== 'string') return 'device';
+  const cleaned = value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '-').slice(0, 64);
+  return cleaned || 'device';
 }
 
 function credentialMatches(credential: IngestionCredential, suppliedSecret: string): boolean {
@@ -108,19 +112,8 @@ async function resolveCategorySuggestion(
   return matchCategoryByPattern(rules, text);
 }
 
-function installmentDate(loan: Loan, installmentNumber: number): string {
-  const first = new Date(`${loan.firstPaymentDate}T12:00:00Z`);
-  const target = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + installmentNumber - 1, 1, 12));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0, 12)).getUTCDate();
-  target.setUTCDate(Math.min(loan.dueDay, lastDay));
-  return target.toISOString().slice(0, 10);
-}
-
-function daysBetween(left: string, right: string): number {
-  return Math.round(Math.abs(new Date(`${left}T12:00:00Z`).getTime() - new Date(`${right}T12:00:00Z`).getTime()) / 86_400_000);
-}
-
-async function resolveLoanSuggestion(
+/** Loads loans + transactions once and delegates to the pure loan matcher. */
+export async function resolveLoanSuggestion(
   householdId: string,
   parsed: ParsedFinancialMessage,
   accountId?: string,
@@ -128,26 +121,12 @@ async function resolveLoanSuggestion(
   if (parsed.kind !== 'expense' || !accountId) return null;
   const db = getFirestore();
   const [loansSnapshot, transactionsSnapshot] = await Promise.all([
-    db.collection(`households/${householdId}/loans`).where('status', '==', 'active').get(),
+    db.collection(`households/${householdId}/loans`).get(),
     db.collection(`households/${householdId}/transactions`).get(),
   ]);
+  const loans = loansSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Loan);
   const transactions = transactionsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction);
-  const matches = loansSnapshot.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() }) as Loan)
-    .flatMap((loan) => {
-      const linkedPayments = transactions.filter((transaction) => transaction.status === 'posted' && transaction.loanId === loan.id);
-      const installmentNumber = (loan.openingPaidInstallments ?? 0) + linkedPayments.length + 1;
-      if (loan.paymentAccountId !== accountId
-        || loan.currency !== parsed.currency
-        || Math.abs(loan.installmentAmount - parsed.amount) > 0.01
-        || installmentNumber > loan.totalInstallments) return [];
-      const dueDate = installmentDate(loan, installmentNumber);
-      const allowedDays = Math.max(3, (loan.graceDay ?? loan.dueDay) - loan.dueDay + 2);
-      return daysBetween(parsed.date, dueDate) <= allowedDays
-        ? [{ loanId: loan.id, loanName: loan.name, installmentNumber }]
-        : [];
-    });
-  return matches.length === 1 ? matches[0] : null;
+  return matchLoanSuggestion(loans, transactions, parsed, accountId);
 }
 
 export const createMessageIngestionCredential = onCall(async (request) => {
@@ -379,36 +358,21 @@ export const ingestFinancialMessage = onRequest(
         const debit = parsed.transferLeg === 'debit' ? parsed : half;
         const credit = parsed.transferLeg === 'credit' ? parsed : half;
 
-        const mergedSuggestions = await resolveSuggestions(credential.householdId, {
-          ...parsed,
-          currency: debit.currency,
-          accountHintLast4: debit.accountHintLast4 ?? undefined,
-          destinationHintLast4: credit.accountHintLast4 ?? undefined,
-          destinationKind: 'cash' as const,
-          // resolveSuggestions uses currency for destination matching — we override after
-        });
-        // Resolve the destination account in the credit-leg currency separately.
-        const destAccountsSnap = await db.collection(`households/${credential.householdId}/accounts`)
-          .where('isActive', '==', true).get();
-        const destAccount = destAccountsSnap.docs
-          .map((d) => ({ id: d.id, ...d.data() }) as Account)
-          .find((a) => a.currency === credit.currency && a.type === 'running');
-
+        const [accountsSnapshot, cardsSnapshot] = await Promise.all([
+          db.collection(`households/${credential.householdId}/accounts`).get(),
+          db.collection(`households/${credential.householdId}/cards`).get(),
+        ]);
+        const accounts = accountsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Account);
+        const cards = cardsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Card);
         const mergedPendingId = half.id; // reuse the first-arriving doc id
         const mergedPendingRef = db.doc(`households/${credential.householdId}/pendingFinancialMessages/${mergedPendingId}`);
-        const merged: Partial<PendingFinancialMessage> = {
-          amount: debit.amount,
-          currency: debit.currency,
-          destinationAmount: credit.amount,
-          destinationCurrency: credit.currency,
-          accountHintLast4: debit.accountHintLast4 ?? null,
-          destinationHintLast4: credit.accountHintLast4 ?? null,
-          suggestedAccountId: mergedSuggestions.accountId ?? null,
-          suggestedDestinationAccountId: destAccount?.id ?? null,
-          transferLeg: null, // fully merged — no longer a half-pending
-          mergeKey: null,
-          messagePreview: `${buildMessagePreview(message)} · ${half.messagePreview}`,
-        };
+        const merged = buildMergedTransferLeg({
+          arriving: parsed,
+          half,
+          arrivingPreview: buildMessagePreview(message),
+          accounts,
+          cards,
+        });
 
         const batch = db.batch();
         batch.set(mergedPendingRef, merged, { merge: true });
