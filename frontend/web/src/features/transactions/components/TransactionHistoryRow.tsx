@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Account, Category, CurrencyCode, FinanceTransaction, LedgerLine } from '@kippa/domain';
 import { DeleteIcon, EditIcon } from '@/components/AppIcon';
 import { getTransactionPresentation } from '@/libs/transactionPresentation';
+import { entryTypeOf } from '@/libs/entryType';
 import { TransactionIcon } from './TransactionIcon';
 import { TransactionTypeChip } from './TransactionTypeChip';
 import { formatShortTime } from '@/libs/dateFormatting';
@@ -23,6 +24,8 @@ export function TransactionHistoryRow({ accounts, baseCurrency, categories, ledg
         <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}><Typography noWrap variant="body1" sx={{ minWidth: 0 }}>{title}</Typography><TransactionTypeChip type={transaction.type} /></Stack>
         <Typography noWrap variant="body2" color="text.secondary">{transaction.date} • {formatShortTime(transaction.createdAt)}{disabled ? ` • ${t('row.voidedLabel')}` : ''}</Typography>
       </TableCell>
+      <TableCell sx={{ py: 1.25, display: { xs: 'none', md: 'table-cell' } }}><Typography noWrap variant="body2" color="text.secondary">{transaction.merchant || '—'}</Typography></TableCell>
+      <TableCell sx={{ py: 1.25, display: { xs: 'none', lg: 'table-cell' } }}><Typography noWrap variant="body2" color="text.secondary">{t(`entryType.${entryTypeOf(transaction)}`)}</Typography></TableCell>
       <TableCell sx={{ py: 1.25, display: { xs: 'none', md: 'table-cell' } }}><Typography noWrap variant="body2" color="text.secondary">{presentation.details}</Typography></TableCell>
       {issuedByName !== undefined && (
         <TableCell sx={{ py: 1.25, display: { xs: 'none', md: 'table-cell' } }}><Typography noWrap variant="body2" color="text.secondary">{issuedByName}</Typography></TableCell>

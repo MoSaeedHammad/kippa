@@ -1,16 +1,16 @@
 import { Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Account, Category, HouseholdMember, PendingFinancialMessage } from '@kippa/domain';
-import { CheckCircleIcon, DeleteIcon, SwapHorizIcon } from '@/components/AppIcon';
+import { AddIcon, CheckCircleIcon, DeleteIcon, SwapHorizIcon } from '@/components/AppIcon';
 import type { AllocationRow, SharedBalanceTagDraft } from '../hooks/usePendingReviewState';
 import { AllocationsEditor } from './AllocationsEditor';
 import { Money } from '@/components/Money';
 
-type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; convertedAmount: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onConvertedAmountChange: (value: string) => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled'; members?: HouseholdMember[]; sharedBalanceTag?: SharedBalanceTagDraft; onSharedBalanceTagChange?: (tag: SharedBalanceTagDraft) => void; allocationsEnabled?: boolean; allocations?: AllocationRow[]; onAllocationsEnabledChange?: (enabled: boolean) => void; onAllocationsChange?: (rows: AllocationRow[]) => void };
+type Props = { accountId: string; accounts: Account[]; busy: boolean; categories: Category[]; categoryId: string; confirmDiscard: boolean; convertedAmount: string; destinationAccountId: string; destinationAccounts: Account[]; item: PendingFinancialMessage | null; merchant: string; onMerchantChange: (value: string) => void; onCreateAccount: () => void; onCreateCategory: () => void; onAccountChange: (id: string) => void; onApprove: () => void; onCategoryChange: (id: string) => void; onClose: () => void; onConvertedAmountChange: (value: string) => void; onDestinationChange: (id: string) => void; onDiscard: () => void; state: 'idle' | 'approving' | 'discarding' | 'settled'; members?: HouseholdMember[]; sharedBalanceTag?: SharedBalanceTagDraft; onSharedBalanceTagChange?: (tag: SharedBalanceTagDraft) => void; allocationsEnabled?: boolean; allocations?: AllocationRow[]; onAllocationsEnabledChange?: (enabled: boolean) => void; onAllocationsChange?: (rows: AllocationRow[]) => void };
 
 export function PendingReviewDialog(props: Props) {
   const { t } = useTranslation('pendingTransactions');
-  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, convertedAmount, destinationAccountId, destinationAccounts, item, onAccountChange, onApprove, onCategoryChange, onClose, onConvertedAmountChange, onDestinationChange, onDiscard, state, members = [], sharedBalanceTag, onSharedBalanceTagChange, allocationsEnabled = false, allocations = [], onAllocationsEnabledChange, onAllocationsChange } = props;
+  const { accountId, accounts, busy, categories, categoryId, confirmDiscard, convertedAmount, destinationAccountId, destinationAccounts, item, merchant, onMerchantChange, onCreateAccount, onCreateCategory, onAccountChange, onApprove, onCategoryChange, onClose, onConvertedAmountChange, onDestinationChange, onDiscard, state, members = [], sharedBalanceTag, onSharedBalanceTagChange, allocationsEnabled = false, allocations = [], onAllocationsEnabledChange, onAllocationsChange } = props;
   if (!item) return null;
   const transfer = item.kind === 'transfer';
   const crossCurrency = !!item.destinationCurrency && item.destinationCurrency !== item.currency;
@@ -21,7 +21,8 @@ export function PendingReviewDialog(props: Props) {
   const tag = sharedBalanceTag ?? { kind: 'none' as const, counterpartyUid: '', share: '' };
   const tagEnabled = tag.kind !== 'none';
   const tagShareValid = tag.kind !== 'split' || (Number(tag.share) > 0 && Number(tag.share) <= item.amount);
-  const canApprove = (transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId && (loanPayment || !!categoryId))
+  // Category is optional — approvals post uncategorized when nothing fits.
+  const canApprove = (transfer ? !halfPending && !!accountId && !!destinationAccountId : !!accountId)
     && (!conversionRequired || Number(convertedAmount) > 0)
     && (!tagEnabled || (!!tag.counterpartyUid && tagShareValid))
     && (!allocationsEnabled || (allocations.length > 0
@@ -47,8 +48,40 @@ export function PendingReviewDialog(props: Props) {
           </Box>
           <Divider />
           <Stack spacing={2}>
-            {!transfer && !loanPayment && <FormControl fullWidth><InputLabel id="pending-category-label">{t('reviewDialog.category')}</InputLabel><Select labelId="pending-category-label" value={categoryId} label={t('reviewDialog.category')} onChange={(event) => onCategoryChange(event.target.value)}>{categories.map((category) => <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>)}</Select></FormControl>}
-            <FormControl fullWidth><InputLabel id="pending-account-label">{item.kind === 'income' ? t('reviewDialog.toAccount') : t('reviewDialog.fromAccount')}</InputLabel><Select labelId="pending-account-label" value={accountId} label={item.kind === 'income' ? t('reviewDialog.toAccount') : t('reviewDialog.fromAccount')} onChange={(event) => onAccountChange(event.target.value)}>{accounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select></FormControl>
+            {!transfer && !loanPayment && (
+              <Box>
+                <FormControl fullWidth>
+                  <InputLabel id="pending-category-label">{t('reviewDialog.categoryOptional')}</InputLabel>
+                  <Select labelId="pending-category-label" value={categoryId} label={t('reviewDialog.categoryOptional')} onChange={(event) => onCategoryChange(event.target.value)}>
+                    <MenuItem value=""><em>{t('reviewDialog.noCategory')}</em></MenuItem>
+                    {categories.map((category) => <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                {onCreateCategory && (
+                  <Button size="small" startIcon={<AddIcon />} sx={{ mt: 0.75 }} onClick={onCreateCategory}>
+                    {t('reviewDialog.newCategory')}
+                  </Button>
+                )}
+              </Box>
+            )}
+            <Box>
+              <FormControl fullWidth>
+                <InputLabel id="pending-account-label">{item.kind === 'income' ? t('reviewDialog.toAccount') : t('reviewDialog.fromAccount')}</InputLabel>
+                <Select labelId="pending-account-label" value={accountId} label={item.kind === 'income' ? t('reviewDialog.toAccount') : t('reviewDialog.fromAccount')} onChange={(event) => onAccountChange(event.target.value)}>{accounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}</Select>
+              </FormControl>
+              {onCreateAccount && (
+                <Button size="small" startIcon={<AddIcon />} sx={{ mt: 0.75 }} onClick={onCreateAccount}>
+                  {t('reviewDialog.newAccount')}
+                </Button>
+              )}
+            </Box>
+            <TextField
+              fullWidth
+              label={t('reviewDialog.merchant')}
+              value={merchant}
+              onChange={(event) => onMerchantChange(event.target.value)}
+              helperText={t('reviewDialog.merchantHint')}
+            />
             {conversionRequired && (
               <TextField
                 fullWidth

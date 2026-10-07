@@ -71,7 +71,13 @@
     "approve": "موافقة",
     "splitLabel": "التوزيع على الحسابات",
     "splitSingle": "حساب واحد",
-    "splitAcross": "توزيع على عدة حسابات"
+    "splitAcross": "توزيع على عدة حسابات",
+    "categoryOptional": "الفئة (اختياري)",
+    "noCategory": "بدون فئة",
+    "newCategory": "فئة جديدة",
+    "newAccount": "حساب جديد",
+    "merchant": "التاجر / الشخص",
+    "merchantHint": "تُستخدم لاقتراح الفئات تلقائيًا لاحقًا"
   },
   "connectionsDialog": {
     "title": "ربط تحويل الرسائل",
@@ -101,7 +107,8 @@
     "restoredForReview": "استُعيد العنصر المعلق للمراجعة",
     "restoreFailed": "تعذر استعادة هذا العنصر",
     "discardFailed": "تعذر إهمال هذا العنصر",
-    "decideBatchFailed": "فشل تنفيذ الإجراء الجماعي جزئيًا — راجع الرسائل المتبقية."
+    "decideBatchFailed": "فشل تنفيذ الإجراء الجماعي جزئيًا — راجع الرسائل المتبقية.",
+    "createFailed": "تعذّر الإنشاء — حاول مجددًا"
   },
   "undo": "تراجع",
   "sharedBalance": {
@@ -205,5 +212,27 @@
     "needsReview_other": "{{count}} رسالة تحتاج مراجعة يدوية — بقيت في القائمة",
     "importButton": "استيراد الرسائل القديمة",
     "reviewHint": "اضغط على أي رسالة لمراجعتها فرديًا."
-  }
+  },
+  "createCategory": {
+    "title": "فئة {{type}} جديدة",
+    "expense": "مصروفات",
+    "income": "إيرادات",
+    "nameLabel": "اسم الفئة",
+    "create": "إنشاء"
+  },
+  "createAccount": {
+    "title": "حساب جديد",
+    "nameLabel": "اسم الحساب",
+    "typeLabel": "النوع",
+    "types": {
+      "running": "جاري",
+      "savings": "توفير",
+      "cash": "نقدي",
+      "wallet": "محفظة",
+      "credit": "بطاقة ائتمانية"
+    },
+    "currencyLabel": "العملة",
+    "create": "إنشاء"
+  },
+  "table": {}
 }

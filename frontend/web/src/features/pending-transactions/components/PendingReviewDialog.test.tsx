@@ -60,6 +60,10 @@ it('shows the suggested account and commits a category selection', async () => {
         destinationAccountId=""
         destinationAccounts={[]}
         item={item}
+        merchant={item.counterparty ?? ''}
+        onMerchantChange={vi.fn()}
+        onCreateAccount={vi.fn()}
+        onCreateCategory={vi.fn()}
         onAccountChange={vi.fn()}
         onApprove={vi.fn()}
         onCategoryChange={onCategoryChange}
@@ -74,7 +78,7 @@ it('shows the suggested account and commits a category selection', async () => {
 
   expect(screen.getByLabelText('From account')).toHaveTextContent('HSBC Credit Card Debt');
 
-  await user.click(screen.getByLabelText('Category'));
+  await user.click(screen.getByLabelText('Category (optional)'));
   await user.click(screen.getByRole('option', { name: 'Apple Music' }));
 
   expect(onCategoryChange).toHaveBeenCalledWith(category.id);
@@ -108,7 +112,11 @@ it('requires a converted amount before approving a foreign-currency card charge'
           destinationAccountId=""
           destinationAccounts={[]}
           item={usdItem}
-          onAccountChange={vi.fn()}
+          merchant={item.counterparty ?? ''}
+        onMerchantChange={vi.fn()}
+        onCreateAccount={vi.fn()}
+        onCreateCategory={vi.fn()}
+        onAccountChange={vi.fn()}
           onApprove={vi.fn()}
           onCategoryChange={vi.fn()}
           onClose={vi.fn()}

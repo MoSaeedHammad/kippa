@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   chunkMessages,
+  extractRecordDuration,
+  filterRecordsByDuration,
+  parseRecordHistoryJson,
   extractDuration,
   extractMessages,
   filterByDuration,
@@ -161,5 +164,35 @@ describe('groupImportedPending', () => {
 
   it('ignores live messages without a batch id', () => {
     expect(groupImportedPending([pendingFactory({ id: 'live' })])).toEqual([]);
+  });
+});
+
+describe('parseRecordHistoryJson', () => {
+  it('accepts a bare array and an object wrapper with tolerant keys', () => {
+    const json = JSON.stringify({ records: [
+      { type: 'transfer', date: '2025-01-05', value: '1,200', currency: 'egp', note: 'rent', person: 'Omar', account: 'a1', toAccount: 'a2' },
+      { date: '2025-02-01', amount: 90, currency: 'USD', label: 'topup', payee: 'Vodafone' },
+    ] });
+    const records = parseRecordHistoryJson(json);
+    expect(records).toHaveLength(2);
+    expect(records[0]).toMatchObject({ kind: 'transfer', amount: 1200, currency: 'EGP', merchant: 'Omar', accountId: 'a1', destinationAccountId: 'a2' });
+    expect(records[0].categoryId).toBeUndefined();
+    expect(records[1]).toMatchObject({ kind: 'expense', merchant: 'Vodafone' });
+  });
+
+  it('drops malformed entries and invalid JSON', () => {
+    expect(parseRecordHistoryJson('not json')).toEqual([]);
+    expect(parseRecordHistoryJson('[{ "date": "2025-13-01", "amount": 5, "currency": "EGP" }]')).toEqual([]);
+    expect(parseRecordHistoryJson('[{ "date": "2025-01-01", "amount": -2, "currency": "EGP" }]')).toEqual([]);
+  });
+
+  it('extracts duration and filters inclusively', () => {
+    const records = parseRecordHistoryJson(JSON.stringify([
+      { date: '2024-01-15', amount: 1, currency: 'EGP' },
+      { date: '2026-06-01', amount: 2, currency: 'EGP' },
+    ]));
+    expect(extractRecordDuration(records)).toEqual({ from: '2024-01-15', to: '2026-06-01' });
+    expect(filterRecordsByDuration(records, '2026-01-01', null)).toHaveLength(1);
+    expect(filterRecordsByDuration(records)).toHaveLength(2);
   });
 });

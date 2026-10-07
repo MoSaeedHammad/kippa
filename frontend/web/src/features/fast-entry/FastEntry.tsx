@@ -17,7 +17,7 @@ import {
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { CalendarTodayIcon, CheckCircleIcon, NotesIcon } from '@/components/AppIcon';
+import { CalendarTodayIcon, CheckCircleIcon, NotesIcon, ShoppingCartIcon } from '@/components/AppIcon';
 import { isToday, format } from 'date-fns';
 import {
   useAccounts,
@@ -52,7 +52,7 @@ export function FastEntry() {
   const isSaveAnimationPreview = import.meta.env.DEV
     && new URLSearchParams(window.location.search).get('preview-save-animation') === '1';
 
-  const { amountStr, categoryDialogOpen, categorySearch, datePickerOpen, description, entryDate, isKeypadForDest, mode, selectedAccountId, selectedCategoryId, setAmountStr, setCategoryDialogOpen, setCategorySearch, setDatePickerOpen, setDescription, setEntryDate, setIsKeypadForDest, setMode, setSelectedAccountId, setSelectedCategoryId, setToAccountId, setToAmountStr, toAccountId, toAmountStr } = useFastEntryFormState();
+  const { amountStr, categoryDialogOpen, categorySearch, datePickerOpen, description, entryDate, isKeypadForDest, mode, selectedAccountId, selectedCategoryId, setAmountStr, setCategoryDialogOpen, setCategorySearch, setDatePickerOpen, setDescription, setEntryDate, setIsKeypadForDest, setMode, setSelectedAccountId, setSelectedCategoryId, setToAccountId, setToAmountStr, setMerchant, toAccountId, toAmountStr, merchant } = useFastEntryFormState();
   const saveFeedback = useSaveFeedback();
   const triggerSaveFeedback = saveFeedback.show;
 
@@ -249,11 +249,11 @@ export function FastEntry() {
         const amount = Number(amountStr);
         const lines = buildSplitEntryLines({ totalAmount: amount, currency: selectedAccount!.currency, isIncome: mode === 'income', allocations: splitRows.map((row) => ({ accountId: row.accountId, amount: Number(row.amount) })) });
         payload = {
-          transaction: { date, budgetCycleId: activeCycle?.id ?? null, createdBy: userProfile!.uid, type: mode, description: description || (mode === 'income' ? 'Income' : null), categoryId: selectedCategory!.id },
+          transaction: { date, budgetCycleId: activeCycle?.id ?? null, createdBy: userProfile!.uid, type: mode, description: description || (mode === 'income' ? 'Income' : null), merchant: merchant.trim() || null, categoryId: selectedCategory!.id },
           lines,
         };
       } else {
-        payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, mode, sourceAccount: selectedAccount });
+        payload = buildFastEntryTransaction({ activeCycle, amountText: amountStr, category: selectedCategory, createdBy: userProfile!.uid, date, description, destinationAccount: toAccount, destinationAmountText: toAmountStr, merchant, mode, sourceAccount: selectedAccount });
       }
       await createTxMutation.mutateAsync({ householdId, ...payload });
       const amount = Number(amountStr);
@@ -262,6 +262,7 @@ export function FastEntry() {
       setAmountStr('0');
       setToAmountStr('0');
       setDescription('');
+      setMerchant('');
       setSelectedCategoryId(null);
       setSplitEnabled(false);
       setSplitRows([]);
@@ -445,6 +446,24 @@ export function FastEntry() {
             />
           </LocalizationProvider>
         </Stack>
+
+        {mode !== 'transfer' && (
+          <TextField
+            fullWidth
+            placeholder={t('pickers.merchantPlaceholder')}
+            value={merchant}
+            onChange={event => setMerchant(event.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ShoppingCartIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        )}
 
         <Button
           fullWidth

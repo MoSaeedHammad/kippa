@@ -19,49 +19,83 @@ import { CardHeading } from '@/features/shared/components/CardHeading';
 import { ParsedTemplatesHelp } from './ParsedTemplatesHelp';
 import { CheckCircleIcon, DocumentUploadIcon } from '@/components/AppIcon';
 import { useAppContext } from '@/hooks/useAppContext';
-import { useImportMessageHistoryMutation } from '@/hooks/useFinance';
+import { useImportMessageHistoryMutation, useImportRecordHistoryMutation } from '@/hooks/useFinance';
 import {
   chunkMessages,
   extractDuration,
   extractMessages,
+  extractRecordDuration,
   filterByDuration,
+  filterRecordsByDuration,
   MAX_IMPORT_FILE_BYTES,
   MESSAGES_PER_IMPORT_CALL,
+  parseRecordHistoryJson,
   type ExtractedMessage,
+  type ExtractedRecord,
   type MessageHistoryFormat,
 } from '@/libs/messageHistoryImport';
 
 type ImportStep = 'choose' | 'preview' | 'result';
+type ImportSource = 'messages' | 'records';
 
 /**
- * Imports a phone's message history (Android SMS-backup XML or pasted text),
- * shows the duration the export covers, and stages every recognized bank
- * message as pending items on the Approvals page.
+ * Imports a phone's history and stages it for review: bank-message exports
+ * (Android SMS-backup XML or pasted text) run through the bank-SMS parser;
+ * personal JSON record exports stage as pending transactions/transfers
+ * directly. Both flows show the covered duration and support bulk
+ * approve-all / cancel-all afterwards on the Approvals page.
  */
 export function MessageImport() {
   const { t } = useTranslation('messageImport');
   const { householdId } = useAppContext();
   const navigate = useNavigate();
   const importMutation = useImportMessageHistoryMutation();
+  const importRecordsMutation = useImportRecordHistoryMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [sourceKind, setSourceKind] = useState<ImportSource>('messages');
   const [fileName, setFileName] = useState<string | null>(null);
   const [pasted, setPasted] = useState('');
   const [step, setStep] = useState<ImportStep>('choose');
   const [format, setFormat] = useState<MessageHistoryFormat>('text');
   const [messages, setMessages] = useState<ExtractedMessage[]>([]);
+  const [records, setRecords] = useState<ExtractedRecord[]>([]);
   const [rangeFrom, setRangeFrom] = useState('');
   const [rangeTo, setRangeTo] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [result, setResult] = useState<ImportMessageHistoryResult | null>(null);
 
-  const duration = useMemo(() => extractDuration(messages), [messages]);
+  const duration = useMemo(
+    () => (sourceKind === 'records' ? extractRecordDuration(records) : extractDuration(messages)),
+    [sourceKind, messages, records],
+  );
   const stagedMessages = useMemo(
     () => filterByDuration(messages, rangeFrom || null, rangeTo || null),
     [messages, rangeFrom, rangeTo],
   );
+  const stagedRecords = useMemo(
+    () => filterRecordsByDuration(records, rangeFrom || null, rangeTo || null),
+    [records, rangeFrom, rangeTo],
+  );
+  const stagedCount = sourceKind === 'records' ? stagedRecords.length : stagedMessages.length;
+  const foundCount = sourceKind === 'records' ? records.length : messages.length;
 
   const scan = (text: string, name: string) => {
+    if (sourceKind === 'records') {
+      const found = parseRecordHistoryJson(text);
+      if (found.length === 0) {
+        setError(t('choose.errors.noRecords'));
+        return;
+      }
+      const bounds = extractRecordDuration(found);
+      setError(null);
+      setRecords(found);
+      setRangeFrom(bounds.from ?? '');
+      setRangeTo(bounds.to ?? '');
+      setResult(null);
+      setStep('preview');
+      return;
+    }
     const { format: detected, messages: found } = extractMessages(text, name);
     if (found.length === 0) {
       setError(t('choose.errors.noMessages'));
@@ -92,17 +126,55 @@ export function MessageImport() {
   };
 
   const runImport = async () => {
-    if (!householdId || stagedMessages.length === 0 || progress) return;
+    if (!householdId || stagedCount === 0 || progress) return;
     setError(null);
-    let batchId: string | undefined;
     const totals = { staged: 0, duplicates: 0, ignored: 0, unsupported: 0, merged: 0 };
-    const chunks = chunkMessages(stagedMessages, MESSAGES_PER_IMPORT_CALL);
-    setProgress({ done: 0, total: stagedMessages.length });
+    setProgress({ done: 0, total: stagedCount });
     try {
-      for (const [index, chunk] of chunks.entries()) {
-        const chunkResult = await importMutation.mutateAsync({
+      // Each chunk call reuses the server-returned batch id so all chunks of
+      // one import land in the same review batch.
+      const runChunks = async <T,>(
+        chunks: T[][],
+        run: (chunk: T[], batchId: string | undefined) => Promise<ImportMessageHistoryResult>,
+      ): Promise<string | undefined> => {
+        let batchId: string | undefined;
+        for (const [index, chunk] of chunks.entries()) {
+          const chunkResult = await run(chunk, batchId);
+          batchId = chunkResult.batchId;
+          totals.staged += chunkResult.staged;
+          totals.duplicates += chunkResult.duplicates;
+          totals.ignored += chunkResult.ignored;
+          totals.unsupported += chunkResult.unsupported;
+          totals.merged += chunkResult.merged;
+          setProgress({
+            done: Math.min((index + 1) * MESSAGES_PER_IMPORT_CALL, stagedCount),
+            total: stagedCount,
+          });
+        }
+        return batchId;
+      };
+
+      const batchId = sourceKind === 'records'
+        ? await runChunks(chunkMessages(stagedRecords, MESSAGES_PER_IMPORT_CALL), (chunk, batch) => importRecordsMutation.mutateAsync({
           householdId,
-          batchId,
+          batchId: batch,
+          records: chunk.map((record) => ({
+            kind: record.kind,
+            date: record.date,
+            amount: record.amount,
+            currency: record.currency,
+            ...(record.description ? { description: record.description } : {}),
+            ...(record.merchant ? { merchant: record.merchant } : {}),
+            ...(record.accountId ? { accountId: record.accountId } : {}),
+            ...(record.destinationAccountId ? { destinationAccountId: record.destinationAccountId } : {}),
+            ...(record.categoryId ? { categoryId: record.categoryId } : {}),
+          })),
+          ...(rangeFrom ? { from: rangeFrom } : {}),
+          ...(rangeTo ? { to: rangeTo } : {}),
+        }))
+        : await runChunks(chunkMessages(stagedMessages, MESSAGES_PER_IMPORT_CALL), (chunk, batch) => importMutation.mutateAsync({
+          householdId,
+          batchId: batch,
           // The forwarder payload contract: text + sender drive the same
           // bank auto-detection as live ingestion.
           messages: chunk.map((message) => ({
@@ -113,19 +185,8 @@ export function MessageImport() {
           ...(rangeFrom ? { from: rangeFrom } : {}),
           ...(rangeTo ? { to: rangeTo } : {}),
           source: format === 'android-xml' ? 'import-xml' : 'import-text',
-        });
-        batchId = chunkResult.batchId;
-        totals.staged += chunkResult.staged;
-        totals.duplicates += chunkResult.duplicates;
-        totals.ignored += chunkResult.ignored;
-        totals.unsupported += chunkResult.unsupported;
-        totals.merged += chunkResult.merged;
-        setProgress({
-          done: Math.min((index + 1) * MESSAGES_PER_IMPORT_CALL, stagedMessages.length),
-          total: stagedMessages.length,
-        });
-      }
-      setResult({ batchId: batchId ?? '', received: stagedMessages.length, ...totals });
+        }));
+      setResult({ batchId: batchId ?? '', received: stagedCount, ...totals });
       setStep('result');
     } catch {
       setError(t('preview.errors.failed'));
@@ -137,6 +198,7 @@ export function MessageImport() {
   const reset = () => {
     setStep('choose');
     setMessages([]);
+    setRecords([]);
     setFileName(null);
     setPasted('');
     setRangeFrom('');
@@ -158,9 +220,25 @@ export function MessageImport() {
               subtitle={t('choose.cardSubtitle')}
             />
             {error && <Alert severity="error">{error}</Alert>}
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant={sourceKind === 'messages' ? 'segmentedSelected' : 'segmented'}
+                sx={{ flex: 1 }}
+                onClick={() => setSourceKind('messages')}
+              >
+                {t('choose.modeMessages')}
+              </Button>
+              <Button
+                variant={sourceKind === 'records' ? 'segmentedSelected' : 'segmented'}
+                sx={{ flex: 1 }}
+                onClick={() => setSourceKind('records')}
+              >
+                {t('choose.modeRecords')}
+              </Button>
+            </Stack>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
               <Button variant="outlined" startIcon={<DocumentUploadIcon />} onClick={() => fileInputRef.current?.click()}>
-                {t('choose.fileButton')}
+                {sourceKind === 'records' ? t('choose.recordsFileButton') : t('choose.fileButton')}
               </Button>
               {fileName && (
                 <Typography variant="fieldHint" noWrap>
@@ -170,7 +248,7 @@ export function MessageImport() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xml,.txt,text/xml,application/xml,text/plain"
+                accept={sourceKind === 'records' ? '.json,application/json' : '.xml,.txt,text/xml,application/xml,text/plain'}
                 hidden
                 onChange={(event) => {
                   void onPickFile(event.target.files?.[0]);
@@ -178,17 +256,21 @@ export function MessageImport() {
                 }}
               />
             </Stack>
-            <Typography variant="fieldHint">{t('choose.fileHint')}</Typography>
+            <Typography variant="fieldHint">
+              {sourceKind === 'records' ? t('choose.recordsHint') : t('choose.fileHint')}
+            </Typography>
             <Divider>
-              <Typography variant="fieldHint">{t('choose.pasteLabel')}</Typography>
+              <Typography variant="fieldHint">
+                {sourceKind === 'records' ? t('choose.recordsPasteLabel') : t('choose.pasteLabel')}
+              </Typography>
             </Divider>
             <TextField
               multiline
               minRows={6}
               maxRows={14}
               fullWidth
-              label={t('choose.pasteLabel')}
-              placeholder={t('choose.pastePlaceholder')}
+              label={sourceKind === 'records' ? t('choose.recordsPasteLabel') : t('choose.pasteLabel')}
+              placeholder={sourceKind === 'records' ? t('choose.recordsPastePlaceholder') : t('choose.pastePlaceholder')}
               value={pasted}
               onChange={(event) => setPasted(event.target.value)}
             />
@@ -198,7 +280,7 @@ export function MessageImport() {
             >
               {t('choose.scan')}
             </Button>
-            <ParsedTemplatesHelp />
+            {sourceKind === 'messages' && <ParsedTemplatesHelp />}
           </Stack>
         </Card>
       )}
@@ -208,9 +290,14 @@ export function MessageImport() {
           <Stack sx={{ p: { xs: 2, sm: 2.5 } }} spacing={2.5}>
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Typography variant="cardTitle" sx={{ flex: 1 }}>
-                {t('preview.title', { count: messages.length })}
+                {t('preview.title', { count: foundCount })}
               </Typography>
-              <Chip size="small" label={format === 'android-xml' ? t('preview.formatXml') : t('preview.formatText')} />
+              <Chip
+                size="small"
+                label={sourceKind === 'records'
+                  ? t('preview.formatRecords')
+                  : format === 'android-xml' ? t('preview.formatXml') : t('preview.formatText')}
+              />
             </Stack>
             {error && <Alert severity="error">{error}</Alert>}
             <Box>
@@ -241,8 +328,8 @@ export function MessageImport() {
             </Stack>
             <Typography variant="fieldHint">
               {rangeFrom || rangeTo
-                ? t('preview.rangeHint', { count: stagedMessages.length })
-                : t('preview.rangeHintAll', { count: messages.length })}
+                ? t('preview.rangeHint', { count: stagedCount })
+                : t('preview.rangeHintAll', { count: foundCount })}
             </Typography>
             {progress && (
               <Stack spacing={1}>
@@ -254,10 +341,10 @@ export function MessageImport() {
               <Button
                 variant="primaryAction"
                 sx={{ flex: 1 }}
-                disabled={stagedMessages.length === 0 || !!progress}
+                disabled={stagedCount === 0 || !!progress}
                 onClick={() => void runImport()}
               >
-                {t('preview.importAction', { count: stagedMessages.length })}
+                {t('preview.importAction', { count: stagedCount })}
               </Button>
               <Button variant="outlined" onClick={reset} disabled={!!progress}>
                 {t('preview.changeSource')}
@@ -297,7 +384,7 @@ export function MessageImport() {
                 {t('result.again')}
               </Button>
             </Stack>
-            {result.unsupported > 0 && <ParsedTemplatesHelp />}
+            {sourceKind === 'messages' && result.unsupported > 0 && <ParsedTemplatesHelp />}
           </Stack>
         </Card>
       )}

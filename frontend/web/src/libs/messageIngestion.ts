@@ -24,6 +24,7 @@ export const messageIngestionLib = {
   async approve(data: {
     householdId: string;
     pendingId: string;
+    merchant?: string;
     categoryId?: string;
     accountId: string;
     destinationAccountId?: string;
@@ -95,6 +96,28 @@ export const messageIngestionLib = {
     source?: string;
   }): Promise<ImportMessageHistoryResult> {
     const callable = httpsCallable<typeof data, ImportMessageHistoryResult>(requireFunctions(), 'importMessageHistory');
+    return (await callable(data)).data;
+  },
+
+  /** Stages one chunk of structured records from a JSON history export. */
+  async importRecords(data: {
+    householdId: string;
+    records: {
+      kind: 'expense' | 'income' | 'transfer';
+      date: string;
+      amount: number;
+      currency: string;
+      description?: string;
+      merchant?: string;
+      accountId?: string;
+      destinationAccountId?: string;
+      categoryId?: string;
+    }[];
+    batchId?: string;
+    from?: string;
+    to?: string;
+  }): Promise<ImportMessageHistoryResult> {
+    const callable = httpsCallable<typeof data, ImportMessageHistoryResult>(requireFunctions(), 'importRecordHistory');
     return (await callable(data)).data;
   },
 

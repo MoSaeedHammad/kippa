@@ -11,6 +11,7 @@ import { daysBetween, installmentDate, matchLoanSuggestion } from '../../domain/
 import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferLegs.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
 import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
+import { matchMerchantCategory } from '../../domain/transactions/merchantCategory.js';
 import { validateAccountAllocations, type AccountAllocation } from '../../domain/message-ingestion/allocations.js';
 import { buildMessagePayload } from '../../domain/notifications/payload.js';
 import { getTokensForUsers, sendToMany } from '../../libs/notifications/sendToMany.js';
@@ -469,6 +470,22 @@ export const ingestFinancialMessage = onRequest(
   },
 );
 
+/** Loads posted transactions for the merchant and delegates to the pure matcher. */
+async function resolveMerchantCategorySuggestion(
+  householdId: string,
+  merchant: string,
+  kind: 'expense' | 'income',
+): Promise<string | null> {
+  const snapshot = await getFirestore().collection(`households/${householdId}/transactions`)
+    .where('merchant', '==', merchant)
+    .get();
+  return matchMerchantCategory(
+    snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction),
+    merchant,
+    kind,
+  );
+}
+
 export const approvePendingFinancialMessage = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
@@ -478,6 +495,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     categoryId?: unknown;
     accountId?: unknown;
     destinationAccountId?: unknown;
+    merchant?: unknown;
     convertedAmount?: unknown;
     sharedBalanceTag?: unknown;
     accountAllocations?: unknown;
@@ -485,7 +503,9 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
   const householdId = assertString(data.householdId, 'householdId');
   const pendingId = assertString(data.pendingId, 'pendingId');
   const categoryId = typeof data.categoryId === 'string' ? data.categoryId.trim() : '';
-  const accountId = assertString(data.accountId, 'accountId');
+  // Account is optional: when the client sends none, the stored suggestion
+  // (the default account) is used so approvals never need a manual pick.
+  const accountIdInput = typeof data.accountId === 'string' ? data.accountId.trim() : '';
   const destinationAccountId = typeof data.destinationAccountId === 'string' ? data.destinationAccountId.trim() : '';
   const convertedAmountRaw = (request.data as { convertedAmount?: unknown }).convertedAmount;
   const convertedAmount = typeof convertedAmountRaw === 'number' && Number.isFinite(convertedAmountRaw) && convertedAmountRaw > 0
@@ -545,13 +565,26 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     }
   }
 
+  // Merchant: an explicit override wins, otherwise the message counterparty —
+  // for transfers the receiving person counts as the merchant too.
+  const merchant = typeof data.merchant === 'string' && data.merchant.trim()
+    ? data.merchant.trim().slice(0, 200)
+    : (pendingForLoanCheck.counterparty ?? null);
+
   // Merchant-pattern fallback: when the client sent no category, use the
-  // suggestion stored at ingest time, or re-derive from current rules.
+  // suggestion stored at ingest time, or re-derive from current rules, or
+  // learn from previous postings of the same merchant. Category is never
+  // required — approvals post uncategorized when nothing matches.
   let effectiveCategoryId = categoryId;
   if (pendingForLoanCheck.kind !== 'transfer' && !suggestedLoanId && !effectiveCategoryId) {
     effectiveCategoryId = pendingForLoanCheck.suggestedCategoryId
       || (await resolveCategorySuggestion(householdId, { description: pendingForLoanCheck.description, counterparty: pendingForLoanCheck.counterparty ?? null }))
-      || '';
+      || (merchant ? (await resolveMerchantCategorySuggestion(householdId, merchant, pendingForLoanCheck.kind === 'income' ? 'income' : 'expense')) ?? '' : '');
+  }
+
+  const accountId = accountIdInput || pendingForLoanCheck.suggestedAccountId || '';
+  if (!accountId) {
+    throw new HttpsError('invalid-argument', 'No account is available for this message. Create or choose an account first.');
   }
 
   await db.runTransaction(async (transaction) => {
@@ -585,8 +618,9 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
         throw new HttpsError('failed-precondition', 'The suggested loan no longer matches this payment.');
       }
       if (paymentLockSnapshot?.exists) throw new HttpsError('already-exists', 'This loan installment is already recorded.');
-    } else if (pending.kind !== 'transfer') {
-      if (!effectiveCategoryId) throw new HttpsError('invalid-argument', 'Category is required.');
+    } else if (pending.kind !== 'transfer' && effectiveCategoryId) {
+      // Category is optional; when supplied it must still be a valid,
+      // active category of the matching type.
       const categorySnapshot = await transaction.get(db.doc(`households/${householdId}/categories/${effectiveCategoryId}`));
       const category = categorySnapshot.data() as Category | undefined;
       if (!category?.isActive) throw new HttpsError('failed-precondition', 'Choose an active category.');
@@ -658,6 +692,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       type: pending.kind,
       date: pending.date,
       description: pending.description,
+      merchant,
       categoryId: effectiveCategoryId || null,
       budgetCycleId: activeCycleId,
       createdBy: uid,

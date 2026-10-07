@@ -71,7 +71,13 @@
     "approve": "Approve",
     "splitLabel": "Split between accounts",
     "splitSingle": "Single account",
-    "splitAcross": "Split across accounts"
+    "splitAcross": "Split across accounts",
+    "categoryOptional": "Category (optional)",
+    "noCategory": "Uncategorized",
+    "newCategory": "New category",
+    "newAccount": "New account",
+    "merchant": "Merchant / person",
+    "merchantHint": "Used to auto-suggest categories next time"
   },
   "connectionsDialog": {
     "title": "Connect SMS forwarding",
@@ -101,7 +107,8 @@
     "restoredForReview": "Pending item restored for review",
     "restoreFailed": "Could not restore this item",
     "discardFailed": "Could not discard this item",
-    "decideBatchFailed": "The bulk decision failed partway — review the remaining messages."
+    "decideBatchFailed": "The bulk decision failed partway — review the remaining messages.",
+    "createFailed": "Could not create it — try again"
   },
   "undo": "Undo",
   "sharedBalance": {
@@ -205,5 +212,27 @@
     "needsReview_two": "{{count}} need manual review — they stayed in the list",
     "needsReview_few": "{{count}} need manual review — they stayed in the list",
     "needsReview_many": "{{count}} need manual review — they stayed in the list"
-  }
+  },
+  "createCategory": {
+    "title": "New {{type}} category",
+    "expense": "expense",
+    "income": "income",
+    "nameLabel": "Category name",
+    "create": "Create"
+  },
+  "createAccount": {
+    "title": "New account",
+    "nameLabel": "Account name",
+    "typeLabel": "Type",
+    "types": {
+      "running": "Running",
+      "savings": "Savings",
+      "cash": "Cash",
+      "wallet": "Wallet",
+      "credit": "Credit card"
+    },
+    "currencyLabel": "Currency",
+    "create": "Create"
+  },
+  "table": {}
 }

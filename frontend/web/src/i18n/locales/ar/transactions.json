@@ -25,7 +25,9 @@
     "accountInfo": "معلومات الحساب",
     "amount": "المبلغ",
     "actions": "الإجراءات",
-    "issuedBy": "أصدرها"
+    "issuedBy": "أصدرها",
+    "merchant": "التاجر",
+    "entryType": "نوع الإدخال"
   },
   "empty": {
     "title": "لا توجد معاملات مطابقة",
@@ -69,5 +71,10 @@
     "descriptionPlaceholder": "أضف تفاصيل أو ملاحظات حول هذه المعاملة...",
     "cancel": "إلغاء",
     "saveChanges": "حفظ التغييرات"
+  },
+  "entryType": {
+    "quick": "سريع",
+    "ingested": "مستلم",
+    "imported": "مستورد"
   }
 }

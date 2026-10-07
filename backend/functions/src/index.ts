@@ -25,6 +25,7 @@ export {
   restoreDiscardedPendingFinancialMessage,
 } from './features/message-ingestion/messageIngestion.js';
 export { importMessageHistory, decideImportBatch } from './features/message-ingestion/messageHistoryImport.js';
+export { importRecordHistory } from './features/message-ingestion/recordHistoryImport.js';
 export { glmProxy } from './features/ai/glmProxy.js';
 export { upsertCategoryRule } from './features/categories/categoryRules.js';
 export {

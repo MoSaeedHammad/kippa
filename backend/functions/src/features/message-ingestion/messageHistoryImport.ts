@@ -53,7 +53,7 @@ function runCallable(fn: object, uid: string, data: unknown): Promise<unknown> {
   return (fn as unknown as RunnableCallable).run({ auth: { uid }, data } as CallableRequest<unknown>);
 }
 
-const BATCH_ID_PATTERN = /^his_[a-z0-9]{6,40}$/;
+export const BATCH_ID_PATTERN = /^his_[a-z0-9]{6,40}$/;
 const MESSAGES_PER_CALL = 200;
 /** Firestore batches cap at 500 writes; each staged message uses two. */
 const OPS_PER_BATCH_COMMIT = 480;
@@ -286,7 +286,7 @@ export const importMessageHistory = onCall(
   },
 );
 
-async function commitChunk(
+export async function commitChunk(
   db: ReturnType<typeof getFirestore>,
   householdId: string,
   created: { receiptId: string; pending: PendingFinancialMessage }[],

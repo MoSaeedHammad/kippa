@@ -25,7 +25,9 @@
     "accountInfo": "Account Info",
     "amount": "Amount",
     "actions": "Actions",
-    "issuedBy": "Issued by"
+    "issuedBy": "Issued by",
+    "merchant": "Merchant",
+    "entryType": "Entry type"
   },
   "empty": {
     "title": "No matching transactions",
@@ -69,5 +71,10 @@
     "descriptionPlaceholder": "Add details or notes about this transaction...",
     "cancel": "Cancel",
     "saveChanges": "Save Changes"
+  },
+  "entryType": {
+    "quick": "Quick",
+    "ingested": "Ingested",
+    "imported": "Imported"
   }
 }

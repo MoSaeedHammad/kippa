@@ -142,6 +142,8 @@ export type FinanceTransaction = {
   type: TransactionType;
   date: string; // YYYY-MM-DD
   description?: string | null;
+  /** Merchant or transfer counterparty; quick entries may set it optionally, approvals copy it from the message. */
+  merchant?: string | null;
   categoryId?: string | null;
   budgetCycleId?: string | null;
   createdBy: string;
@@ -178,6 +180,8 @@ export type FinanceTransaction = {
   } | null;
   /** Set when this draft transaction was materialized from a recurring rule. */
   recurringRuleId?: string | null;
+  /** Audit marker for entries approved from an ingested or imported bank message / record. */
+  importedFrom?: { kind: 'financial-message'; pendingId: string; provider: string; source: string } | null;
   /** Embedded facts for confirming a recurring draft (ledger line written at confirm time). */
   recurringDraft?: {
     amount: number;
@@ -451,6 +455,7 @@ export type AuditAction =
   | 'pending_message_discarded'
   | 'pending_message_restored'
   | 'message_history_imported'
+  | 'record_history_imported'
   | 'shared_balance_proposed'
   | 'shared_balance_approved'
   | 'shared_balance_rejected'

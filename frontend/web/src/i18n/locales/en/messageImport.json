@@ -16,8 +16,15 @@
       "empty": "Choose a file or paste some messages first.",
       "tooLarge": "That file is larger than 100 MB — export a shorter range and try again.",
       "noMessages": "No messages were found in this export.",
-      "readFailed": "Could not read the file — try a different export."
-    }
+      "readFailed": "Could not read the file — try a different export.",
+      "noRecords": "No usable records were found in this JSON — check the format hint below."
+    },
+    "modeMessages": "Bank messages",
+    "modeRecords": "Records (JSON)",
+    "recordsFileButton": "Choose JSON file",
+    "recordsPasteLabel": "Or paste JSON records",
+    "recordsPastePlaceholder": "[{ \"kind\": \"expense\", \"date\": \"2025-03-14\", \"amount\": 249.5, \"currency\": \"EGP\", \"description\": \"Groceries\", \"merchant\": \"Metro\" }, …]",
+    "recordsHint": "Accepts a JSON array (or {\"records\": […]}) of expenses, incomes and transfers with date, amount and currency — plus optional description, merchant, account and category ids."
   },
   "preview": {
     "title_one": "{{count}} message found",
@@ -56,7 +63,8 @@
     "importAction_zero": "Import {{count}} messages",
     "importAction_two": "Import {{count}} messages",
     "importAction_few": "Import {{count}} messages",
-    "importAction_many": "Import {{count}} messages"
+    "importAction_many": "Import {{count}} messages",
+    "formatRecords": "Record history (JSON)"
   },
   "result": {
     "title": "Import complete",

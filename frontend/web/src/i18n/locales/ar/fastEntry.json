@@ -17,7 +17,8 @@
     "destinationAccount": "الحساب الهدف",
     "noOtherAccounts": "لا توجد حسابات أخرى متاحة.",
     "selectSourceFirst": "يرجى اختيار الحساب المصدر أولًا.",
-    "notePlaceholder": "ملاحظة (اختياري)"
+    "notePlaceholder": "ملاحظة (اختياري)",
+    "merchantPlaceholder": "التاجر (اختياري)"
   },
   "save": {
     "expense": "حفظ المصروف",

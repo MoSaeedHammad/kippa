@@ -17,7 +17,8 @@
     "destinationAccount": "Destination Account",
     "noOtherAccounts": "No other accounts available.",
     "selectSourceFirst": "Please select a Source Account first.",
-    "notePlaceholder": "Note (optional)"
+    "notePlaceholder": "Note (optional)",
+    "merchantPlaceholder": "Merchant (optional)"
   },
   "save": {
     "expense": "Save Expense",

@@ -220,8 +220,8 @@ export function filterByDuration(messages: ExtractedMessage[], from?: string | n
   });
 }
 
-export function chunkMessages(messages: ExtractedMessage[], size = MESSAGES_PER_IMPORT_CALL): ExtractedMessage[][] {
-  const chunks: ExtractedMessage[][] = [];
+export function chunkMessages<T>(messages: T[], size = MESSAGES_PER_IMPORT_CALL): T[][] {
+  const chunks: T[][] = [];
   for (let index = 0; index < messages.length; index += size) {
     chunks.push(messages.slice(index, index + size));
   }
@@ -243,4 +243,104 @@ export function groupImportedPending<T extends { id: string; importBatchId?: str
     batch.items.push(item);
   }
   return [...batches.values()].sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+}
+
+// ── Structured record imports (JSON) ────────────────────────────────────
+
+export type ExtractedRecord = {
+  kind: 'expense' | 'income' | 'transfer';
+  date: string; // YYYY-MM-DD
+  amount: number;
+  currency: string;
+  description?: string;
+  /** Merchant or transfer person. */
+  merchant?: string;
+  accountId?: string;
+  destinationAccountId?: string;
+  categoryId?: string;
+};
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function recordString(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return undefined;
+}
+
+function recordNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value.replace(/,/g, ''));
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Parses a personal JSON export of records: a bare array or
+ * `{ records: […] }` / `{ transactions: […] }`, with tolerant key aliases
+ * (`type|kind`, `note|label|description`, `person|payee|merchant`,
+ * `account|fromAccount`, `toAccount|destinationAccount`, …). Unusable
+ * entries are dropped — the server re-validates everything.
+ */
+export function parseRecordHistoryJson(text: string): ExtractedRecord[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const list = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object'
+      ? ((parsed as Record<string, unknown>).records ?? (parsed as Record<string, unknown>).transactions)
+      : null;
+  if (!Array.isArray(list)) return [];
+  const records: ExtractedRecord[] = [];
+  for (const entry of list) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const kindRaw = recordString(record, ['kind', 'type'])?.toLowerCase() ?? 'expense';
+    if (kindRaw !== 'expense' && kindRaw !== 'income' && kindRaw !== 'transfer') continue;
+    const date = recordString(record, ['date']);
+    if (!date || !ISO_DATE.test(date) || Number.isNaN(Date.parse(`${date}T12:00:00Z`))) continue;
+    const amount = recordNumber(record, ['amount', 'value']);
+    if (amount == null || !(amount > 0)) continue;
+    const currency = recordString(record, ['currency', 'currencyCode']);
+    if (!currency || !/^[A-Za-z]{3}$/.test(currency)) continue;
+    records.push({
+      kind: kindRaw,
+      date,
+      amount: Math.round(amount * 100) / 100,
+      currency: currency.toUpperCase(),
+      ...(recordString(record, ['description', 'note', 'label']) ? { description: recordString(record, ['description', 'note', 'label']) } : {}),
+      ...(recordString(record, ['merchant', 'counterparty', 'person', 'payee']) ? { merchant: recordString(record, ['merchant', 'counterparty', 'person', 'payee']) } : {}),
+      ...(recordString(record, ['accountId', 'account', 'fromAccountId', 'fromAccount']) ? { accountId: recordString(record, ['accountId', 'account', 'fromAccountId', 'fromAccount']) } : {}),
+      ...(recordString(record, ['destinationAccountId', 'toAccountId', 'toAccount', 'destinationAccount']) ? { destinationAccountId: recordString(record, ['destinationAccountId', 'toAccountId', 'toAccount', 'destinationAccount']) } : {}),
+      ...(recordString(record, ['categoryId', 'category']) ? { categoryId: recordString(record, ['categoryId', 'category']) } : {}),
+    });
+  }
+  return records;
+}
+
+/** Earliest/latest record dates, as YYYY-MM-DD bounds. */
+export function extractRecordDuration(records: ExtractedRecord[]): { from: string | null; to: string | null } {
+  const dates = records.map((record) => record.date).sort();
+  return { from: dates[0] ?? null, to: dates[dates.length - 1] ?? null };
+}
+
+/** Narrows records to the inclusive YYYY-MM-DD range (records are always dated). */
+export function filterRecordsByDuration(records: ExtractedRecord[], from?: string | null, to?: string | null): ExtractedRecord[] {
+  if (!from && !to) return records;
+  return records.filter((record) => {
+    if (from && record.date < from) return false;
+    if (to && record.date > to) return false;
+    return true;
+  });
 }

@@ -111,6 +111,11 @@ describe('parseFinancialMessage — Bank Misr', () => {
     expect(result).toMatchObject({ outcome: 'matched', parsed: { accountHintLast4: '2508', amount: 800, description: 'HK STORES' } });
   });
 
+  it('parses a real Bank Misr card charge with a > placeholder and double commas (production sample)', () => {
+    const result = parseFinancialMessage('عميلنا العزيز، شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية *1234، تم خصم مبلغ EGP 354 في GEIDEAE*Elmostafa mall > بتاريخ 12/09/2026،، للاطلاع اضغط على bnkmsr.com/online');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', accountKind: 'credit-card', currency: 'EGP', amount: 354, date: '2026-09-12', description: 'GEIDEAE*Elmostafa mall', counterparty: 'GEIDEAE*Elmostafa mall' } });
+  });
+
   it('parses a Bank Misr credit-card charge with a > placeholder instead of a province code', () => {
     const result = parseFinancialMessage('عميلنا العزيز، شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية *2508، تم خصم مبلغ EGP 165 في AmanPF*Shadia Pharmacy  > بتاريخ 25/08/2026، الرصيدالمتاحEGP 177380.92، للاطلاع  اضغط على bnkmsr.com/online');
     expect(result).toMatchObject({ outcome: 'matched', parsed: { amount: 165, description: 'AmanPF*Shadia Pharmacy' } });

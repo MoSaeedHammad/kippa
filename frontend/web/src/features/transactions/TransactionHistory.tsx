@@ -229,6 +229,8 @@ export function TransactionHistory() {
               <TableRow>
                 <TableCell align="center" sx={{ width: 64, py: 1.75 }}>{t('table.type')}</TableCell>
                 <TableCell sx={{ py: 1.75 }}>{t('table.transaction')}</TableCell>
+                <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.merchant')}</TableCell>
+                <TableCell sx={{ py: 1.75, display: { xs: 'none', lg: 'table-cell' } }}>{t('table.entryType')}</TableCell>
                 <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.accountInfo')}</TableCell>
                 {showIssuer && <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.issuedBy')}</TableCell>}
                 <TableCell align="right" sx={{ width: { xs: 120, sm: 160 }, py: 1.75 }}>{t('table.amount')}</TableCell>
@@ -238,7 +240,7 @@ export function TransactionHistory() {
             <TableBody>
               {filteredTxs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={showIssuer ? 6 : 5} sx={{ p: 2, borderBottom: 0 }}>
+                  <TableCell colSpan={showIssuer ? 8 : 7} sx={{ p: 2, borderBottom: 0 }}>
                     <EmptyLayout
                       icon={<SearchIcon sx={{ fontSize: 28 }} />}
                       title={t('empty.title')}

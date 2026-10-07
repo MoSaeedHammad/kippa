@@ -1,14 +1,14 @@
 import type { Account, BudgetCycle, Category } from '@kippa/domain';
 
 export type EntryMode = 'expense' | 'income' | 'transfer';
-type Input = { activeCycle: BudgetCycle | null; amountText: string; category: Category | null; createdBy: string; date: string; description: string; destinationAccount: Account | null; destinationAmountText: string; mode: EntryMode; sourceAccount: Account | null };
+type Input = { activeCycle: BudgetCycle | null; amountText: string; category: Category | null; createdBy: string; date: string; description: string; destinationAccount: Account | null; destinationAmountText: string; merchant?: string; mode: EntryMode; sourceAccount: Account | null };
 
 export function buildFastEntryTransaction(input: Input) {
   const amount = Number(input.amountText);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error('Please enter a valid amount');
   if (!input.sourceAccount) throw new Error('Please select a From Account');
   if (input.mode !== 'transfer' && !input.category) throw new Error('Please select a category before continuing');
-  const common = { date: input.date, budgetCycleId: input.activeCycle?.id ?? null, createdBy: input.createdBy };
+  const common = { date: input.date, budgetCycleId: input.activeCycle?.id ?? null, createdBy: input.createdBy, merchant: input.merchant?.trim() || null };
   if (input.mode === 'expense' || input.mode === 'income') {
     const income = input.mode === 'income';
     return { transaction: { ...common, type: input.mode, description: input.description || (income ? 'Income' : null), categoryId: input.category!.id }, lines: [{ accountId: input.sourceAccount.id, signedAmount: income ? amount : -amount, currency: input.sourceAccount.currency }] };

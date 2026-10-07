@@ -202,6 +202,16 @@ export function useImportMessageHistoryMutation() {
   });
 }
 
+export function useImportRecordHistoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: messageIngestionLib.importRecords,
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.pendingMessages(variables.householdId) });
+    },
+  });
+}
+
 export function useDecideImportBatchMutation() {
   const queryClient = useQueryClient();
   return useMutation({

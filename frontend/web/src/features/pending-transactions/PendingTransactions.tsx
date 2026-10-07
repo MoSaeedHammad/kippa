@@ -35,8 +35,12 @@ import {
   useResolvedPendingFinancialMessages,
   useRestoreDiscardedPendingFinancialMessageMutation,
 } from '@/hooks/useFinance';
-import type { PendingFinancialMessage } from '@kippa/domain';
+import type { AccountType, PendingFinancialMessage } from '@kippa/domain';
 import { groupImportedPending } from '@/libs/messageHistoryImport';
+import { ledgerLib } from '@/libs/ledger';
+import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
+import { useQueryClient } from '@tanstack/react-query';
+import { CreateAccountDialog, CreateCategoryDialog } from './components/QuickCreateDialogs';
 import { useMessageConnections } from './hooks/useMessageConnections';
 import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
 import { pendingForViewerCount } from '@/libs/approvals';
@@ -90,9 +94,14 @@ export function PendingTransactions() {
   const restoreMutation = useRestoreDiscardedPendingFinancialMessageMutation();
   const { data: resolved = [], isLoading: historyLoading } = useResolvedPendingFinancialMessages(householdId);
   const [tab, setTab] = useState<'review' | 'history'>('review');
-  const { accountId, allocations, allocationsEnabled, categoryId, confirmDiscard, convertedAmount, destinationAccountId, selected, sharedBalanceTag, setAccountId, setAllocations, setAllocationsEnabled, setCategoryId, setConfirmDiscard, setConvertedAmount, setDestinationAccountId, setSelected, setSharedBalanceTag } = usePendingReviewState();
+  const { accountId, allocations, allocationsEnabled, categoryId, confirmDiscard, convertedAmount, destinationAccountId, merchant, selected, sharedBalanceTag, setAccountId, setAllocations, setAllocationsEnabled, setCategoryId, setConfirmDiscard, setConvertedAmount, setDestinationAccountId, setMerchant, setSelected, setSharedBalanceTag } = usePendingReviewState();
   const [itemStates, setItemStates] = useState<Record<string, PendingItemState>>({});
   const [setupOpen, setSetupOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const connections = useMessageConnections(householdId);
   const previewMode = import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview-pending') === '1';
   const pending = previewMode ? PREVIEW_PENDING_ITEMS : remotePending;
@@ -138,6 +147,7 @@ export function PendingTransactions() {
     setCategoryId(item.suggestedCategoryId ?? '');
     setAccountId(item.suggestedAccountId ?? '');
     setDestinationAccountId(item.suggestedDestinationAccountId ?? '');
+    setMerchant(item.counterparty ?? '');
     setConfirmDiscard(false);
     setConvertedAmount('');
     setSharedBalanceTag({ kind: 'none', counterpartyUid: '', share: '' });
@@ -148,6 +158,7 @@ export function PendingTransactions() {
   const closeReview = () => {
     if (approveMutation.isPending || discardMutation.isPending) return;
     setSelected(null);
+    setMerchant('');
     setConfirmDiscard(false);
     setSharedBalanceTag({ kind: 'none', counterpartyUid: '', share: '' });
     setAllocationsEnabled(false);
@@ -156,7 +167,6 @@ export function PendingTransactions() {
 
   const approve = async () => {
     if (!selected || !accountId
-      || (selected.kind !== 'transfer' && !selected.suggestedLoanId && !categoryId)
       || (selected.kind === 'transfer' && !destinationAccountId)
       || (selected.conversionRequired && !(Number(convertedAmount) > 0))
       || (allocationsEnabled && (allocations.length === 0
@@ -174,6 +184,7 @@ export function PendingTransactions() {
         householdId,
         pendingId: selected.id,
         categoryId: selected.suggestedLoanId ? undefined : categoryId,
+        merchant: merchant.trim() ? merchant.trim() : undefined,
         accountId,
         destinationAccountId: selected.kind === 'transfer' ? destinationAccountId : undefined,
         convertedAmount: selected.conversionRequired ? Number(convertedAmount) : undefined,
@@ -250,6 +261,46 @@ export function PendingTransactions() {
       setTab('review');
     } catch (error) {
       enqueueSnackbar(error instanceof Error ? error.message : t('toasts.restoreFailed'), { variant: 'error' });
+    }
+  };
+
+  const createCategoryAndSelect = async (name: string) => {
+    if (!selected) return;
+    setCreatingCategory(true);
+    try {
+      const id = await ledgerLib.createCategory(householdId, {
+        name,
+        type: selected.kind === 'income' ? 'income' : 'expense',
+        isActive: true,
+      });
+      await queryClient.invalidateQueries({ queryKey: keys.categories(householdId) });
+      setCategoryId(id);
+      setCategoryDialogOpen(false);
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.createFailed'), { variant: 'error' });
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const createAccountAndSelect = async (input: { name: string; type: AccountType; currency: string }) => {
+    setCreatingAccount(true);
+    try {
+      const id = await ledgerLib.createAccount(householdId, {
+        name: input.name,
+        type: input.type,
+        currency: input.currency,
+        isActive: true,
+        sortOrder: 100,
+        ownerUid: null,
+      });
+      await queryClient.invalidateQueries({ queryKey: keys.accounts(householdId) });
+      setAccountId(id);
+      setAccountDialogOpen(false);
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('toasts.createFailed'), { variant: 'error' });
+    } finally {
+      setCreatingAccount(false);
     }
   };
 
@@ -430,9 +481,12 @@ export function PendingTransactions() {
         </Card>
       ))}
 
-      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} members={members} sharedBalanceTag={sharedBalanceTag} onSharedBalanceTagChange={setSharedBalanceTag} allocationsEnabled={allocationsEnabled} allocations={allocations} onAllocationsEnabledChange={setAllocationsEnabled} onAllocationsChange={setAllocations} />
+      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} merchant={merchant} onMerchantChange={setMerchant} onCreateAccount={() => setAccountDialogOpen(true)} onCreateCategory={() => setCategoryDialogOpen(true)} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} members={members} sharedBalanceTag={sharedBalanceTag} onSharedBalanceTagChange={setSharedBalanceTag} allocationsEnabled={allocationsEnabled} allocations={allocations} onAllocationsEnabledChange={setAllocationsEnabled} onAllocationsChange={setAllocations} />
 
       <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} open={setupOpen} />
+
+      <CreateCategoryDialog open={categoryDialogOpen} busy={creatingCategory} categoryType={selected?.kind === 'income' ? 'income' : 'expense'} onClose={() => setCategoryDialogOpen(false)} onCreate={(name) => void createCategoryAndSelect(name)} />
+      <CreateAccountDialog open={accountDialogOpen} busy={creatingAccount} defaultCurrency={selected?.currency ?? 'EGP'} onClose={() => setAccountDialogOpen(false)} onCreate={(input) => void createAccountAndSelect(input)} />
     </Stack>
   );
 }
