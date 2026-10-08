@@ -179,13 +179,26 @@
       "subtitle": "A named-group regex that extracts amount, currency, date, merchant and card digits",
       "cancel": "Cancel",
       "create": "Create template",
-      "save": "Save changes"
+      "save": "Save changes",
+      "duplicateTitle": "Duplicate predefined rule"
     },
     "toasts": {
       "created": "Template created",
       "updated": "Template updated",
       "removed": "Template deleted",
       "failed": "Could not save the template"
+    },
+    "override": {
+      "title": "Apply before the built-in bank rules",
+      "hint": "When on, this rule runs first — an edited copy of a predefined rule overrides the stock behavior. Noise (statements, login alerts) is always skipped.",
+      "chip": "Overrides built-in"
+    },
+    "predefined": {
+      "title": "Predefined rules",
+      "subtitle": "The bank rules Kippa knows out of the box. Duplicate one to customize it for message variants it misses.",
+      "show": "Show",
+      "hide": "Hide",
+      "duplicate": "Duplicate"
     }
   }
 }

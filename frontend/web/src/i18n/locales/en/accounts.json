@@ -16,6 +16,33 @@
   "editAria": "Edit {{name}}",
   "addCard": "Add card",
   "addAnotherCard": "Add another card",
+  "showInactive": "Show frozen & void",
+  "hideInactive": "Hide frozen & void",
+  "hiddenInactive": "{{count}} hidden",
+  "deleteAria": "Remove {{name}}",
+  "wipe": {
+    "action": "Remove & wipe",
+    "title": "Wipe account from the system?",
+    "warning": "This permanently deletes \"{{name}}\" from Kippa: its balance history, every transaction, its cards and their statements. This cannot be undone.",
+    "preview": "Will remove {{transactions}} transaction(s) and {{cards}} card(s).",
+    "recurring": "Recurring rules that will be cancelled: {{rules}}",
+    "blockingLoan": "Cannot wipe: the active loan \"{{name}}\" is funded from this account. Re-point the loan first.",
+    "confirm": "Yes, wipe everything",
+    "cancel": "Keep account",
+    "done": "Account wiped",
+    "failed": "Could not wipe the account"
+  },
+  "cardRemove": {
+    "action": "Remove card",
+    "title": "Remove \"{{name}}\"?",
+    "debit": "The card disappears from this account. Its account and transactions stay.",
+    "credit": "Removing a credit card also wipes its hidden debt account with all charges and payments. This cannot be undone.",
+    "transactions": "{{count}} transaction(s) will be removed.",
+    "confirm": "Yes, remove",
+    "cancel": "Keep card",
+    "done": "Card removed",
+    "failed": "Could not remove the card"
+  },
   "types": {
     "running": "Running Bank",
     "savings": "Savings Bank",

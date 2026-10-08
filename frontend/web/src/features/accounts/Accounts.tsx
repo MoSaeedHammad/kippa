@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -10,20 +11,30 @@ import {
   IconButton,
   Skeleton,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Alert,
   Paper
 } from '@mui/material';
 import { AccountBalanceIcon } from '@/components/AppIcon';
 import { SavingsIcon } from '@/components/AppIcon';
 import { PaymentsIcon } from '@/components/AppIcon';
 import { CreditCardIcon } from '@/components/AppIcon';
+import { DeleteIcon } from '@/components/AppIcon';
 import { EditIcon } from '@/components/AppIcon';
 import { AddIcon } from '@/components/AppIcon';
+import { VisibilityOffIcon } from '@/components/AppIcon';
+import { VisibilityIcon } from '@/components/AppIcon';
 import {
   useAccounts,
   useCreateAccountMutation,
   useUpdateAccountMutation,
   useCards,
   useUpdateCardMutation,
+  useDeleteCardMutation,
+  useWipeAccountMutation,
   useLedgerLines,
   useTransactions,
   useCardStatements,
@@ -36,6 +47,7 @@ import { AddCardDialog } from '@/features/cards/AddCardDialog';
 import { CardDetail } from '@/features/cards/CardDetail';
 import { calculateAccountBalance } from '@/libs/financeCalculations';
 import { computeCardSummary } from '@/libs/cardSelectors';
+import { accountLifecycleLib, type AccountWipePreview } from '@/libs/accountLifecycle';
 import { useHouseholdBaseCurrency } from '@/hooks/useFinance';
 import { Money } from '@/components/Money';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
@@ -45,6 +57,7 @@ import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useShar
 
 export function Accounts() {
   const { t } = useTranslation('accounts');
+  const { enqueueSnackbar } = useSnackbar();
   const { householdId } = useAppContext();
   const baseCurrency = useHouseholdBaseCurrency();
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -52,6 +65,11 @@ export function Accounts() {
   // Card UI state
   const [addCardForAccount, setAddCardForAccount] = useState<string | null>(null);
   const [detailCard, setDetailCard] = useState<CardType | null>(null);
+
+  // Frozen/void visibility + destructive-removal state
+  const [showInactive, setShowInactive] = useState(false);
+  const [removingCard, setRemovingCard] = useState<CardType | null>(null);
+  const [cardWipePreview, setCardWipePreview] = useState<AccountWipePreview | null>(null);
 
   // Queries & Mutations
   const { data: accounts = [], isLoading } = useAccounts(householdId);
@@ -65,6 +83,8 @@ export function Accounts() {
   const createAccountMutation = useCreateAccountMutation();
   const updateAccountMutation = useUpdateAccountMutation();
   const updateCard = useUpdateCardMutation();
+  const deleteCardMutation = useDeleteCardMutation();
+  const wipeAccountMutation = useWipeAccountMutation();
 
   // Balance of an account from the ledger.
   const accountBalance = (accountId: string) => {
@@ -93,6 +113,45 @@ export function Accounts() {
     setEditingAccount(null);
   };
 
+  const handleWipeAccount = async () => {
+    if (!editingAccount) return;
+    try {
+      await wipeAccountMutation.mutateAsync({ householdId, accountId: editingAccount.id });
+      enqueueSnackbar(t('wipe.done'), { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('wipe.failed'), { variant: 'error' });
+    } finally {
+      setEditingAccount(null);
+    }
+  };
+
+  // Opening the removal dialog for a credit card fetches the server-side
+  // preview of the hidden debt-account wipe so the user sees real numbers.
+  const handleOpenRemoveCard = async (card: CardType) => {
+    setRemovingCard(card);
+    setCardWipePreview(null);
+    if (card.kind === 'credit') {
+      try {
+        setCardWipePreview(await accountLifecycleLib.previewWipe(householdId, card.parentAccountId));
+      } catch {
+        setCardWipePreview(null);
+      }
+    }
+  };
+
+  const handleRemoveCard = async () => {
+    if (!removingCard) return;
+    try {
+      await deleteCardMutation.mutateAsync({ householdId, cardId: removingCard.id });
+      enqueueSnackbar(t('cardRemove.done'), { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error instanceof Error ? error.message : t('cardRemove.failed'), { variant: 'error' });
+    } finally {
+      setRemovingCard(null);
+      setCardWipePreview(null);
+    }
+  };
+
   const handleCreateAccount = async (draft: { name: string; type: AccountType; currency: CurrencyCode; ownerUid: string | null }) => {
     const nextOrder = accounts.length > 0 ? Math.max(...accounts.map(a => a.sortOrder)) + 1 : 1;
 
@@ -119,7 +178,10 @@ export function Accounts() {
 
   // Credit accounts are debt buckets owned by their cards — hide them from the
   // accounts list (you never transact with them directly outside card flows).
-  const visibleAccounts = accounts.filter(a => a.type !== 'credit');
+  // Frozen/void accounts stay out of the list unless explicitly revealed.
+  const inactiveCount = accounts.filter(a => a.type !== 'credit' && !a.isActive).length;
+  const visibleAccounts = accounts
+    .filter(a => a.type !== 'credit' && (showInactive || a.isActive));
 
   return (
     <Box sx={{ py: 0.5 }}>
@@ -134,10 +196,22 @@ export function Accounts() {
             </Typography>
           </Box>
           {!isLoading && (
-            <Chip
-              label={t('connected', { count: visibleAccounts.length })}
-              sx={{ bgcolor: 'action.hover', color: 'primary.main' }}
-            />
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Chip
+                label={t('connected', { count: visibleAccounts.length })}
+                sx={{ bgcolor: 'action.hover', color: 'primary.main' }}
+              />
+              {(inactiveCount > 0 || showInactive) && (
+                <Chip
+                  icon={showInactive ? <VisibilityIcon sx={{ fontSize: 16 }} /> : <VisibilityOffIcon sx={{ fontSize: 16 }} />}
+                  label={showInactive ? t('hideInactive') : t('showInactive')}
+                  onClick={() => setShowInactive(current => !current)}
+                  variant={showInactive ? 'outlined' : undefined}
+                  color={showInactive ? 'primary' : 'default'}
+                  sx={{ bgcolor: 'action.hover' }}
+                />
+              )}
+            </Stack>
           )}
         </Stack>
 
@@ -164,7 +238,9 @@ export function Accounts() {
             ) : (
               visibleAccounts.map(acc => {
                 const bal = accountBalance(acc.id);
-                const linked = cards.filter(c => c.parentAccountId === acc.id || c.paymentAccountId === acc.id);
+                const allLinked = cards.filter(c => c.parentAccountId === acc.id || c.paymentAccountId === acc.id);
+                const linked = allLinked.filter(c => showInactive || c.isActive);
+                const hiddenCards = allLinked.length - linked.length;
                 const canHoldCard = acc.type === 'running' || acc.type === 'savings';
                 return (
                   <Card key={acc.id} sx={{ overflow: 'hidden' }}>
@@ -215,10 +291,16 @@ export function Accounts() {
                                       householdId, cardId: card.id,
                                       updates: { isActive: !card.isActive }, accounts,
                                     })}
+                                    onDelete={() => void handleOpenRemoveCard(card)}
                                     onOpenDetail={() => setDetailCard(card)}
                                   />
                                 ))}
                               </Box>
+                            )}
+                            {hiddenCards > 0 && (
+                              <Typography variant="fieldHint" color="text.secondary" sx={{ mb: 0.5 }}>
+                                {t('hiddenInactive', { count: hiddenCards })}
+                              </Typography>
                             )}
                             <Button startIcon={<AddIcon />} onClick={() => setAddCardForAccount(acc.id)} sx={{ color: 'text.secondary' }}>
                               {linked.length > 0 ? t('addAnotherCard') : t('addCard')}
@@ -245,7 +327,39 @@ export function Accounts() {
       />
       {detailCard && <CardDetail card={detailCard} onClose={() => setDetailCard(null)} />}
 
-      {editingAccount && <EditAccountDialog account={editingAccount} busy={updateAccountMutation.isPending} members={members} onClose={() => setEditingAccount(null)} onSave={handleUpdateAccount} />}
+      {/* Card removal confirmation — credit cards wipe their hidden debt account. */}
+      <Dialog open={removingCard !== null} onClose={() => { setRemovingCard(null); setCardWipePreview(null); }} fullWidth maxWidth="xs">
+        <DialogTitle>{removingCard ? t('cardRemove.title', { name: removingCard.name }) : ''}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5}>
+            <Alert severity={removingCard?.kind === 'credit' ? 'error' : 'info'}>
+              {removingCard?.kind === 'credit' ? t('cardRemove.credit') : t('cardRemove.debit')}
+            </Alert>
+            {removingCard?.kind === 'credit' && cardWipePreview && cardWipePreview.transactions > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                {t('cardRemove.transactions', { count: cardWipePreview.transactions })}
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setRemovingCard(null); setCardWipePreview(null); }}>{t('cardRemove.cancel')}</Button>
+          <Button color="error" variant="contained" startIcon={<DeleteIcon />} loading={deleteCardMutation.isPending} onClick={() => void handleRemoveCard()}>
+            {t('cardRemove.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {editingAccount && (
+        <EditAccountDialog
+          account={editingAccount}
+          busy={updateAccountMutation.isPending}
+          members={members}
+          onClose={() => setEditingAccount(null)}
+          onSave={handleUpdateAccount}
+          onDelete={handleWipeAccount}
+        />
+      )}
     </Box>
   );
 }

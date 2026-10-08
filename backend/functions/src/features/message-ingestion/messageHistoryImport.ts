@@ -11,7 +11,7 @@ import type {
   Loan,
   PendingFinancialMessage,
 } from '@kippa/domain';
-import { buildMessagePreview, parseFinancialMessage } from '../../domain/message-ingestion/parser.js';
+import { buildMessagePreview, isIgnoredFinancialMessage, parseFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import {
   chunksOf,
   importReceiptKey,
@@ -118,6 +118,7 @@ export const importMessageHistory = onCall(
     const transactions = transactionsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction);
     const categoryRules = categoryRulesSnapshot.docs.map((doc) => ({ ...doc.data() }) as { pattern: string; categoryId: string });
     const templates = templatesSnapshot.docs.map((doc) => ({ ...(doc.data() as MessageTemplate), id: doc.id }));
+    const overrideTemplates = templates.filter((template) => template.overrideBuiltIn === true);
     const todayIso = new Date().toISOString().slice(0, 10);
 
     let staged = 0;
@@ -157,9 +158,16 @@ export const importMessageHistory = onCall(
         const receiptId = importReceiptKey(householdId, message.text);
         if (!freshIds.has(receiptId)) continue;
 
-        let parsedResult = parseFinancialMessage(message.text, source, message.sender);
         let templateMatch: ReturnType<typeof matchMessageTemplates> = null;
-        if (parsedResult.outcome === 'unsupported') {
+        // Overriding rules run before the built-in bank regexes (noise is
+        // filtered first); other templates rescue unsupported messages.
+        if (!isIgnoredFinancialMessage(message.text)) {
+          templateMatch = matchMessageTemplates(message.text, overrideTemplates, todayIso);
+        }
+        let parsedResult = templateMatch
+          ? ({ outcome: 'matched', parsed: templateMatch.parsed } as ReturnType<typeof parseFinancialMessage>)
+          : parseFinancialMessage(message.text, source, message.sender);
+        if (!templateMatch && parsedResult.outcome === 'unsupported') {
           templateMatch = matchMessageTemplates(message.text, templates, todayIso);
           if (templateMatch) parsedResult = { outcome: 'matched', parsed: templateMatch.parsed };
         }
@@ -239,6 +247,7 @@ export const importMessageHistory = onCall(
           description: loanSuggestion ? `${loanSuggestion.loanName} — installment ${loanSuggestion.installmentNumber}` : parsed.description,
           counterparty: parsed.counterparty ?? null,
           messagePreview: buildMessagePreview(message.text),
+          sourceMessage: message.text,
           accountHintLast4: parsed.accountHintLast4 ?? null,
           destinationHintLast4: parsed.destinationHintLast4 ?? null,
           suggestedAccountId: suggestions.accountId ?? null,

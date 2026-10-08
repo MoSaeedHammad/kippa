@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, CardContent, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Button, Card, CardContent, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import { DeleteIcon } from '@/components/AppIcon';
 import type { Account, AccountType, CurrencyCode, HouseholdMember } from '@kippa/domain';
 import { CurrencySelect } from '@/features/shared/components/CurrencySelect';
+import { accountLifecycleLib, type AccountWipePreview } from '@/libs/accountLifecycle';
 import type accountsEn from '@/i18n/locales/en/accounts.json';
 
 type TypeLabelKey = keyof typeof accountsEn['types'];
@@ -29,8 +31,75 @@ export function AddAccountCard({ baseCurrency, busy, members, onCreate }: { base
   return <Card sx={{ position: { lg: 'sticky' }, top: { lg: 24 } }}><CardContent><Stack spacing={2.5}><div><Typography variant="h3">{t('form.addTitle')}</Typography><Typography variant="body2" color="text.secondary">{t('form.addSubtitle')}</Typography></div><TextField fullWidth label={t('form.accountName')} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /><TypeSelect id="acc-type-label" value={draft.type} onChange={(type) => setDraft({ ...draft, type })} /><CurrencySelect labelId="acc-currency-label" value={draft.currency} onChange={(currency) => setDraft({ ...draft, currency })} /><OwnerSelect id="acc-owner-label" members={members} value={draft.ownerUid} onChange={(ownerUid) => setDraft({ ...draft, ownerUid })} /><Button fullWidth variant="contained" onClick={create} loading={busy}>{t('form.create')}</Button></Stack></CardContent></Card>;
 }
 
-export function EditAccountDialog({ account, busy, members, onClose, onSave }: { account: Account; busy: boolean; members: HouseholdMember[]; onClose: () => void; onSave: (account: Account) => Promise<void> }) {
+export function EditAccountDialog({ account, busy, members, onClose, onSave, onDelete }: { account: Account; busy: boolean; members: HouseholdMember[]; onClose: () => void; onSave: (account: Account) => Promise<void>; onDelete?: () => Promise<void> }) {
   const { t } = useTranslation('accounts');
   const [draft, setDraft] = useState(account);
-  return <Dialog open onClose={onClose}><DialogTitle>{t('form.editTitle')}</DialogTitle><DialogContent><Stack spacing={2} sx={{ mt: 1 }}><TextField fullWidth label={t('form.accountName')} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /><TypeSelect id="edit-acc-type-label" value={draft.type} onChange={(type) => setDraft({ ...draft, type })} /><CurrencySelect labelId="edit-acc-currency-label" value={draft.currency} onChange={(currency) => setDraft({ ...draft, currency })} /><OwnerSelect id="edit-acc-owner-label" members={members} value={draft.ownerUid ?? ''} onChange={(ownerUid) => setDraft({ ...draft, ownerUid: ownerUid || null })} /><FormControlLabel control={<Checkbox checked={draft.isActive} onChange={(event) => setDraft({ ...draft, isActive: event.target.checked })} />} label={t('form.isActive')} /></Stack></DialogContent><DialogActions><Button onClick={onClose}>{t('form.cancel')}</Button><Button onClick={() => onSave({ ...draft, name: draft.name.trim() })} variant="contained" loading={busy} disabled={!draft.name.trim()}>{t('form.saveChanges')}</Button></DialogActions></Dialog>;
+  // Two-step destructive wipe: preview what goes away, then confirm.
+  const [wipeStep, setWipeStep] = useState<'idle' | 'confirm'>('idle');
+  const [preview, setPreview] = useState<AccountWipePreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [wipeBusy, setWipeBusy] = useState(false);
+  const blockingLoan = preview?.blockingLoan ?? null;
+
+  const loadPreview = async () => {
+    setPreviewLoading(true);
+    try {
+      setPreview(await accountLifecycleLib.previewWipe(account.householdId, account.id));
+    } catch {
+      setPreview(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+    setWipeStep('confirm');
+  };
+
+  const runWipe = async () => {
+    if (!onDelete) return;
+    setWipeBusy(true);
+    try {
+      await onDelete();
+    } finally {
+      setWipeBusy(false);
+    }
+  };
+
+  return <Dialog open onClose={onClose}><DialogTitle>{t('form.editTitle')}</DialogTitle><DialogContent><Stack spacing={2} sx={{ mt: 1 }}><TextField fullWidth label={t('form.accountName')} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /><TypeSelect id="edit-acc-type-label" value={draft.type} onChange={(type) => setDraft({ ...draft, type })} /><CurrencySelect labelId="edit-acc-currency-label" value={draft.currency} onChange={(currency) => setDraft({ ...draft, currency })} /><OwnerSelect id="edit-acc-owner-label" members={members} value={draft.ownerUid ?? ''} onChange={(ownerUid) => setDraft({ ...draft, ownerUid: ownerUid || null })} /><FormControlLabel control={<Checkbox checked={draft.isActive} onChange={(event) => setDraft({ ...draft, isActive: event.target.checked })} />} label={t('form.isActive')} /></Stack>
+    {onDelete && (
+      <Stack spacing={1} sx={{ mt: 3 }}>
+        {wipeStep === 'idle' ? (
+          <Button color="error" variant="outlined" startIcon={<DeleteIcon />} loading={previewLoading} onClick={() => void loadPreview()}>
+            {t('wipe.action')}
+          </Button>
+        ) : (
+          <>
+            {blockingLoan ? (
+              <Alert severity="warning">{t('wipe.blockingLoan', { name: blockingLoan.name })}</Alert>
+            ) : (
+              <Alert severity="error">
+                <Typography variant="body2" sx={{ mb: 0.5 }}>{t('wipe.warning', { name: account.name })}</Typography>
+                {preview && (
+                  <Typography variant="fieldHint" color="text.secondary">
+                    {t('wipe.preview', { transactions: preview.transactions, cards: preview.cards })}
+                  </Typography>
+                )}
+                {preview && preview.recurringRules.length > 0 && (
+                  <Typography variant="fieldHint" color="text.secondary">
+                    {t('wipe.recurring', { rules: preview.recurringRules.join(', ') })}
+                  </Typography>
+                )}
+              </Alert>
+            )}
+            <Stack direction="row" spacing={1}>
+              <Button size="small" onClick={() => setWipeStep('idle')}>{t('wipe.cancel')}</Button>
+              {!blockingLoan && (
+                <Button size="small" color="error" variant="contained" loading={wipeBusy} onClick={() => void runWipe()}>
+                  {t('wipe.confirm')}
+                </Button>
+              )}
+            </Stack>
+          </>
+        )}
+      </Stack>
+    )}
+  </DialogContent><DialogActions><Button onClick={onClose}>{t('form.cancel')}</Button><Button onClick={() => onSave({ ...draft, name: draft.name.trim() })} variant="contained" loading={busy} disabled={!draft.name.trim()}>{t('form.saveChanges')}</Button></DialogActions></Dialog>;
 }

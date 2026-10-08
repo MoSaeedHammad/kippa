@@ -1,0 +1,60 @@
+{
+  "page": {
+    "title": "Certificates",
+    "subtitle": "Deposit certificates whose interest is tracked as recurring income",
+    "create": "Add certificate"
+  },
+  "status": {
+    "active": "Active",
+    "redeemed": "Redeemed"
+  },
+  "frequencies": {
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "card": {
+    "edit": "Edit",
+    "rate": "{{rate}}% annual",
+    "payout": "Every payout ({{frequency}})",
+    "nextPayout": "Next payout {{date}}",
+    "noUpcoming": "No upcoming payouts",
+    "category": "Category: {{category}}",
+    "redeem": "Redeem"
+  },
+  "dialog": {
+    "createTitle": "New certificate",
+    "editTitle": "Edit certificate",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "create": "Create certificate"
+  },
+  "fields": {
+    "name": "Certificate name",
+    "bank": "Bank",
+    "noBank": "No bank",
+    "payoutAccount": "Payout account",
+    "principal": "Principal",
+    "rate": "Annual rate",
+    "frequency": "Payout frequency",
+    "payoutAmount": "Payout amount",
+    "payoutHint": "Suggested from the rate: {{amount}}",
+    "startDate": "First payout",
+    "maturityDate": "Maturity date",
+    "hasMaturity": "Has a maturity date",
+    "category": "Income category",
+    "noCategory": "No category",
+    "notes": "Notes (optional)"
+  },
+  "empty": {
+    "title": "No certificates yet",
+    "description": "Add a deposit certificate and Kippa schedules its interest as recurring income — every payout waits in Approvals to be confirmed.",
+    "createFirst": "Add certificate"
+  },
+  "toasts": {
+    "created": "Certificate created — payouts are scheduled",
+    "updated": "Certificate updated",
+    "redeemed": "Certificate redeemed — payouts stopped",
+    "failed": "Could not save the certificate"
+  }
+}

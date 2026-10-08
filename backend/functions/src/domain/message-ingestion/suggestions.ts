@@ -76,9 +76,13 @@ export function pickSuggestions(accounts: Account[], cards: Card[], parsed: Pars
     if (cashAccounts.length === 1) accountId = cashAccounts[0].id;
   }
 
+  // A message in a currency the target account doesn't hold (a USD charge on
+  // an EGP account or card) needs the settled amount at approval, whatever
+  // the account type — not only credit cards.
   let conversionRequired = false;
-  if (parsed.accountKind === 'credit-card' && accountId) {
-    const account = accounts.find((candidate) => candidate.id === accountId);
+  const resolutionTarget = accountId ?? destinationAccountId;
+  if (resolutionTarget) {
+    const account = accounts.find((candidate) => candidate.id === resolutionTarget);
     conversionRequired = !!account?.isActive && account.currency !== parsed.currency;
   }
 

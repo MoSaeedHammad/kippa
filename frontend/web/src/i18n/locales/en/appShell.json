@@ -49,7 +49,8 @@
     "importHistory": "Import history",
     "recurring": "Recurring",
     "spending": "Spending",
-    "merchants": "Merchants"
+    "merchants": "Merchants",
+    "certificates": "Certificates"
   },
   "sections": {
     "money": "Money",

@@ -25,6 +25,7 @@ import {
   SearchIcon,
   NotesIcon,
   PaymentsIcon,
+  SavingsIcon,
   SwitchAccountIcon,
 } from '@/components/AppIcon';
 
@@ -36,6 +37,7 @@ const menuItems: NavItem[] = [
   { labelKey: 'dashboard', path: '/', icon: DashboardIcon },
   { labelKey: 'askKip', path: '/ai', icon: NotesIcon },
   { labelKey: 'loans', path: '/loans', icon: PaymentsIcon },
+  { labelKey: 'certificates', path: '/certificates', icon: SavingsIcon },
   {
     labelKey: 'analytics',
     path: '/cycles',

@@ -14,6 +14,7 @@
   "pickers": {
     "sourceAccount": "الحساب المصدر",
     "fromAccount": "من حساب",
+    "fromAccounts": "من حسابات",
     "destinationAccount": "الحساب الهدف",
     "noOtherAccounts": "لا توجد حسابات أخرى متاحة.",
     "selectSourceFirst": "يرجى اختيار الحساب المصدر أولًا.",
@@ -67,6 +68,7 @@
     "single": "حساب واحد",
     "across": "التوزيع على الحسابات",
     "participants": "التوزيع بين",
-    "participantHint": "تُقسم المبالغ بالتساوي على الحسابات المختارة"
+    "participantHint": "تُقسم المبالغ بالتساوي على الحسابات المختارة",
+    "noneSelected": "اختر حسابًا واحدًا على الأقل للتوزيع."
   }
 }

@@ -182,6 +182,8 @@ export type FinanceTransaction = {
   recurringRuleId?: string | null;
   /** Audit marker for entries approved from an ingested or imported bank message / record. */
   importedFrom?: { kind: 'financial-message'; pendingId: string; provider: string; source: string } | null;
+  /** The raw bank message this transaction was tracked from (ingested or imported); null for manual entries. */
+  sourceMessage?: string | null;
   /**
    * Embedded facts for confirming a recurring draft (ledger lines are written
    * at confirm time). Transfer rules carry the destination fields instead of
@@ -340,6 +342,44 @@ export type LedgerLine = {
   createdAt: string;
 };
 
+/**
+ * A bank deposit certificate (شهادة) that pays out recurring interest into a
+ * household account. Each payout is materialized by the linked recurring
+ * income rule (`recurringRuleId`) through the daily cron — the certificate
+ * page is a friendly wrapper around that rule, not a separate engine.
+ */
+export type Certificate = {
+  id: string;
+  householdId: string;
+  name: string;
+  /** Bank preset id (frontend banks.tsx) for display. */
+  bankId?: string | null;
+  /** Account the interest payout lands in (also the rule's income account). */
+  accountId: string;
+  currency: CurrencyCode;
+  /** Deposited principal. Informational — payouts are tracked via the rule. */
+  principal: number;
+  /** Annual interest rate in percent, e.g. 22.5 for 22.5%. */
+  annualRatePct: number;
+  /** How often interest is paid out; drives the linked rule's frequency. */
+  payoutFrequency: 'weekly' | 'monthly' | 'yearly';
+  /** Interest amount per payout in the account currency. */
+  payoutAmount: number;
+  /** First payout date (the linked rule's anchor). */
+  startDate: string;
+  /** Optional maturity date — after it the certificate should be redeemed. */
+  maturityDate?: string | null;
+  /** Optional income category assigned to payout transactions. */
+  categoryId?: string | null;
+  /** The recurring income rule that materializes each payout. */
+  recurringRuleId?: string | null;
+  status: 'active' | 'redeemed';
+  notes?: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ConversionDetails = {
   transactionId: string;
   fromCurrency: CurrencyCode;
@@ -454,6 +494,11 @@ export type AuditAction =
   | 'transaction_updated'
   | 'account_created'
   | 'account_updated'
+  | 'account_deleted'
+  | 'card_deleted'
+  | 'certificate_created'
+  | 'certificate_updated'
+  | 'certificate_redeemed'
   | 'category_created'
   | 'category_updated'
   | 'cycle_created'
@@ -523,6 +568,12 @@ export type MessageTemplate = {
   bankId?: string | null;
   /** Name of the group carrying a short description (optional). */
   descriptionGroup?: string | null;
+  /**
+   * When true the template is tried BEFORE the built-in bank regexes, so an
+   * edited copy of a predefined rule overrides them. Ignored-noise messages
+   * (statements, login alerts) stay ignored either way.
+   */
+  overrideBuiltIn?: boolean | null;
   isActive: boolean;
   createdBy: string;
   createdAt: string;
@@ -542,6 +593,12 @@ export type PendingFinancialMessage = {
   description: string;
   counterparty?: string | null;
   messagePreview: string;
+  /**
+   * The complete raw message, kept so approved transactions can show the
+   * exact text they were tracked from. Sanitized previews remain available
+   * for list UIs.
+   */
+  sourceMessage?: string | null;
   accountHintLast4?: string | null;
   destinationHintLast4?: string | null;
   suggestedAccountId?: string | null;

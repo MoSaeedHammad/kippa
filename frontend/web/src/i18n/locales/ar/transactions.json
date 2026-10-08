@@ -85,6 +85,7 @@
     "originalCharge": "المبلغ الأصلي",
     "status": "الحالة",
     "subtitleTitle": "السطر الملخص",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "sourceMessage": "رسالة البنك"
   }
 }

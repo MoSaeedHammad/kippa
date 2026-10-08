@@ -37,6 +37,15 @@ describe('validateMessageTemplate', () => {
     expect(!validateMessageTemplate({ ...base, kind: 'adjustment' } as never).ok).toBe(true);
     expect(!validateMessageTemplate({ ...base, name: '' } as never).ok).toBe(true);
   });
+
+  it('accepts and normalizes the overrideBuiltIn flag', () => {
+    const overriding = validateMessageTemplate({ ...base, overrideBuiltIn: true } as never);
+    expect(overriding.ok).toBe(true);
+    if (overriding.ok) expect(overriding.value.overrideBuiltIn).toBe(true);
+    const plain = validateMessageTemplate(base as never);
+    expect(plain.ok).toBe(true);
+    if (plain.ok) expect(plain.value.overrideBuiltIn).toBe(false);
+  });
 });
 
 describe('applyMessageTemplate', () => {

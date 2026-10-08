@@ -85,6 +85,7 @@
     "originalCharge": "Original charge",
     "status": "Status",
     "subtitleTitle": "Summary line",
-    "close": "Close"
+    "close": "Close",
+    "sourceMessage": "Bank message"
   }
 }

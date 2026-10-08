@@ -74,7 +74,10 @@ export function FastEntry() {
 
   // Sort accounts so base-currency running accounts come first, then cash accounts, then everything else (e.g. USD).
   // Priority: base-currency running account (0) -> cash type (1) -> other (2). Stable within each tier.
-  const sortedAccounts = [...accounts].sort((a, b) => {
+  // Frozen/void accounts never appear as entry sources or destinations.
+  const sortedAccounts = [...accounts]
+    .filter((acc) => acc.isActive)
+    .sort((a, b) => {
     const rank = (acc: typeof a) => {
       if (acc.currency === baseCurrency && acc.type === 'running') return 0;
       if (acc.type === 'cash') return 1;
@@ -144,9 +147,6 @@ export function FastEntry() {
   // Event handlers to update state and reset target/destination account if it is invalid for the chosen mode or source account.
   const handleSelectSourceAccount = (id: string | null) => {
     setSelectedAccountId(id);
-    // The split participant set is anchored to the source account's currency —
-    // reseed it so no stale cross-currency participant survives a switch.
-    if (splitEnabled) setSplitAccountIds(id ? [id] : []);
     if (!id || !toAccountId) return;
     const sourceAcc = accounts.find(a => a.id === id);
     const toAcc = accounts.find(a => a.id === toAccountId);
@@ -196,15 +196,21 @@ export function FastEntry() {
   const [splitEnabled, setSplitEnabled] = useState(false);
   const [splitAccountIds, setSplitAccountIds] = useState<string[]>([]);
 
-  // Split participants, restricted to the source account's currency; the
-  // source account is always one of the participants when it matches.
+  // Split participants ARE the from-accounts: same currency as the picked
+  // source (or the household base currency when nothing is picked yet).
   const splitCandidateAccounts = useMemo(
-    () => sortedAccounts.filter((account) => account.currency === selectedAccount?.currency),
-    [sortedAccounts, selectedAccount]
+    () => sortedAccounts.filter((account) => account.currency === (selectedAccount?.currency ?? baseCurrency)),
+    [sortedAccounts, selectedAccount, baseCurrency]
   );
 
   const handleToggleSplitAccount = (accountId: string) => {
-    setSplitAccountIds((ids) => ids.includes(accountId) ? ids.filter(id => id !== accountId) : [...ids, accountId]);
+    const next = splitAccountIds.includes(accountId)
+      ? splitAccountIds.filter(id => id !== accountId)
+      : [...splitAccountIds, accountId];
+    setSplitAccountIds(next);
+    // The first pick stays the "primary" account so the keypad currency,
+    // destination filtering and save feedback keep a single source of truth.
+    setSelectedAccountId(next[0] ?? null);
   };
 
   const handleSetSplitEnabled = (enabled: boolean) => {
@@ -250,6 +256,10 @@ export function FastEntry() {
       }
       let payload: ReturnType<typeof buildFastEntryTransaction>;
       if (splitEnabled && (mode === 'expense' || mode === 'income')) {
+        if (splitAccountIds.length === 0) {
+          enqueueSnackbar(t('split.noneSelected'), { variant: 'error' });
+          return;
+        }
         const amount = Number(amountStr);
         const lines = buildSplitEntryLines({
           totalAmount: amount,
@@ -353,51 +363,50 @@ export function FastEntry() {
           />
         )}
 
-        {/* Split between accounts (Only for expense/income): an on/off
-            toggle pair — participants are then picked directly and the
-            amount is divided equally. */}
+        {/* Split toggle + source account picker — one control, not two:
+            "Split between accounts" turns the from-account picker into a
+            multi-select, so the split participants ARE the from accounts. */}
         {(mode === 'expense' || mode === 'income') && (
-          <Stack spacing={1.5}>
-            <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
-              <Button
-                onClick={() => handleSetSplitEnabled(false)}
-                variant={!splitEnabled ? 'segmentedSelected' : 'segmented'}
-                sx={{ flex: 1 }}
-              >
-                {t('split.single')}
-              </Button>
-              <Button
-                onClick={() => handleSetSplitEnabled(true)}
-                variant={splitEnabled ? 'segmentedSelected' : 'segmented'}
-                sx={{ flex: 1 }}
-              >
-                {t('split.across')}
-              </Button>
-            </Stack>
-            {splitEnabled && (
-              <>
-                <MultiAccountPicker
-                  accounts={splitCandidateAccounts}
-                  amountFor={splitShareFor}
-                  currency={selectedAccount?.currency ?? baseCurrency}
-                  label={t('split.participants')}
-                  selectedAccountIds={splitAccountIds}
-                  onToggle={handleToggleSplitAccount}
-                />
-                <Typography variant="fieldHint" color="text.secondary">
-                  {t('split.participantHint')}
-                </Typography>
-              </>
-            )}
+          <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+            <Button
+              onClick={() => handleSetSplitEnabled(false)}
+              variant={!splitEnabled ? 'segmentedSelected' : 'segmented'}
+              sx={{ flex: 1 }}
+            >
+              {t('split.single')}
+            </Button>
+            <Button
+              onClick={() => handleSetSplitEnabled(true)}
+              variant={splitEnabled ? 'segmentedSelected' : 'segmented'}
+              sx={{ flex: 1 }}
+            >
+              {t('split.across')}
+            </Button>
           </Stack>
         )}
 
-        <AccountPicker
-          accounts={sortedAccounts}
-          label={mode === 'transfer' ? t('pickers.sourceAccount') : t('pickers.fromAccount')}
-          onSelect={handleSelectSourceAccount}
-          selectedAccountId={selectedAccountId}
-        />
+        {splitEnabled && (mode === 'expense' || mode === 'income') ? (
+          <Stack spacing={0.75}>
+            <MultiAccountPicker
+              accounts={splitCandidateAccounts}
+              amountFor={splitShareFor}
+              currency={selectedAccount?.currency ?? baseCurrency}
+              label={t('pickers.fromAccounts')}
+              selectedAccountIds={splitAccountIds}
+              onToggle={handleToggleSplitAccount}
+            />
+            <Typography variant="fieldHint" color="text.secondary">
+              {t('split.participantHint')}
+            </Typography>
+          </Stack>
+        ) : (
+          <AccountPicker
+            accounts={sortedAccounts}
+            label={mode === 'transfer' ? t('pickers.sourceAccount') : t('pickers.fromAccount')}
+            onSelect={handleSelectSourceAccount}
+            selectedAccountId={selectedAccountId}
+          />
+        )}
 
         {/* Target Account Selection (Only for transfer) */}
         {mode === 'transfer' && (

@@ -1,6 +1,7 @@
 import { Box, Typography, LinearProgress, Stack, IconButton, Chip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { AcUnitIcon } from '@/components/AppIcon';
+import { DeleteIcon } from '@/components/AppIcon';
 import { EditIcon } from '@/components/AppIcon';
 import type { Card } from '@kippa/domain';
 import type { CardSummary } from '@/libs/cardSelectors';
@@ -14,6 +15,7 @@ export function CardTile({
   summary,
   parentAccountBalance,
   onFreeze,
+  onDelete,
   onEdit,
   onOpenDetail,
 }: {
@@ -21,6 +23,7 @@ export function CardTile({
   summary?: CardSummary;
   parentAccountBalance?: number;
   onFreeze?: () => void;
+  onDelete?: () => void;
   onEdit?: () => void;
   onOpenDetail?: () => void;
 }) {
@@ -96,6 +99,26 @@ export function CardTile({
               <ContactlessIcon />
             </Stack>
           </Stack>
+
+          {card.name && (
+            <Typography
+              noWrap
+              sx={{
+                mt: 0.5,
+                mb: -0.5,
+                fontSize: '12px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '1.2px',
+                color: '#ffffff',
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                position: 'relative',
+                zIndex: 1,
+              }}
+            >
+              {card.name}
+            </Typography>
+          )}
 
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 0.5, mb: 0.5, position: 'relative', zIndex: 1 }}>
             <Typography
@@ -190,7 +213,7 @@ export function CardTile({
               <NetworkLogo network={card.network} />
             </Stack>
 
-            {(onFreeze || onEdit) && (
+            {(onFreeze || onDelete || onEdit) && (
               <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }} onClick={e => e.stopPropagation()}>
                 {onFreeze && (
                   <IconButton
@@ -203,6 +226,20 @@ export function CardTile({
                     }}
                   >
                     <AcUnitIcon sx={{ fontSize: 15 }} />
+                  </IconButton>
+                )}
+                {onDelete && (
+                  <IconButton
+                    size="small"
+                    onClick={onDelete}
+                    aria-label={t('tile.removeAria', { name: card.name })}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      color: '#ffffff',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 15 }} />
                   </IconButton>
                 )}
                 {onEdit && (

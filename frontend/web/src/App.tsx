@@ -28,6 +28,7 @@ const AiAssistant = lazy(() => import('@/features/ai/AiAssistant').then(m => ({ 
 const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBalancePage').then(m => ({ default: m.SharedBalancePage })));
 const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SpacesPage').then(m => ({ default: m.SpacesPage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
+const Certificates = lazy(() => import('@/features/certificates/Certificates').then(m => ({ default: m.Certificates })));
 const MessageImport = lazy(() => import('@/features/message-import/MessageImport').then(m => ({ default: m.MessageImport })));
 const Recurring = lazy(() => import('@/features/recurring/Recurring').then(m => ({ default: m.Recurring })));
 const SpendingView = lazy(() => import('@/features/analytics/SpendingView').then(m => ({ default: m.SpendingView })));
@@ -98,6 +99,7 @@ export default function App() {
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="ai" element={<AiAssistant />} />
                 <Route path="loans" element={<Loans />} />
+                <Route path="certificates" element={<Certificates />} />
                 <Route path="recurring" element={<Recurring />} />
                 <Route path="spending" element={<SpendingView />} />
                 <Route path="merchants" element={<MerchantsView />} />

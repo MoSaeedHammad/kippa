@@ -140,4 +140,33 @@ describe('parseFinancialMessage — Bank Misr', () => {
     const result = parseFinancialMessage('شكرًا لاستخدامك بطاقة بنك مصر ****8616، تم إضافة مبلغEGP 9800.00 الة رقم 01880111 BM F.D SMA يوم 25/08، الرصيد المتاح EGP 188908.57لمزيد من المعلومات اضغط هنا bnkmsr.com/online');
     expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', provider: 'bank-misr', destinationKind: 'bank', destinationHintLast4: '8616', accountHintLast4: undefined, currency: 'EGP', amount: 9800, description: 'Cash deposit at machine' } });
   });
+
+  it('parses a credit-card charge phrased without the bank name', () => {
+    const result = parseFinancialMessage('عميلنا العزيز، شكرًا لاستخدامكم بطاقة ائتمانية *5510، تم خصم مبلغ EGP 240 في TALABAT      EG بتاريخ 01/09/2026');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', provider: 'bank-misr', accountKind: 'credit-card', accountHintLast4: '5510', amount: 240, currency: 'EGP', date: '2026-09-01', description: 'TALABAT' } });
+  });
+
+  it('keeps a non-EGP/USD currency such as EUR', () => {
+    const result = parseFinancialMessage('عميلناالعزيز،شكرًا لاستخدامكم بطاقة بنك مصر الائتمانية*2508 تم خصم مبلغ EUR 12.5 فيNETFLIX.COM      LUبتاريخ 02/09/2026');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', accountKind: 'credit-card', currency: 'EUR', amount: 12.5, date: '2026-09-02' } });
+  });
+
+  it('parses a transfer to a long sub-account number with the حسابي wording', () => {
+    const result = parseFinancialMessage('تم اضافة مبلغ 500USD       الى حسابي رقم 9876544321      فى 30-AUG-2026  عن طريق التحويل اللحظي');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', provider: 'bank-misr', accountKind: 'bank', currency: 'USD', amount: 500, accountHintLast4: '4321', date: '2026-08-30' } });
+  });
+
+  it('extracts a credit-card charge from keywords when no bank regex fits', () => {
+    const result = parseFinancialMessage('بطاقة ائتمانية تنتهي بـ 4321، تم خصم مبلغ USD 25 في واتر شرك 05/09/2026');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', accountKind: 'credit-card', accountHintLast4: '4321', currency: 'USD', amount: 25, date: '2026-09-05' } });
+  });
+
+  it('keyword fallback maps machine debits to a cash transfer', () => {
+    const result = parseFinancialMessage('البطاقة الائتمانية ****7700 تم الخصم مبلغEGP 3000 الة رقم 55 يوم 12/09/2026');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', destinationKind: 'cash', accountHintLast4: '7700', accountKind: 'credit-card', currency: 'EGP', amount: 3000 } });
+  });
+
+  it('never parses statement noise even when it contains amounts', () => {
+    expect(parseFinancialMessage('بطاقة ائتمانية *1234 Statement Date 11/07/2026. Total Amt Due EGP 216.81')).toMatchObject({ outcome: 'ignored' });
+  });
 });

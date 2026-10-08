@@ -53,6 +53,40 @@ function last4(value?: string): string | undefined {
   return value?.replace(/\D/g, '').slice(-4) || undefined;
 }
 
+/**
+ * Normalizes a captured currency token: currency symbols map to their ISO
+ * code and anything else uppercases. Unknown bare words (e.g. a stray
+ * two-letter fragment) are rejected so the caller can fall back.
+ */
+export function normalizeCurrencyToken(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const token = raw.trim();
+  if (!token) return undefined;
+  if (token === '$') return 'USD';
+  if (token === '€') return 'EUR';
+  if (token === '£') return 'GBP';
+  const upper = token.toUpperCase();
+  return /^[A-Z]{3}$/.test(upper) ? upper : undefined;
+}
+
+/** Any ISO-4217 code or a common symbol, before or after the amount. */
+const CURRENCY_TOKEN = '(\\$|€|£|[A-Z]{3})';
+const AMOUNT_TOKEN = '([\\d,]+(?:\\.\\d{1,2})?)';
+
+/** Credit-card mentions that force `accountKind: 'credit-card'` regardless of phrasing. */
+const CREDIT_CARD_KEYWORDS = /credit\s*card|بطاقة\s*(?:بنك\s*مصر\s*)?(?:ال)?ائتمانية|(?:ال)?ائتمانية/i;
+
+/**
+ * Statements, login alerts and other non-financial noise. Exported so the
+ * ingestion layer can apply it before giving user templates precedence —
+ * user rules must never turn noise into transactions.
+ */
+export function isIgnoredFinancialMessage(text: string): boolean {
+  if (/statement date|minimum amount due|min\.?\s*amt due|total amt due/i.test(text)) return true;
+  if (/تم تسجيل الدخول/.test(text)) return true;
+  return false;
+}
+
 function cleanParty(value: string): string {
   return value.replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim();
 }
@@ -80,12 +114,8 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
   const text = raw.replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
   if (!text) return { outcome: 'unsupported', reason: 'Message is empty.' };
 
-  if (/statement date|minimum amount due|min\.?\s*amt due|total amt due/i.test(text)) {
-    return { outcome: 'ignored', reason: 'Card statement alerts do not create transactions.' };
-  }
-
-  if (/تم تسجيل الدخول/.test(text)) {
-    return { outcome: 'ignored', reason: 'Bank login alerts do not create transactions.' };
+  if (isIgnoredFinancialMessage(text)) {
+    return { outcome: 'ignored', reason: 'Statement alerts and login notifications do not create transactions.' };
   }
 
   const provider = /HSBC/i.test(text) || /hsbc/i.test(senderHint)
@@ -247,8 +277,12 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
   }
 
   // ── Bank Misr ────────────────────────────────────────────────────────
+  // Account-wording variants: حساب رقم / حسابي رقم / الحساب رقم, with an
+  // optional x*/** mask before the (possibly longer-than-4) account number.
+  const MISR_ACCOUNT = '(?:ال)?حساب(?:ي|ى)?\\s*رقم\\s*[x*]*(\\d{4,})';
+
   const misrTransferIn = text.match(
-    /تم اضافة مبلغ\s*([\d,]+(?:\.\d{1,2})?)\s*([A-Z]{3})\s*الى حساب رقم\s*x*(\d{4})\s*فى\s*(\d{2}-[A-Z]{3}-\d{4})\s*عن طريق التحويل اللحظي/i,
+    new RegExp(`تم اضافة مبلغ\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}\\s*الى ${MISR_ACCOUNT}\\s*فى\\s*(\\d{2}-[A-Z]{3}-\\d{4})\\s*عن طريق التحويل اللحظي`, 'i'),
   );
   if (misrTransferIn) {
     return {
@@ -256,14 +290,14 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
       parsed: {
         kind: 'income', provider: 'bank-misr', accountKind: 'bank',
         date: compactDate(misrTransferIn[4]), description: 'Instant transfer in',
-        accountHintLast4: misrTransferIn[3],
-        currency: misrTransferIn[2].toUpperCase(), amount: amount(misrTransferIn[1]),
+        accountHintLast4: last4(misrTransferIn[3]),
+        currency: normalizeCurrencyToken(misrTransferIn[2]) ?? 'EGP', amount: amount(misrTransferIn[1]),
       },
     };
   }
 
   const misrTransferOut = text.match(
-    /تم تحويل مبلغ\s*([\d,]+(?:\.\d{1,2})?)\s*([A-Z]{3})\s*من حساب رقم\s*x*(\d{4})\s*فى\s*(\d{2}-[A-Z]{3}-\d{4})\s*عن طريق التحويل اللحظي/i,
+    new RegExp(`تم تحويل مبلغ\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}\\s*من ${MISR_ACCOUNT}\\s*فى\\s*(\\d{2}-[A-Z]{3}-\\d{4})\\s*عن طريق التحويل اللحظي`, 'i'),
   );
   if (misrTransferOut) {
     return {
@@ -271,22 +305,28 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
       parsed: {
         kind: 'expense', provider: 'bank-misr', accountKind: 'bank',
         date: compactDate(misrTransferOut[4]), description: 'Instant transfer out',
-        accountHintLast4: misrTransferOut[3],
-        currency: misrTransferOut[2].toUpperCase(), amount: amount(misrTransferOut[1]),
+        accountHintLast4: last4(misrTransferOut[3]),
+        currency: normalizeCurrencyToken(misrTransferOut[2]) ?? 'EGP', amount: amount(misrTransferOut[1]),
       },
     };
   }
 
+  // Credit-card purchase. Two spellings of the same message exist in the
+  // wild, so the card phrase is matched flexibly: بطاقة بنك مصر الائتمانية,
+  // بطاقة ائتمانية, البطاقة الائتمانية … with optional المنتهية بـ mask.
   const misrCardCharge = text.match(
-    /بطاقة بنك مصر الائتمانية\s*\*+\s*(\d{4})\s*[،,]?\s*تم خصم مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*في\s*(.+?)\s*(?:[A-Z]{2}|>)?\s*بتاريخ\s*(\d{2}\/\d{2}\/\d{4})/i,
+    new RegExp(
+      `بطاقة\\s*(?:بنك\\s*مصر)?\\s*(?:ال)?ائتمانية\\s*(?:(?:المنتهية\\s*)?ب?ـ?\\s*\\*{0,4}\\s*)?(\\d{4})\\s*[،,]?\\s*تم\\s*خصم\\s*(?:مبلغ\\s*)?${CURRENCY_TOKEN}?\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}?\\s*(?:في|فى)\\s*(.+?)\\s*(?:[A-Z]{2}|>)?\\s*بتاريخ\\s*(\\d{2}\\/\\d{2}\\/\\d{4})`,
+      'i',
+    ),
   );
   if (misrCardCharge) {
-    const currency = (misrCardCharge[2] ?? misrCardCharge[4] ?? 'EGP').toUpperCase();
+    const currency = normalizeCurrencyToken(misrCardCharge[2] ?? misrCardCharge[4]) ?? 'EGP';
     return {
       outcome: 'matched',
       parsed: {
         kind: 'expense', provider: 'bank-misr', accountKind: 'credit-card',
-        accountHintLast4: misrCardCharge[1], currency, amount: amount(misrCardCharge[3]),
+        accountHintLast4: last4(misrCardCharge[1]), currency, amount: amount(misrCardCharge[3]),
         date: numericDate(misrCardCharge[6]),
         description: cleanParty(misrCardCharge[5]), counterparty: cleanParty(misrCardCharge[5]),
       },
@@ -294,10 +334,10 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
   }
 
   const misrCardPayment = text.match(
-    /تم إيداع\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*بالبطاقة الائتمانية المنتهية\s*بـ\s*\*+\s*(\d{4})/i,
+    new RegExp(`تم إيداع\\s*${CURRENCY_TOKEN}?\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}?\\s*بالبطاقة الائتمانية المنتهية\\s*بـ?\\s*\\*+\\s*(\\d{4})`, 'i'),
   );
   if (misrCardPayment) {
-    const currency = (misrCardPayment[1] ?? misrCardPayment[3] ?? 'EGP').toUpperCase();
+    const currency = normalizeCurrencyToken(misrCardPayment[1] ?? misrCardPayment[3]) ?? 'EGP';
     return {
       outcome: 'notification',
       title: 'Credit-card payment detected',
@@ -307,30 +347,30 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
   }
 
   const misrMachineDebit = text.match(
-    /بطاقة بنك مصر\s*\*+\s*(\d{4})\s*[،,]?\s*تم الخصم مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*الة رقم\s*\d+.*?يوم\s*(\d{2}\/\d{2})/i,
+    new RegExp(`بطاقة بنك مصر\\s*\\*+\\s*(\\d{4})\\s*[،,]?\\s*تم الخصم مبلغ\\s*${CURRENCY_TOKEN}?\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}?\\s*الة رقم\\s*\\d+.*?يوم\\s*(\\d{2}\\/\\d{2})`, 'i'),
   );
   if (misrMachineDebit) {
-    const currency = (misrMachineDebit[2] ?? misrMachineDebit[4] ?? 'EGP').toUpperCase();
+    const currency = normalizeCurrencyToken(misrMachineDebit[2] ?? misrMachineDebit[4]) ?? 'EGP';
     return {
       outcome: 'matched',
-      parsed: {
+      parsed: refineCardKind(text, {
         kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
         accountHintLast4: misrMachineDebit[1],
         currency, amount: amount(misrMachineDebit[3]),
         date: dayMonthDate(misrMachineDebit[5]),
         description: 'ATM cash withdrawal', destinationKind: 'cash',
-      },
+      }),
     };
   }
 
   const misrMachineCredit = text.match(
-    /بطاقة بنك مصر\s*\*+\s*(\d{4})\s*[،,]?\s*تم إضافة مبلغ\s*(?:(EGP|USD)\s*)?([\d,]+(?:\.\d{1,2})?)\s*(?:(EGP|USD))?\s*الة رقم\s*\d+.*?يوم\s*(\d{2}\/\d{2})/i,
+    new RegExp(`بطاقة بنك مصر\\s*\\*+\\s*(\\d{4})\\s*[،,]?\\s*تم إضافة مبلغ\\s*${CURRENCY_TOKEN}?\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}?\\s*الة رقم\\s*\\d+.*?يوم\\s*(\\d{2}\\/\\d{2})`, 'i'),
   );
   if (misrMachineCredit) {
-    const currency = (misrMachineCredit[2] ?? misrMachineCredit[4] ?? 'EGP').toUpperCase();
+    const currency = normalizeCurrencyToken(misrMachineCredit[2] ?? misrMachineCredit[4]) ?? 'EGP';
     return {
       outcome: 'matched',
-      parsed: {
+      parsed: refineCardKind(text, {
         kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
         // Cash deposits credit the bank account tied to the card; there is no
         // source bank account, so the hint is explicitly absent.
@@ -339,9 +379,96 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
         currency, amount: amount(misrMachineCredit[3]),
         date: dayMonthDate(misrMachineCredit[5]),
         description: 'Cash deposit at machine', destinationKind: 'bank',
-      },
+      }),
     };
   }
 
+  const keyword = parseByKeywords(text, provider);
+  if (keyword) return { outcome: 'matched', parsed: keyword };
+
   return { outcome: 'unsupported', reason: 'No supported financial transaction was found.' };
+}
+
+/**
+ * Refines the account kind of an already-matched message using keywords:
+ * a credit-card mention anywhere in the text means the hint belongs to a
+ * credit card even when the structural regex only captured a card number.
+ */
+function refineCardKind(text: string, parsed: ParsedFinancialMessage): ParsedFinancialMessage {
+  if (parsed.accountKind === 'credit-card') return parsed;
+  if (!parsed.accountHintLast4 && !parsed.destinationHintLast4) return parsed;
+  if (!CREDIT_CARD_KEYWORDS.test(text)) return parsed;
+  const refined: ParsedFinancialMessage = { ...parsed, accountKind: 'credit-card' };
+  if (parsed.destinationHintLast4 && !parsed.accountHintLast4) {
+    // Deposit-style messages credit the card account — move the hint over.
+    refined.accountHintLast4 = parsed.destinationHintLast4;
+    refined.destinationHintLast4 = undefined;
+    refined.destinationKind = undefined;
+    refined.kind = 'expense';
+  }
+  return refined;
+}
+
+/**
+ * Keyword fallback for messages the per-bank regexes don't cover: needs a
+ * card/account keyword, a last-4 hint, an explicitly marked amount and a
+ * debit/credit verb, so random texts can't become transactions. Account
+ * kind comes from the keywords — "credit card" / بطاقة ائتمانية → credit
+ * card, otherwise a bank account ("sub account") hint.
+ */
+function parseByKeywords(text: string, provider: string): ParsedFinancialMessage | null {
+  const cardHint = text.match(
+    /(?:\*+\s*(\d{4})|(?:تنتهي|ending)\s*(?:بـ?|with)?\s*\*{0,4}\s*(\d{4}))/i,
+  );
+  if (!cardHint) return null;
+  const hint = last4(cardHint[1] ?? cardHint[2]);
+
+  const debitVerb = /تم\s*(?:ال)?(?:خصم|تحويل)|debited|purchase|used\s*for|payment\s*from/i.test(text);
+  const creditVerb = /تم\s*(?:إضافة|اضافة|إيداع|ايداع)|credited|deposit/i.test(text);
+  if (!debitVerb && !creditVerb) return null;
+
+  const amountMatch = text.match(
+    new RegExp(`مبلغ\\s*${CURRENCY_TOKEN}?\\s*${AMOUNT_TOKEN}\\s*${CURRENCY_TOKEN}?|(?:credited|debited)\\s+(?:with\\s+)?${CURRENCY_TOKEN}\\s+${AMOUNT_TOKEN}`, 'i'),
+  );
+  if (!amountMatch) return null;
+  const value = amountMatch[2] ?? amountMatch[5];
+  const currency = normalizeCurrencyToken(amountMatch[1] ?? amountMatch[3] ?? amountMatch[4]);
+  if (!value || !currency) return null;
+
+  const dateMatch = text.match(/(\d{2}\/\d{2}\/\d{4})|(\d{2}-\d{2}-\d{4})|(\d{4}-\d{2}-\d{2})|(\d{2}[A-Z]{3}\d{2,4})/i);
+  let date = new Date().toISOString().slice(0, 10);
+  if (dateMatch) {
+    if (dateMatch[1]) date = numericDate(dateMatch[1]);
+    else if (dateMatch[2]) date = numericDate(dateMatch[2]);
+    else if (dateMatch[3]) date = dateMatch[3];
+    else if (dateMatch[4]) date = compactDate(dateMatch[4]);
+  }
+
+  // Machine/ATM context keeps the cash-flow model: withdrawal = transfer to
+  // the cash wallet, deposit = transfer from cash into the bank account.
+  const isMachine = /الة رقم|ATM/i.test(text);
+  if (isMachine) {
+    return refineCardKind(text, {
+      kind: 'transfer', provider,
+      amount: amount(value),
+      currency,
+      date,
+      description: creditVerb ? 'Cash deposit at machine' : 'ATM cash withdrawal',
+      accountHintLast4: creditVerb ? undefined : hint,
+      destinationHintLast4: creditVerb ? hint : undefined,
+      accountKind: 'bank',
+      destinationKind: creditVerb ? 'bank' : 'cash',
+    });
+  }
+
+  return refineCardKind(text, {
+    kind: debitVerb ? 'expense' : 'income',
+    provider,
+    amount: amount(value),
+    currency,
+    date,
+    description: debitVerb ? 'Card/account debit' : 'Card/account credit',
+    accountHintLast4: hint,
+    accountKind: 'bank',
+  });
 }

@@ -17,6 +17,7 @@ export type NormalizedMessageTemplate = {
   cardKind: 'debit' | 'credit' | null;
   bankId: string | null;
   descriptionGroup: string | null;
+  overrideBuiltIn: boolean;
   isActive: boolean;
 };
 
@@ -76,6 +77,7 @@ export function validateMessageTemplate(
   const cardKind = cardKindRaw === 'debit' || cardKindRaw === 'credit' ? cardKindRaw : null;
   const bankId = typeof raw.bankId === 'string' && raw.bankId.trim() ? raw.bankId.trim() : null;
   const descriptionGroup = groupName(raw.descriptionGroup);
+  const overrideBuiltIn = raw.overrideBuiltIn === true;
   const isActive = raw.isActive === false ? false : true;
 
   if (existingGroups && existingGroups.namedGroups.length > 0) {
@@ -93,7 +95,8 @@ export function validateMessageTemplate(
     ok: true,
     value: {
       name, pattern, kind: kind as MessageTemplate['kind'], amountGroup, currencyGroup, currency,
-      dateGroup, dateFormat, merchantGroup, last4Group, cardKind, bankId, descriptionGroup, isActive,
+      dateGroup, dateFormat, merchantGroup, last4Group, cardKind, bankId, descriptionGroup,
+      overrideBuiltIn, isActive,
     },
   };
 }

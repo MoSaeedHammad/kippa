@@ -3,11 +3,11 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { projectID } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancialMessage, SharedBalanceEntry, UserProfile } from '@kippa/domain';
-import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
+import { buildMessagePreview, isIgnoredFinancialMessage, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
 import { extractMessage, extractSender, extractSmsDate } from '../../domain/message-ingestion/ingestBody.js';
 import { pickSuggestions, type Suggestions } from '../../domain/message-ingestion/suggestions.js';
-import { resolveTemplateMatch } from './messageTemplates.js';
+import { resolveOverrideTemplateMatch, resolveTemplateMatch } from './messageTemplates.js';
 import { daysBetween, installmentDate, matchLoanSuggestion } from '../../domain/message-ingestion/loanSuggestion.js';
 import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferLegs.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
@@ -266,12 +266,21 @@ export const ingestFinancialMessage = onRequest(
     }
     const source = cleanSource((request.body as IngestBody).source);
     const sender = extractSender(request.body);
-    let parsedResult = parseFinancialMessage(message, source, sender);
+    const todayIso = new Date().toISOString().slice(0, 10);
     let templateMatch: Awaited<ReturnType<typeof resolveTemplateMatch>> = null;
+    // Rules flagged as overriding are tried before the built-in bank regexes,
+    // so an edited copy of a predefined rule wins. Noise (statements, login
+    // alerts) is filtered first and never becomes a transaction.
+    if (!isIgnoredFinancialMessage(message)) {
+      templateMatch = await resolveOverrideTemplateMatch(credential.householdId, message, todayIso);
+    }
+    let parsedResult = templateMatch
+      ? ({ outcome: 'matched', parsed: templateMatch.parsed } as ReturnType<typeof parseFinancialMessage>)
+      : parseFinancialMessage(message, source, sender);
     // User-defined regex templates rescue messages the built-in parser has no
     // regex for (but not ones it deliberately ignores, like statements).
-    if (parsedResult.outcome === 'unsupported') {
-      templateMatch = await resolveTemplateMatch(credential.householdId, message, new Date().toISOString().slice(0, 10));
+    if (!templateMatch && parsedResult.outcome === 'unsupported') {
+      templateMatch = await resolveTemplateMatch(credential.householdId, message, todayIso);
       if (templateMatch) parsedResult = { outcome: 'matched', parsed: templateMatch.parsed };
     }
     // Forwarders carry the real SMS timestamp (receivedStamp); trust it over
@@ -429,6 +438,7 @@ export const ingestFinancialMessage = onRequest(
       description: loanSuggestion ? `${loanSuggestion.loanName} — installment ${loanSuggestion.installmentNumber}` : parsed.description,
       counterparty: parsed.counterparty ?? null,
       messagePreview: buildMessagePreview(message),
+      sourceMessage: message,
       accountHintLast4: parsed.accountHintLast4 ?? null,
       destinationHintLast4: parsed.destinationHintLast4 ?? null,
       suggestedAccountId: suggestions.accountId ?? null,
@@ -642,13 +652,13 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
     const conversionRequired = !!pending.conversionRequired;
     if (conversionRequired) {
       if (convertedAmount == null) {
-        throw new HttpsError('invalid-argument', 'Enter the amount in the card account currency to approve this charge.');
+        throw new HttpsError('invalid-argument', 'Enter the amount in the account currency to approve this charge.');
       }
       if (!(pending.amount > 0)) {
         throw new HttpsError('invalid-argument', 'This message has no parsable original amount.');
       }
       if (pending.suggestedAccountId && accountId !== pending.suggestedAccountId) {
-        throw new HttpsError('failed-precondition', 'Foreign-currency card charges must be approved against the linked card account.');
+        throw new HttpsError('failed-precondition', 'Foreign-currency charges must be approved against the suggested account.');
       }
     }
     if (!account?.isActive || (!conversionRequired && account.currency !== pending.currency)) {
@@ -714,6 +724,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       loanInstallmentNumber: isLoanPayment ? suggestedInstallment : null,
       originalCharge: settled.originalCharge,
       importedFrom: { kind: 'financial-message', pendingId, provider: pending.provider, source: pending.source },
+      sourceMessage: pending.sourceMessage ?? null,
     });
     if (allocations) {
       allocations.forEach((allocation, index) => {

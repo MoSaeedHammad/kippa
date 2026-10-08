@@ -29,6 +29,23 @@ export async function resolveTemplateMatch(
   return matchMessageTemplates(messageText, templates, todayIso);
 }
 
+/**
+ * Resolves a message against templates flagged `overrideBuiltIn` only — these
+ * run BEFORE the built-in bank regexes so an edited copy of a predefined rule
+ * takes precedence over the stock behavior.
+ */
+export async function resolveOverrideTemplateMatch(
+  householdId: string,
+  messageText: string,
+  todayIso: string,
+) {
+  const templates = (await loadActiveMessageTemplates(householdId)).filter(
+    (template) => template.overrideBuiltIn === true,
+  );
+  if (templates.length === 0) return null;
+  return matchMessageTemplates(messageText, templates, todayIso);
+}
+
 /** Lists / creates / edits / removes user-defined regex message templates. */
 export const upsertMessageTemplate = onCall(async (request) => {
   const uid = request.auth?.uid;

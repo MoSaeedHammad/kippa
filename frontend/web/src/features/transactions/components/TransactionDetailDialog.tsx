@@ -123,6 +123,21 @@ export function TransactionDetailDialog({ open, transaction, ledgerLines, accoun
               {joinSubtitleParts(Object.values(getTransactionSubtitleParts(transaction, ledgerLines, accounts, cards, categories)), t(`types.${transaction.type === 'adjustment' ? 'reconciliation' : transaction.type}`))}
             </Typography>
           </Box>
+          {transaction.sourceMessage && (
+            <>
+              <Divider />
+              <Box>
+                <Typography variant="sectionLabel" color="primary">{t('detail.sourceMessage')}</Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                >
+                  {transaction.sourceMessage}
+                </Typography>
+              </Box>
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

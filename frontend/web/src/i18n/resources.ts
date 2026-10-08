@@ -20,6 +20,7 @@ import loansEn from './locales/en/loans.json';
 import aiEn from './locales/en/ai.json';
 import messageImportEn from './locales/en/messageImport.json';
 import recurringEn from './locales/en/recurring.json';
+import certificatesEn from './locales/en/certificates.json';
 import commonAr from './locales/ar/common.json';
 import appShellAr from './locales/ar/appShell.json';
 import authAr from './locales/ar/auth.json';
@@ -42,6 +43,7 @@ import loansAr from './locales/ar/loans.json';
 import aiAr from './locales/ar/ai.json';
 import messageImportAr from './locales/ar/messageImport.json';
 import recurringAr from './locales/ar/recurring.json';
+import certificatesAr from './locales/ar/certificates.json';
 
 export const resources = {
   en: {
@@ -67,6 +69,7 @@ export const resources = {
     ai: aiEn,
     messageImport: messageImportEn,
     recurring: recurringEn,
+    certificates: certificatesEn,
   },
   ar: {
     common: commonAr,
@@ -91,5 +94,6 @@ export const resources = {
     ai: aiAr,
     messageImport: messageImportAr,
     recurring: recurringAr,
+    certificates: certificatesAr,
   },
 } as const;

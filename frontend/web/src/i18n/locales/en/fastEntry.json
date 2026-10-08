@@ -14,6 +14,7 @@
   "pickers": {
     "sourceAccount": "Source Account",
     "fromAccount": "From Account",
+    "fromAccounts": "From Accounts",
     "destinationAccount": "Destination Account",
     "noOtherAccounts": "No other accounts available.",
     "selectSourceFirst": "Please select a Source Account first.",
@@ -67,6 +68,7 @@
     "single": "Single account",
     "across": "Split between accounts",
     "participants": "Split between",
-    "participantHint": "Picked accounts share the amount equally"
+    "participantHint": "Picked accounts share the amount equally",
+    "noneSelected": "Pick at least one account to split across."
   }
 }

@@ -144,7 +144,7 @@ export function PendingReviewDialog(props: Props) {
             </Stack>
           )}
           <Divider />
-          <Box><Typography variant="sectionLabel" color="primary">{t('reviewDialog.bankMessage')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.messagePreview}</Typography></Box>
+          <Box><Typography variant="sectionLabel" color="primary">{t('reviewDialog.bankMessage')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.sourceMessage || item.messagePreview}</Typography></Box>
           {onSharedBalanceTagChange && otherMembers.length > 0 && (
             <>
               <Divider />

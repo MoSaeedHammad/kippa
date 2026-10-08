@@ -15,16 +15,19 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
 import type { MessageTemplate } from '@kippa/domain';
-import { AddIcon, DeleteIcon, EditIcon, ExpandLessIcon, InfoOutlinedIcon, TuneIcon } from '@/components/AppIcon';
+import { AddIcon, ContentCopyIcon, DeleteIcon, EditIcon, ExpandLessIcon, InfoOutlinedIcon, TuneIcon } from '@/components/AppIcon';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { useAppContext } from '@/hooks/useAppContext';
 import { messageTemplatesLib, type MessageTemplateInput, type TemplateTestMatch } from '@/libs/messageTemplates';
+import { PREDEFINED_MESSAGE_TEMPLATES, type PredefinedMessageTemplate } from './predefinedTemplates';
 import { BANK_LIST } from '@/features/cards/banks/banks';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -37,30 +40,33 @@ const EXAMPLE_SAMPLE = 'بطاقة بنك مصر الائتمانية **2508، �
 /**
  * Create / edit dialog for one regex message template, with a live tester:
  * paste a sample message and see exactly which fields would be extracted.
+ * `prefill` seeds a brand-new copy from a predefined rule (duplicate flow).
  */
-function TemplateDialog({ open, template, onClose }: {
+function TemplateDialog({ open, template, prefill, onClose }: {
   open: boolean;
   template: MessageTemplate | null;
+  prefill?: PredefinedMessageTemplate | null;
   onClose: () => void;
 }) {
   const { t } = useTranslation('messageImport');
   const { enqueueSnackbar } = useSnackbar();
   const { householdId } = useAppContext();
 
-  const [name, setName] = useState(template?.name ?? '');
-  const [pattern, setPattern] = useState(template?.pattern ?? '');
-  const [kind, setKind] = useState<(typeof KINDS)[number]>(template?.kind ?? 'expense');
-  const [amountGroup, setAmountGroup] = useState(template?.amountGroup ?? 'amount');
-  const [currencyGroup, setCurrencyGroup] = useState(template?.currencyGroup ?? '');
-  const [currency, setCurrency] = useState(template?.currency ?? 'EGP');
-  const [dateGroup, setDateGroup] = useState(template?.dateGroup ?? '');
-  const [dateFormat, setDateFormat] = useState<(typeof DATE_FORMATS)[number]>((template?.dateFormat ?? 'dd/MM/yyyy') as (typeof DATE_FORMATS)[number]);
-  const [merchantGroup, setMerchantGroup] = useState(template?.merchantGroup ?? '');
-  const [last4Group, setLast4Group] = useState(template?.last4Group ?? '');
-  const [cardKind, setCardKind] = useState<'debit' | 'credit'>(template?.cardKind ?? 'credit');
-  const [bankId, setBankId] = useState(template?.bankId ?? 'other');
-  const [descriptionGroup, setDescriptionGroup] = useState(template?.descriptionGroup ?? '');
-  const [sample, setSample] = useState('');
+  const [name, setName] = useState(template?.name ?? prefill?.name ?? '');
+  const [pattern, setPattern] = useState(template?.pattern ?? prefill?.pattern ?? '');
+  const [kind, setKind] = useState<(typeof KINDS)[number]>(template?.kind ?? prefill?.kind ?? 'expense');
+  const [amountGroup, setAmountGroup] = useState(template?.amountGroup ?? prefill?.amountGroup ?? 'amount');
+  const [currencyGroup, setCurrencyGroup] = useState(template?.currencyGroup ?? prefill?.currencyGroup ?? '');
+  const [currency, setCurrency] = useState(template?.currency ?? prefill?.currency ?? 'EGP');
+  const [dateGroup, setDateGroup] = useState(template?.dateGroup ?? prefill?.dateGroup ?? '');
+  const [dateFormat, setDateFormat] = useState<(typeof DATE_FORMATS)[number]>((template?.dateFormat ?? prefill?.dateFormat ?? 'dd/MM/yyyy') as (typeof DATE_FORMATS)[number]);
+  const [merchantGroup, setMerchantGroup] = useState(template?.merchantGroup ?? prefill?.merchantGroup ?? '');
+  const [last4Group, setLast4Group] = useState(template?.last4Group ?? prefill?.last4Group ?? '');
+  const [cardKind, setCardKind] = useState<'debit' | 'credit'>(template?.cardKind ?? prefill?.cardKind ?? 'credit');
+  const [bankId, setBankId] = useState(template?.bankId ?? prefill?.bankId ?? 'other');
+  const [descriptionGroup, setDescriptionGroup] = useState(template?.descriptionGroup ?? prefill?.descriptionGroup ?? '');
+  const [overrideBuiltIn, setOverrideBuiltIn] = useState<boolean>(template?.overrideBuiltIn ?? prefill?.overrideBuiltIn ?? false);
+  const [sample, setSample] = useState(prefill?.sample ?? '');
   const [testResult, setTestResult] = useState<TemplateTestMatch | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
 
@@ -78,6 +84,7 @@ function TemplateDialog({ open, template, onClose }: {
     cardKind: last4Group.trim() ? cardKind : null,
     bankId: bankId || null,
     descriptionGroup: descriptionGroup.trim() || null,
+    overrideBuiltIn,
     isActive: true,
   });
 
@@ -118,7 +125,7 @@ function TemplateDialog({ open, template, onClose }: {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        {template ? t('templates.dialog.editTitle') : t('templates.dialog.createTitle')}
+        {template ? t('templates.dialog.editTitle') : prefill ? t('templates.dialog.duplicateTitle') : t('templates.dialog.createTitle')}
         <Typography component="span" variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
           {t('templates.dialog.subtitle')}
         </Typography>
@@ -202,6 +209,16 @@ function TemplateDialog({ open, template, onClose }: {
             </TextField>
           </Stack>
           <TextField fullWidth label={t('templates.fields.descriptionGroup')} value={descriptionGroup} onChange={(event) => setDescriptionGroup(event.target.value)} placeholder={t('templates.fields.none')} />
+
+          <FormControlLabel
+            control={<Switch checked={overrideBuiltIn} onChange={(event) => setOverrideBuiltIn(event.target.checked)} />}
+            label={(
+              <Box>
+                <Typography variant="body2">{t('templates.override.title')}</Typography>
+                <Typography variant="fieldHint" color="text.secondary">{t('templates.override.hint')}</Typography>
+              </Box>
+            )}
+          />
 
           <Divider />
           <TextField
@@ -289,6 +306,8 @@ export function MessageTemplatesCard() {
   const [loaded, setLoaded] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<MessageTemplate | null>(null);
+  const [prefill, setPrefill] = useState<PredefinedMessageTemplate | null>(null);
+  const [showPredefined, setShowPredefined] = useState(false);
 
   const reload = async () => {
     try {
@@ -316,6 +335,24 @@ export function MessageTemplatesCard() {
     }
   };
 
+  const duplicatePredefined = (entry: PredefinedMessageTemplate) => {
+    setEditing(null);
+    setPrefill(entry);
+    setDialogOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setPrefill(null);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (template: MessageTemplate) => {
+    setEditing(template);
+    setPrefill(null);
+    setDialogOpen(true);
+  };
+
   return (
     <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
       <CardHeading
@@ -323,10 +360,7 @@ export function MessageTemplatesCard() {
         title={t('templates.title')}
         subtitle={t('templates.subtitle')}
         trailing={(
-          <Button
-            variant="outlined" size="small" startIcon={<AddIcon />}
-            onClick={() => { setEditing(null); setDialogOpen(true); }}
-          >
+          <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={openCreate}>
             {t('templates.new')}
           </Button>
         )}
@@ -343,13 +377,16 @@ export function MessageTemplatesCard() {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
                   <Typography noWrap variant="sectionLabel" sx={{ flex: 1 }}>{template.name}</Typography>
+                  {template.overrideBuiltIn && (
+                    <Chip label={t('templates.override.chip')} size="small" color="primary" variant="outlined" />
+                  )}
                   <Chip label={t(`templates.kinds.${template.kind}`)} size="small" variant="outlined" />
                 </Stack>
                 <Typography noWrap variant="fieldHint" color="text.secondary" sx={{ mt: 0.25, fontFamily: 'monospace' }}>
                   /{template.pattern}/i
                 </Typography>
               </Box>
-              <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => { setEditing(template); setDialogOpen(true); }}>
+              <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => openEdit(template)}>
                 {t('templates.edit')}
               </Button>
               <Button size="small" variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => void remove(template)}>
@@ -360,8 +397,50 @@ export function MessageTemplatesCard() {
           </Box>
         ))
       )}
+
+      {/* Predefined rules: the built-in bank regexes as duplicable catalog. */}
+      <Divider />
+      <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 1.5 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="sectionLabel">{t('templates.predefined.title')}</Typography>
+            <Typography variant="fieldHint" color="text.secondary" sx={{ mt: 0.25 }}>
+              {t('templates.predefined.subtitle')}
+            </Typography>
+          </Box>
+          <Button size="small" variant="outlined" onClick={() => setShowPredefined(current => !current)}>
+            {showPredefined ? t('templates.predefined.hide') : t('templates.predefined.show')}
+          </Button>
+        </Stack>
+        {showPredefined && (
+          <Stack divider={<Divider flexItem />} sx={{ mt: 1 }}>
+            {PREDEFINED_MESSAGE_TEMPLATES.map((entry) => (
+              <Box key={entry.name} sx={{ py: 1.25, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+                    <Typography noWrap variant="body2" sx={{ fontWeight: 700, flex: 1 }}>{entry.name}</Typography>
+                    <Chip label={t(`templates.kinds.${entry.kind}`)} size="small" variant="outlined" />
+                  </Stack>
+                  <Typography noWrap variant="fieldHint" color="text.secondary" sx={{ mt: 0.25, fontFamily: 'monospace' }}>
+                    /{entry.pattern}/i
+                  </Typography>
+                </Box>
+                <Button size="small" variant="outlined" startIcon={<ContentCopyIcon />} onClick={() => duplicatePredefined(entry)}>
+                  {t('templates.predefined.duplicate')}
+                </Button>
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
+
       {dialogOpen && (
-        <TemplateDialog open={dialogOpen} template={editing} onClose={() => { setDialogOpen(false); setEditing(null); void reload(); }} />
+        <TemplateDialog
+          open={dialogOpen}
+          template={editing}
+          prefill={prefill}
+          onClose={() => { setDialogOpen(false); setEditing(null); setPrefill(null); void reload(); }}
+        />
       )}
     </Card>
   );

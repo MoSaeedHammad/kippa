@@ -24,6 +24,7 @@ import { HistoryIcon } from '@/components/AppIcon';
 import { CalendarMonthIcon } from '@/components/AppIcon';
 import { SyncAltIcon } from '@/components/AppIcon';
 import { PaymentsIcon } from '@/components/AppIcon';
+import { SavingsIcon } from '@/components/AppIcon';
 
 interface QuickNavMenuProps {
   anchorEl: HTMLElement | null;
@@ -84,6 +85,7 @@ const FULL_SECTIONS: Array<{ titleKey: SectionKey; items: Array<{ labelKey: NavK
     items: [
       { labelKey: 'statements', icon: <CalendarMonthIcon fontSize="small" />, path: '/cycles' },
       { labelKey: 'loans', icon: <PaymentsIcon fontSize="small" />, path: '/loans' },
+      { labelKey: 'certificates', icon: <SavingsIcon fontSize="small" />, path: '/certificates' },
       { labelKey: 'reconciliation', icon: <SyncAltIcon fontSize="small" />, path: '/reconciliation' },
     ],
   },

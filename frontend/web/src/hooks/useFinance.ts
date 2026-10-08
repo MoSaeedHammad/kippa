@@ -5,6 +5,7 @@ import { cyclesLib } from '@/libs/cycles';
 import { transactionsLib } from '@/libs/transactions';
 import { loansLib, type LoanInput } from '@/libs/loans';
 import { cardsLib, type CardInput } from '@/libs/cards';
+import { accountLifecycleLib } from '@/libs/accountLifecycle';
 import { auditLogLib } from '@/libs/auditLog';
 import { messageIngestionLib } from '@/libs/messageIngestion';
 import { authLib } from '@/libs/auth';
@@ -637,6 +638,40 @@ export function useUpdateCardMutation() {
     onSuccess: (_, variables) => {
       notifyOfflineSuccess();
       queryClient.invalidateQueries({ queryKey: keys.cards(variables.householdId) });
+    },
+  });
+}
+
+export function useDeleteCardMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { householdId: string; cardId: string }) =>
+      accountLifecycleLib.deleteCard(data.householdId, data.cardId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.cards(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.accounts(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.cardStatements(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.ledgerLines(variables.householdId) });
+    },
+  });
+}
+
+export function useWipeAccountMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { householdId: string; accountId: string }) =>
+      accountLifecycleLib.wipeAccount(data.householdId, data.accountId),
+    onSuccess: (_, variables) => {
+      // A wipe touches accounts, cards, statements, transactions, ledger
+      // lines and recurring rules — refresh every financial query.
+      queryClient.invalidateQueries({ queryKey: keys.accounts(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.cards(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.cardStatements(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.transactions(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: keys.ledgerLines(variables.householdId) });
+      queryClient.invalidateQueries({ queryKey: ['recurringTransactionRules', variables.householdId] });
+      queryClient.invalidateQueries({ queryKey: ['certificates', variables.householdId] });
     },
   });
 }

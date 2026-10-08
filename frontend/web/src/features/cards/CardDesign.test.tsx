@@ -42,8 +42,9 @@ describe('CardTile rendering across banks', () => {
       tierId: 'premier',
     };
     const { container } = renderWithProvider(<CardTile card={card} />);
-    // HSBC wordmark appears (from the logo function)
-    expect(screen.getByText(/hsbc/i)).toBeInTheDocument();
+    // HSBC wordmark appears (from the logo function) and the card name row
+    // shows the card's name — both match /hsbc/i.
+    expect(screen.getAllByText(/hsbc/i).length).toBeGreaterThan(0);
     // last4 rendered
     expect(screen.getByText(/1234/)).toBeInTheDocument();
     expect(container).toBeTruthy();
@@ -74,6 +75,8 @@ describe('CardTile rendering across banks', () => {
     // No tier label for 'other' debit → falls back to "Debit" text
     expect(screen.getByText(/debit/i)).toBeInTheDocument();
     expect(screen.getByText(/1234/)).toBeInTheDocument();
+    // The card's name is printed on the card face
+    expect(screen.getByText(/my local bank/i)).toBeInTheDocument();
   });
 
   it('does NOT show "Debit" label on a credit card with no tier', () => {

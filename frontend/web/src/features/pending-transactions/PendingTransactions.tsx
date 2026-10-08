@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +43,7 @@ import {
 import type { AccountType, PendingFinancialMessage, ResolvedPendingFinancialMessage } from '@kippa/domain';
 import { groupImportedPending } from '@/libs/messageHistoryImport';
 import { ledgerLib } from '@/libs/ledger';
+import { currencyLib } from '@/libs/currency';
 import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
 import { useQueryClient } from '@tanstack/react-query';
 import { CreateAccountDialog, CreateCategoryDialog } from './components/QuickCreateDialogs';
@@ -150,6 +151,25 @@ export function PendingTransactions() {
     return accounts.filter((account) => account.isActive && account.currency === targetCurrency && account.id !== accountId);
   }, [accounts, selected, accountId]);
 
+  // Foreign-currency messages: prefill the settled amount from the live rate
+  // so approving converts to the account currency directly. The user can
+  // still override it — the field stays fully editable.
+  const ratePrefillKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selected?.conversionRequired) return;
+    const target = accounts.find((account) => account.id === (selected.suggestedAccountId ?? accountId))?.currency
+      ?? selected.currency;
+    const key = `${selected.id}:${target}`;
+    if (ratePrefillKey.current === key) return;
+    ratePrefillKey.current = key;
+    let cancelled = false;
+    void currencyLib.getRate(selected.currency, target).then((rate) => {
+      if (cancelled) return;
+      setConvertedAmount((current) => (current.trim() === '' ? (selected.amount * rate).toFixed(2) : current));
+    });
+    return () => { cancelled = true; };
+  }, [selected, accounts, accountId, setConvertedAmount]);
+
   const openReview = (item: PendingFinancialMessage) => {
     if ((itemStates[item.id] ?? 'idle') !== 'idle') return;
     setSelected(item);
@@ -159,6 +179,7 @@ export function PendingTransactions() {
     setMerchant(item.counterparty ?? '');
     setConfirmDiscard(false);
     setConvertedAmount('');
+    ratePrefillKey.current = null;
     setSharedBalanceTag({ kind: 'none', counterpartyUid: '', share: '' });
     setAllocationsEnabled(false);
     setAllocations([]);
@@ -525,7 +546,9 @@ export function PendingTransactions() {
               <Divider />
               <Box>
                 <Typography variant="sectionLabel" color="primary">{t('reviewDialog.bankMessage')}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{detailResolved.snapshot.messagePreview}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                  {detailResolved.snapshot.sourceMessage || detailResolved.snapshot.messagePreview}
+                </Typography>
               </Box>
             </Stack>
           </DialogContent>

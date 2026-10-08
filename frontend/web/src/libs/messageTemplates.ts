@@ -22,6 +22,8 @@ export type MessageTemplateInput = {
   cardKind?: 'debit' | 'credit' | null;
   bankId?: string | null;
   descriptionGroup?: string | null;
+  /** Run before the built-in bank rules instead of only as a fallback. */
+  overrideBuiltIn?: boolean | null;
   isActive?: boolean;
 };
 

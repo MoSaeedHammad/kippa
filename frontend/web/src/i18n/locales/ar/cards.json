@@ -9,7 +9,8 @@
     "due": "مستحق {{date}}",
     "utilized": "{{count}}% مستغل",
     "limit": "الحد: {{limit}}",
-    "availableBalance": "الرصيد المتاح"
+    "availableBalance": "الرصيد المتاح",
+    "removeAria": "إزالة {{name}}"
   },
   "detail": {
     "outstandingBalance": "الرصيد المستحق",

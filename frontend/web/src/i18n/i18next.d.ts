@@ -21,6 +21,7 @@ import type loans from './locales/en/loans.json';
 import type ai from './locales/en/ai.json';
 import type messageImport from './locales/en/messageImport.json';
 import type recurring from './locales/en/recurring.json';
+import type certificates from './locales/en/certificates.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -48,6 +49,7 @@ declare module 'i18next' {
       ai: typeof ai;
       messageImport: typeof messageImport;
       recurring: typeof recurring;
+      certificates: typeof certificates;
     };
   }
 }

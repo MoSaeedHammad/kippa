@@ -9,7 +9,8 @@
     "due": "Due {{date}}",
     "utilized": "{{count}}% utilized",
     "limit": "Limit: {{limit}}",
-    "availableBalance": "Available Balance"
+    "availableBalance": "Available Balance",
+    "removeAria": "Remove {{name}}"
   },
   "detail": {
     "outstandingBalance": "Outstanding Balance",
