@@ -63,6 +63,15 @@ function validateCertificateInput(raw: Record<string, unknown>): { ok: true; val
 }
 
 /**
+ * The web client nests the certificate fields under `certificate` alongside
+ * action/certificateId; payloads with the fields spread at the top level are
+ * still accepted. Unwrap, then validate.
+ */
+export function resolveCertificateInput(data: Record<string, unknown>) {
+  return validateCertificateInput((data.certificate ?? data) as Record<string, unknown>);
+}
+
+/**
  * Creates / edits / redeems a deposit certificate with recurring interest
  * income. Creation also creates the linked recurring income rule so the daily
  * cron materializes each payout; redemption cancels it and freezes the
@@ -108,7 +117,7 @@ export const upsertCertificate = onCall(async (request) => {
   }
 
   const input = (() => {
-    const result = validateCertificateInput(data as never);
+    const result = resolveCertificateInput(data);
     if (!result.ok) throw new HttpsError('invalid-argument', result.error);
     return result.value;
   })();
