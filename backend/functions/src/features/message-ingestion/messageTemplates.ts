@@ -46,6 +46,15 @@ export async function resolveOverrideTemplateMatch(
   return matchMessageTemplates(messageText, templates, todayIso);
 }
 
+/**
+ * The web client nests the template fields under `template` alongside
+ * action/templateId; payloads with the fields spread at the top level are
+ * still accepted. Unwrap, then validate.
+ */
+export function resolveMessageTemplateInput(data: Record<string, unknown>) {
+  return validateMessageTemplate((data.template ?? data) as Record<string, unknown>);
+}
+
 /** Lists / creates / edits / removes user-defined regex message templates. */
 export const upsertMessageTemplate = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -68,7 +77,7 @@ export const upsertMessageTemplate = onCall(async (request) => {
   }
 
   const input = (() => {
-    const result = validateMessageTemplate(data as never);
+    const result = resolveMessageTemplateInput(data);
     if (!result.ok) throw new HttpsError('invalid-argument', result.error);
     return result.value;
   })();
@@ -119,7 +128,7 @@ export const testMessageTemplate = onCall(async (request) => {
   }
 
   const input = (() => {
-    const result = validateMessageTemplate(data as never);
+    const result = resolveMessageTemplateInput(data);
     if (!result.ok) throw new HttpsError('invalid-argument', result.error);
     return result.value;
   })();
