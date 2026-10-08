@@ -30,6 +30,8 @@ import {
   discardPendingFinancialMessage,
 } from './messageIngestion.js';
 import { requireFullHouseholdMember } from '../../libs/householdAccess.js';
+import { matchMessageTemplates } from '../../domain/message-ingestion/messageTemplates.js';
+import type { MessageTemplate } from '@kippa/domain';
 
 type IngestionReceipt = {
   id: string;
@@ -102,18 +104,21 @@ export const importMessageHistory = onCall(
     const db = getFirestore();
     // Everything suggestion-related is loaded once per call — the per-message
     // loaders used by the webhook would re-scan collections per message.
-    const [accountsSnapshot, cardsSnapshot, loansSnapshot, transactionsSnapshot, categoryRulesSnapshot] = await Promise.all([
+    const [accountsSnapshot, cardsSnapshot, loansSnapshot, transactionsSnapshot, categoryRulesSnapshot, templatesSnapshot] = await Promise.all([
       db.collection(`households/${householdId}/accounts`).get(),
       db.collection(`households/${householdId}/cards`).get(),
       db.collection(`households/${householdId}/loans`).get(),
       db.collection(`households/${householdId}/transactions`).get(),
       db.collection(`households/${householdId}/categoryRules`).get(),
+      db.collection(`households/${householdId}/messageTemplates`).where('isActive', '==', true).get(),
     ]);
     const accounts = accountsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Account);
     const cards = cardsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Card);
     const loans = loansSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Loan);
     const transactions = transactionsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction);
     const categoryRules = categoryRulesSnapshot.docs.map((doc) => ({ ...doc.data() }) as { pattern: string; categoryId: string });
+    const templates = templatesSnapshot.docs.map((doc) => ({ ...(doc.data() as MessageTemplate), id: doc.id }));
+    const todayIso = new Date().toISOString().slice(0, 10);
 
     let staged = 0;
     let duplicates = 0;
@@ -152,7 +157,12 @@ export const importMessageHistory = onCall(
         const receiptId = importReceiptKey(householdId, message.text);
         if (!freshIds.has(receiptId)) continue;
 
-        const parsedResult = parseFinancialMessage(message.text, source, message.sender);
+        let parsedResult = parseFinancialMessage(message.text, source, message.sender);
+        let templateMatch: ReturnType<typeof matchMessageTemplates> = null;
+        if (parsedResult.outcome === 'unsupported') {
+          templateMatch = matchMessageTemplates(message.text, templates, todayIso);
+          if (templateMatch) parsedResult = { outcome: 'matched', parsed: templateMatch.parsed };
+        }
         if (parsedResult.outcome === 'notification' || parsedResult.outcome === 'ignored') {
           ignored++;
           continue;
@@ -233,6 +243,9 @@ export const importMessageHistory = onCall(
           destinationHintLast4: parsed.destinationHintLast4 ?? null,
           suggestedAccountId: suggestions.accountId ?? null,
           suggestedDestinationAccountId: suggestions.destinationAccountId ?? null,
+          suggestedAccountProposal: suggestions.accountProposal ?? null,
+          matchedTemplateId: templateMatch?.templateId ?? null,
+          matchedTemplateName: templateMatch?.templateName ?? null,
           suggestedLoanId: loanSuggestion?.loanId ?? null,
           suggestedLoanName: loanSuggestion?.loanName ?? null,
           suggestedLoanInstallmentNumber: loanSuggestion?.installmentNumber ?? null,

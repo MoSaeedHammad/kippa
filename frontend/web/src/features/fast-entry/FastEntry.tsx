@@ -9,10 +9,7 @@ import {
   Stack,
   TextField,
   Skeleton,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
+  Typography,
 } from '@mui/material';
 import { MobileDatePicker } from '@mui/x-date-pickers/MobileDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -31,16 +28,17 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { AccountPicker } from '@/features/shared/components/AccountPicker';
+import { MultiAccountPicker } from '@/features/shared/components/MultiAccountPicker';
 import { CategoryChips, CategoryDialog } from './components/CategoryPicker';
 import { SaveFeedbackOverlay } from './components/SaveFeedbackOverlay';
 import { EntryKeypad } from './components/EntryKeypad';
-import { buildFastEntryTransaction, type EntryMode } from '@/libs/fastEntryTransaction';
+import {
+  buildFastEntryTransaction,
+  buildSplitEntryLines,
+  equalSplitAllocations,
+  type EntryMode,
+} from '@/libs/fastEntryTransaction';
 import { useProposeTransferMutation } from '@/features/transactions/hooks/useTransferApprovals';
-import { useUpsertRecurringTransactionRuleMutation } from '@/features/transactions/hooks/useRecurringTransactions';
-import { AllocationsEditor } from '@/features/pending-transactions/components/AllocationsEditor';
-import type { AllocationRow } from '@/features/pending-transactions/hooks/usePendingReviewState';
-import { buildSplitEntryLines } from '@/libs/fastEntryTransaction';
-import type { RecurringFrequency } from '@/libs/recurringTransactions';
 import { useSaveFeedback } from './hooks/useSaveFeedback';
 import { useFastEntryFormState } from './hooks/useFastEntryFormState';
 
@@ -146,6 +144,9 @@ export function FastEntry() {
   // Event handlers to update state and reset target/destination account if it is invalid for the chosen mode or source account.
   const handleSelectSourceAccount = (id: string | null) => {
     setSelectedAccountId(id);
+    // The split participant set is anchored to the source account's currency —
+    // reseed it so no stale cross-currency participant survives a switch.
+    if (splitEnabled) setSplitAccountIds(id ? [id] : []);
     if (!id || !toAccountId) return;
     const sourceAcc = accounts.find(a => a.id === id);
     const toAcc = accounts.find(a => a.id === toAccountId);
@@ -192,10 +193,32 @@ export function FastEntry() {
   };
 
   const proposeTransferMutation = useProposeTransferMutation();
-  const upsertRecurringRuleMutation = useUpsertRecurringTransactionRuleMutation();
-  const [repeat, setRepeat] = useState<'none' | RecurringFrequency>('none');
   const [splitEnabled, setSplitEnabled] = useState(false);
-  const [splitRows, setSplitRows] = useState<AllocationRow[]>([]);
+  const [splitAccountIds, setSplitAccountIds] = useState<string[]>([]);
+
+  // Split participants, restricted to the source account's currency; the
+  // source account is always one of the participants when it matches.
+  const splitCandidateAccounts = useMemo(
+    () => sortedAccounts.filter((account) => account.currency === selectedAccount?.currency),
+    [sortedAccounts, selectedAccount]
+  );
+
+  const handleToggleSplitAccount = (accountId: string) => {
+    setSplitAccountIds((ids) => ids.includes(accountId) ? ids.filter(id => id !== accountId) : [...ids, accountId]);
+  };
+
+  const handleSetSplitEnabled = (enabled: boolean) => {
+    setSplitEnabled(enabled);
+    // The source account starts as the only split participant.
+    setSplitAccountIds(enabled && selectedAccount ? [selectedAccount.id] : []);
+  };
+
+  // Equal share per split participant, cent-exact (remainder on the first).
+  const splitShareFor = (account: { id: string }) => {
+    const amount = Number(amountStr);
+    if (!Number.isFinite(amount) || amount <= 0 || splitAccountIds.length === 0) return null;
+    return equalSplitAllocations(amount, splitAccountIds).find(a => a.accountId === account.id)?.amount ?? null;
+  };
 
   const handleSave = async () => {
     if (isSaveAnimationPreview) {
@@ -203,25 +226,6 @@ export function FastEntry() {
       return;
     }
     try {
-      if (repeat !== 'none' && (mode === 'expense' || mode === 'income')) {
-        await upsertRecurringRuleMutation.mutateAsync({
-          householdId,
-          action: 'create',
-          type: mode,
-          amount: Number(amountStr),
-          accountId: selectedAccount!.id,
-          categoryId: selectedCategoryId ?? null,
-          description,
-          frequency: repeat,
-          anchorDate: date,
-        });
-        triggerSaveFeedback(t('feedback.recurringCreated'), `${Number(amountStr)} ${selectedAccount!.currency}`, selectedCategory?.name ?? mode, selectedAccount!.name);
-        setAmountStr('0');
-        setDescription('');
-        setSelectedCategoryId(null);
-        setRepeat('none');
-        return;
-      }
       if (mode === 'transfer') {
         const result = await proposeTransferMutation.mutateAsync({
           householdId,
@@ -247,7 +251,12 @@ export function FastEntry() {
       let payload: ReturnType<typeof buildFastEntryTransaction>;
       if (splitEnabled && (mode === 'expense' || mode === 'income')) {
         const amount = Number(amountStr);
-        const lines = buildSplitEntryLines({ totalAmount: amount, currency: selectedAccount!.currency, isIncome: mode === 'income', allocations: splitRows.map((row) => ({ accountId: row.accountId, amount: Number(row.amount) })) });
+        const lines = buildSplitEntryLines({
+          totalAmount: amount,
+          currency: selectedAccount!.currency,
+          isIncome: mode === 'income',
+          allocations: equalSplitAllocations(amount, splitAccountIds),
+        });
         payload = {
           transaction: { date, budgetCycleId: activeCycle?.id ?? null, createdBy: userProfile!.uid, type: mode, description: description || (mode === 'income' ? 'Income' : null), merchant: merchant.trim() || null, categoryId: selectedCategory!.id },
           lines,
@@ -265,7 +274,7 @@ export function FastEntry() {
       setMerchant('');
       setSelectedCategoryId(null);
       setSplitEnabled(false);
-      setSplitRows([]);
+      setSplitAccountIds([]);
     } catch (error) {
       enqueueSnackbar(error instanceof Error ? error.message : t('save.errorToast'), { variant: 'error' });
     }
@@ -344,53 +353,43 @@ export function FastEntry() {
           />
         )}
 
-        {/* Split between accounts (Only for expense/income) */}
+        {/* Split between accounts (Only for expense/income): an on/off
+            toggle pair — participants are then picked directly and the
+            amount is divided equally. */}
         {(mode === 'expense' || mode === 'income') && (
           <Stack spacing={1.5}>
-            <FormControl fullWidth>
-              <InputLabel id="fast-entry-split-label">{t('split.label')}</InputLabel>
-              <Select
-                labelId="fast-entry-split-label"
-                value={splitEnabled ? 'yes' : 'no'}
-                label={t('split.label')}
-                onChange={(event) => {
-                  const enabled = event.target.value === 'yes';
-                  setSplitEnabled(enabled);
-                  setSplitRows(enabled && selectedAccount ? [{ accountId: selectedAccount.id, amount: amountStr }] : []);
-                }}
+            <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+              <Button
+                onClick={() => handleSetSplitEnabled(false)}
+                variant={!splitEnabled ? 'segmentedSelected' : 'segmented'}
+                sx={{ flex: 1 }}
               >
-                <MenuItem value="no">{t('split.single')}</MenuItem>
-                <MenuItem value="yes">{t('split.across')}</MenuItem>
-              </Select>
-            </FormControl>
+                {t('split.single')}
+              </Button>
+              <Button
+                onClick={() => handleSetSplitEnabled(true)}
+                variant={splitEnabled ? 'segmentedSelected' : 'segmented'}
+                sx={{ flex: 1 }}
+              >
+                {t('split.across')}
+              </Button>
+            </Stack>
             {splitEnabled && (
-              <AllocationsEditor
-                accounts={sortedAccounts.filter((account) => account.currency === selectedAccount?.currency)}
-                rows={splitRows}
-                total={Number(amountStr) || 0}
-                currency={selectedAccount?.currency ?? baseCurrency}
-                onChange={setSplitRows}
-              />
+              <>
+                <MultiAccountPicker
+                  accounts={splitCandidateAccounts}
+                  amountFor={splitShareFor}
+                  currency={selectedAccount?.currency ?? baseCurrency}
+                  label={t('split.participants')}
+                  selectedAccountIds={splitAccountIds}
+                  onToggle={handleToggleSplitAccount}
+                />
+                <Typography variant="fieldHint" color="text.secondary">
+                  {t('split.participantHint')}
+                </Typography>
+              </>
             )}
           </Stack>
-        )}
-
-        {/* Repeat (Only for expense/income) — creates a recurring rule */}
-        {(mode === 'expense' || mode === 'income') && (
-          <FormControl fullWidth>
-            <InputLabel id="fast-entry-repeat-label">{t('repeat.label')}</InputLabel>
-            <Select
-              labelId="fast-entry-repeat-label"
-              value={repeat}
-              label={t('repeat.label')}
-              onChange={(event) => setRepeat(event.target.value as 'none' | RecurringFrequency)}
-            >
-              <MenuItem value="none">{t('repeat.none')}</MenuItem>
-              <MenuItem value="weekly">{t('repeat.weekly')}</MenuItem>
-              <MenuItem value="monthly">{t('repeat.monthly')}</MenuItem>
-              <MenuItem value="yearly">{t('repeat.yearly')}</MenuItem>
-            </Select>
-          </FormControl>
         )}
 
         <AccountPicker

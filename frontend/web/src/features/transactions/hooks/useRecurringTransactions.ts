@@ -32,8 +32,8 @@ export function useUpsertRecurringTransactionRuleMutation() {
 export function useDecideRecurringDraftMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ householdId, transactionId, action }: { householdId: string; transactionId: string; action: 'confirm' | 'skip' }) =>
-      recurringTransactionsLib.decide(householdId, transactionId, action),
+    mutationFn: ({ householdId, transactionId, action, amount }: { householdId: string; transactionId: string; action: 'confirm' | 'skip'; amount?: number }) =>
+      recurringTransactionsLib.decide(householdId, transactionId, action, amount),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['recurringDrafts', variables.householdId] });
       queryClient.invalidateQueries({ queryKey: ['transactions', variables.householdId] });

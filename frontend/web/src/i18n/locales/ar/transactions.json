@@ -76,5 +76,15 @@
     "quick": "سريع",
     "ingested": "مستلم",
     "imported": "مستورد"
+  },
+  "detail": {
+    "type": "النوع",
+    "bank": "البنك",
+    "loan": "القرض",
+    "loanInstallment": "القسط {{installment}}",
+    "originalCharge": "المبلغ الأصلي",
+    "status": "الحالة",
+    "subtitleTitle": "السطر الملخص",
+    "close": "إغلاق"
   }
 }

@@ -17,6 +17,7 @@ import type { ImportMessageHistoryResult } from '@kippa/domain';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { ParsedTemplatesHelp } from './ParsedTemplatesHelp';
+import { MessageTemplatesCard } from './MessageTemplatesCard';
 import { CheckCircleIcon, DocumentUploadIcon } from '@/components/AppIcon';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useImportMessageHistoryMutation, useImportRecordHistoryMutation } from '@/hooks/useFinance';
@@ -284,6 +285,8 @@ export function MessageImport() {
           </Stack>
         </Card>
       )}
+
+      {step === 'choose' && <MessageTemplatesCard />}
 
       {step === 'preview' && (
         <Card>

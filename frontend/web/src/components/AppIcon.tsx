@@ -1,12 +1,12 @@
 import { forwardRef, type ComponentType, type ElementType } from 'react';
 import { Box, type SvgIconProps } from '@mui/material';
 import {
-  Add, AddSquare, ArrowLeft, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
+  Add, AddSquare, ArrowLeft, ArrowRight, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
   Bank, Briefcase, Calendar, Card, CardPos, Category, Chart, CloseCircle, CloudRemove,
   Convert, Copy, Discover, DocumentUpload, Edit2, Export, Eye, EyeSlash, Filter, Home2,
   InfoCircle, Key, Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle,
   People, Play, Profile2User, Receipt, SearchNormal1, Setting2, ShoppingCart, Sun,
-  TickCircle, TickSquare, Timer1, Trash,
+  TickCircle, TickSquare, Timer1, Trash, Wallet,
 } from 'iconsax-react';
 
 type IconsaxVariant = 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
@@ -66,8 +66,10 @@ export const AccountBalanceIcon = createAppIcon(Bank);
 export const AddIcon = createAppIcon(Add);
 export const AddHomeIcon = createAppIcon(AddSquare);
 export const ArrowBackIcon = createAppIcon(ArrowLeft);
+export const ArrowForwardIcon = createAppIcon(ArrowRight);
 export const BackspaceIcon = createAppIcon(BackSquare);
 export const BarChartIcon = createAppIcon(Chart);
+export const BeneficiaryIcon = createAppIcon(Wallet);
 export const CalendarMonthIcon = createAppIcon(Calendar);
 export const CalendarTodayIcon = createAppIcon(Calendar);
 export const CancelIcon = createAppIcon(CloseCircle);

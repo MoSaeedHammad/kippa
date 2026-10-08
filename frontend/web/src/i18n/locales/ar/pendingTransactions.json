@@ -29,7 +29,8 @@
     "emptyTitle": "لا شيء بانتظارك",
     "emptyDescription": "سيظهر نشاط البنك المكتشف هنا. لا يُنشأ أي قيد في دفتر الأستاذ حتى توافق عليه.",
     "detectedTitle": "النشاط المكتشف",
-    "detectedHint": "اضغط على عنصر لمراجعته"
+    "detectedHint": "اضغط على عنصر لمراجعته",
+    "templateChip": "قالب: {{name}}"
   },
   "historyTab": {
     "emptyTitle": "لا يوجد سجل مراجعة بعد",
@@ -39,7 +40,14 @@
     "approved": "موافق عليه",
     "discarded": "مهمل",
     "restoring": "جارٍ الاستعادة…",
-    "restore": "استعادة"
+    "restore": "استعادة",
+    "resolvedOn": "عيّنها {{name}} · {{date}}",
+    "detailBank": "البنك",
+    "detailKind": "النوع",
+    "detailDate": "التاريخ",
+    "detailCard": "البطاقة",
+    "detailMerchant": "التاجر / المستفيد",
+    "close": "إغلاق"
   },
   "reviewDialog": {
     "transferTitle": "مراجعة التحويل",
@@ -77,7 +85,22 @@
     "newCategory": "فئة جديدة",
     "newAccount": "حساب جديد",
     "merchant": "التاجر / الشخص",
-    "merchantHint": "تُستخدم لاقتراح الفئات تلقائيًا لاحقًا"
+    "merchantHint": "تُستخدم لاقتراح الفئات تلقائيًا لاحقًا",
+    "proposal": {
+      "banner": "بطاقة {bank} ••{last4} غير موجودة في حساباتك بعد",
+      "accept": "إنشاء البطاقة",
+      "title": "إنشاء بطاقة {bank}",
+      "subtitle": "تم التعرف عليها من الرسالة — بطاقة تنتهي بـ {last4}",
+      "name": "اسم البطاقة",
+      "network": "الشبكة",
+      "creditLimit": "حد الائتمان ({currency})",
+      "paymentAccount": "حساب السداد",
+      "linkAccount": "الحساب المرتبط",
+      "cancel": "إلغاء",
+      "create": "إنشاء واستخدام",
+      "created": "تم إنشاء {name}",
+      "failed": "تعذر إنشاء البطاقة"
+    }
   },
   "connectionsDialog": {
     "title": "ربط تحويل الرسائل",
@@ -166,12 +189,38 @@
       "confirm": "تأكيد",
       "skip": "تجاهل",
       "confirmPaid": "تأكيد الدفع",
-      "confirmReceived": "تأكيد الاستلام"
+      "confirmReceived": "تأكيد الاستلام",
+      "confirmTransfer": "تأكيد التحويل"
     },
     "toasts": {
       "confirmed": "تم تسجيل الحدث",
       "skipped": "تم تجاهل الحدث",
       "failed": "تعذر تحديد قرار هذا الحدث"
+    },
+    "transfer": "تحويل",
+    "confirmDialog": {
+      "title": "تأكيد الحدث",
+      "scheduled": "المجدول",
+      "amount": "المبلغ",
+      "sourceAmount": "مبلغ المصدر",
+      "amountHint": "عدّل المبلغ إذا اختلف الفعلي",
+      "transferHint": "تُسجَّل أحداث التحويل بالمبلغ المجدول",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد"
+    }
+  },
+  "loanDue": {
+    "title": "أقساط القروض المستحقة",
+    "subtitle": "سجّل الدفعة أو تجاهلها حتى موعد الاستحقاق التالي",
+    "installmentChip": "القسط {{number}}/{{total}}",
+    "dueOn": "استحقاق {{date}}",
+    "actions": {
+      "record": "تسجيل دفعة",
+      "skip": "تجاهل"
+    },
+    "toasts": {
+      "recorded": "تم تسجيل الدفعة",
+      "failed": "تعذر تسجيل الدفعة"
     }
   },
   "imported": {

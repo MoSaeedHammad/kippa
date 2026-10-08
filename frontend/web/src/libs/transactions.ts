@@ -86,6 +86,31 @@ export const transactionsLib = {
     return transactionId;
   },
 
+  /** Re-categorizes one transaction without touching its ledger lines. */
+  async updateTransactionCategory(
+    householdId: string,
+    transactionId: string,
+    categoryId: string | null,
+    auditUser?: AuditUser
+  ): Promise<void> {
+    const transaction = await dbLib.getDoc(householdId, 'transactions', transactionId) as FinanceTransaction | null;
+    if (!transaction) throw new Error('Transaction not found');
+    await dbLib.setDoc(householdId, 'transactions', transactionId, {
+      ...transaction,
+      categoryId,
+      updatedAt: new Date().toISOString()
+    });
+    if (auditUser) {
+      auditLogLib.logAction(
+        householdId,
+        auditUser,
+        'transaction_updated',
+        `${auditUser.displayName} changed the category of transaction: ${transaction.description || transaction.type}`,
+        { transactionId, categoryId }
+      );
+    }
+  },
+
   async voidTransaction(householdId: string, transactionId: string, auditUser?: AuditUser): Promise<void> {
     const transaction = await dbLib.getDoc(householdId, 'transactions', transactionId) as FinanceTransaction | null;
     if (!transaction) throw new Error('Transaction not found');

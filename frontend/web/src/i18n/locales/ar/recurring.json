@@ -1,0 +1,73 @@
+{
+  "page": {
+    "title": "المعاملات المتكررة",
+    "subtitle": "خطّط للمصروفات والإيرادات والتحويلات المتكررة — كل حدث يظهر في الموافقات عند استحقاقه",
+    "create": "معاملة متكررة جديدة"
+  },
+  "types": {
+    "expense": "مصروف",
+    "income": "إيراد",
+    "transfer": "تحويل"
+  },
+  "frequencies": {
+    "weekly": "أسبوعيًا",
+    "monthly": "شهريًا",
+    "yearly": "سنويًا"
+  },
+  "status": {
+    "paused": "موقوف",
+    "cancelled": "ملغى"
+  },
+  "rule": {
+    "untitled": "قيد متكرر",
+    "occurrences_zero": "لم يُنشأ أي حدث بعد",
+    "occurrences_one": "تم إنشاء حدث واحد",
+    "occurrences_two": "تم إنشاء حدثين",
+    "occurrences_few": "تم إنشاء {{count}} أحداث",
+    "occurrences_many": "تم إنشاء {{count}} حدثًا",
+    "occurrences_other": "تم إنشاء {{count}} حدث",
+    "nextOccurrence": "التالي: {{date}}",
+    "noUpcoming": "لا أحداث قادمة",
+    "pause": "إيقاف",
+    "resume": "استئناف",
+    "cancel": "إلغاء",
+    "edit": "تعديل"
+  },
+  "fields": {
+    "amount": "المبلغ",
+    "account": "الحساب",
+    "sourceAccount": "من حساب",
+    "destinationAccount": "إلى حساب",
+    "destinationAmount": "المبلغ ({{currency}})",
+    "destinationAmountHint": "1 {{source}} → {{destination}} — أدخل المبلغ بعد التحويل",
+    "category": "الفئة",
+    "merchant": "التاجر / المستفيد",
+    "merchantPlaceholder": "التاجر (اختياري)",
+    "description": "الوصف",
+    "occurs": "يتكرر",
+    "startDate": "أول حدث",
+    "endDate": "تاريخ الانتهاء",
+    "hasEnd": "ينتهي بعد تاريخ"
+  },
+  "dialog": {
+    "createTitle": "معاملة متكررة جديدة",
+    "editTitle": "تعديل المعاملة المتكررة",
+    "subtitle": "اختر النوع والمبلغ وعدد المرات — تصل الأحداث إلى الموافقات عند استحقاقها",
+    "cancel": "إلغاء",
+    "create": "إنشاء القاعدة",
+    "save": "حفظ التغييرات"
+  },
+  "empty": {
+    "title": "لا توجد معاملات متكررة بعد",
+    "description": "أنشئ قاعدة للإيجار أو الراتب أو الاشتراكات أو التحويلات الدورية — يطلب منك كِبّا تأكيد كل حدث عند استحقاقه.",
+    "createFirst": "أنشئ أول قاعدة"
+  },
+  "toasts": {
+    "created": "تم إنشاء المعاملة المتكررة",
+    "updated": "تم تحديث المعاملة المتكررة",
+    "failed": "تعذر حفظ المعاملة المتكررة",
+    "pauseSuccess": "تم إيقاف القاعدة",
+    "resumeSuccess": "تم استئناف القاعدة",
+    "cancelSuccess": "تم إلغاء القاعدة"
+  }
+}

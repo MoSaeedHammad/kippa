@@ -7,7 +7,10 @@ import {
   Button,
   Card,
   Chip,
-  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Skeleton,
   Stack,
@@ -23,8 +26,10 @@ import { ImportedBatchCard } from './components/ImportedBatchCard';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
+import { TransactionListItem, TransactionListItemDivider, ListItemSpinner } from '@/features/transactions/components/TransactionListItem';
 import { Money } from '@/components/Money';
 import { CheckCircleIcon, DocumentUploadIcon, HistoryIcon, KeyIcon } from '@/components/AppIcon';
+import { providerBankName } from '@/libs/transactionPresentation';
 import { useAppContext } from '@/hooks/useAppContext';
 import {
   useAccounts,
@@ -35,18 +40,20 @@ import {
   useResolvedPendingFinancialMessages,
   useRestoreDiscardedPendingFinancialMessageMutation,
 } from '@/hooks/useFinance';
-import type { AccountType, PendingFinancialMessage } from '@kippa/domain';
+import type { AccountType, PendingFinancialMessage, ResolvedPendingFinancialMessage } from '@kippa/domain';
 import { groupImportedPending } from '@/libs/messageHistoryImport';
 import { ledgerLib } from '@/libs/ledger';
 import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
 import { useQueryClient } from '@tanstack/react-query';
 import { CreateAccountDialog, CreateCategoryDialog } from './components/QuickCreateDialogs';
+import { AccountProposalDialog } from './components/AccountProposalDialog';
 import { useMessageConnections } from './hooks/useMessageConnections';
 import { useSharedBalanceEntries } from '@/features/shared-balance/hooks/useSharedBalance';
 import { pendingForViewerCount } from '@/libs/approvals';
 import { SharedBalanceApprovalsCard } from './components/SharedBalanceApprovalsCard';
 import { TransferApprovalsCard } from './components/TransferApprovalsCard';
 import { RecurringConfirmationsCard } from './components/RecurringConfirmationsCard';
+import { LoanDueCard } from './components/LoanDueCard';
 import { useRecurringDrafts } from '@/features/transactions/hooks/useRecurringTransactions';
 import { useDraftTransfers } from '@/features/transactions/hooks/useTransferApprovals';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
@@ -100,6 +107,8 @@ export function PendingTransactions() {
   const queryClient = useQueryClient();
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [detailResolved, setDetailResolved] = useState<ResolvedPendingFinancialMessage | null>(null);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [creatingAccount, setCreatingAccount] = useState(false);
   const connections = useMessageConnections(householdId);
@@ -358,6 +367,7 @@ export function PendingTransactions() {
           <SharedBalanceApprovalsCard entries={pendingShared} />
           <TransferApprovalsCard members={members} />
           <RecurringConfirmationsCard />
+          <LoanDueCard />
           {importBatches.map((batch) => (
             <ImportedBatchCard
               key={batch.batchId}
@@ -383,41 +393,28 @@ export function PendingTransactions() {
       ) : livePending.length === 0 ? null : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 800 }}>{t('reviewTab.detectedTitle')}</Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.25 }}>{t('reviewTab.detectedHint')}</Typography>
+            <CardHeading icon={<HistoryIcon variant="Bulk" />} title={t('reviewTab.detectedTitle')} subtitle={t('reviewTab.detectedHint')} />
           </Box>
           <Divider />
           {livePending.map((item, index) => (
             <Box key={item.id}>
-              <Box
-                component="button"
-                type="button"
+              <TransactionListItem
+                leading={(itemStates[item.id] ?? 'idle') === 'idle'
+                  ? <TransactionIcon type={item.kind} size={40} />
+                  : <ListItemSpinner />}
+                title={item.description}
+                amount={<Money amount={item.amount} code={item.currency} />}
+                subtitle={[
+                  providerBankName(item.provider)?.toUpperCase() ?? item.provider.toUpperCase(),
+                  item.kind,
+                  item.date,
+                  item.accountHintLast4 ? `•• ${item.accountHintLast4}` : undefined,
+                  item.matchedTemplateName ? t('reviewTab.templateChip', { name: item.matchedTemplateName }) : undefined,
+                ].filter(Boolean).join(' · ')}
                 onClick={() => openReview(item)}
                 disabled={(itemStates[item.id] ?? 'idle') !== 'idle'}
-                sx={{
-                  width: '100%', minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.25,
-                  display: 'flex', alignItems: 'center', gap: 1.5, border: 0,
-                  bgcolor: 'transparent', color: 'text.primary', textAlign: 'start', cursor: 'pointer',
-                  opacity: (itemStates[item.id] ?? 'idle') === 'idle' ? 1 : 0.6,
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                {(itemStates[item.id] ?? 'idle') === 'idle'
-                  ? <TransactionIcon type={item.kind} size={40} />
-                  : <CircularProgress size={32} />}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 800, flex: 1 }}>{item.description}</Typography>
-                    <Typography sx={{ fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                      <Money amount={item.amount} code={item.currency} />
-                    </Typography>
-                  </Stack>
-                  <Typography noWrap sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.25 }}>
-                    {item.provider.toUpperCase()} · {item.kind} · {item.date}
-                  </Typography>
-                </Box>
-              </Box>
-              {index < livePending.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
+              />
+              {index < livePending.length - 1 && <TransactionListItemDivider />}
             </Box>
           ))}
         </Card>
@@ -447,46 +444,109 @@ export function PendingTransactions() {
             const restoring = restoreMutation.isPending && restoreMutation.variables?.pendingId === item.id;
             return (
               <Box key={item.id}>
-                <Box sx={{ minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.25, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <TransactionIcon type={item.snapshot.kind} size={40} />
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography noWrap sx={{ fontSize: 13.5, fontWeight: 800, flex: 1 }}>{item.snapshot.description}</Typography>
-                      <Typography sx={{ fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                        <Money amount={item.snapshot.amount} code={item.snapshot.currency} />
-                      </Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
-                      <Chip
-                        label={item.state === 'approved' ? t('historyTab.approved') : t('historyTab.discarded')}
-                        color={item.state === 'approved' ? 'success' : 'default'}
-                        size="small"
-                        variant="outlined"
-                      />
-                      <Typography noWrap sx={{ fontSize: 11.5, color: 'text.secondary' }}>
-                        {new Date(item.resolvedAt).toLocaleString()} · {item.resolvedByDisplayName}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                  {item.state === 'discarded' && (
+                <TransactionListItem
+                  leading={<TransactionIcon type={item.snapshot.kind} size={40} />}
+                  title={item.snapshot.description}
+                  amount={<Money amount={item.snapshot.amount} code={item.snapshot.currency} />}
+                  metaChips={(
+                    <Chip
+                      label={item.state === 'approved' ? t('historyTab.approved') : t('historyTab.discarded')}
+                      color={item.state === 'approved' ? 'success' : 'default'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  )}
+                  subtitle={[
+                    providerBankName(item.snapshot.provider)?.toUpperCase() ?? item.snapshot.provider.toUpperCase(),
+                    item.snapshot.kind,
+                    item.snapshot.date,
+                    item.snapshot.accountHintLast4 ? `•• ${item.snapshot.accountHintLast4}` : undefined,
+                    new Date(item.resolvedAt).toLocaleString(),
+                    item.resolvedByDisplayName,
+                  ].filter(Boolean).join(' · ')}
+                  onClick={() => setDetailResolved(item)}
+                  trailing={item.state === 'discarded' ? (
                     <Button size="small" variant="outlined" disabled={restoring} onClick={() => restoreDiscarded(item.id)}>
                       {restoring ? t('historyTab.restoring') : t('historyTab.restore')}
                     </Button>
-                  )}
-                </Box>
-                {index < resolved.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
+                  ) : undefined}
+                />
+                {index < resolved.length - 1 && <TransactionListItemDivider />}
               </Box>
             );
           })}
         </Card>
       ))}
 
-      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} merchant={merchant} onMerchantChange={setMerchant} onCreateAccount={() => setAccountDialogOpen(true)} onCreateCategory={() => setCategoryDialogOpen(true)} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} members={members} sharedBalanceTag={sharedBalanceTag} onSharedBalanceTagChange={setSharedBalanceTag} allocationsEnabled={allocationsEnabled} allocations={allocations} onAllocationsEnabledChange={setAllocationsEnabled} onAllocationsChange={setAllocations} />
+      <PendingReviewDialog accountId={accountId} accounts={availableAccounts} busy={reviewBusy} categories={availableCategories} categoryId={categoryId} confirmDiscard={confirmDiscard} convertedAmount={convertedAmount} destinationAccountId={destinationAccountId} destinationAccounts={availableDestinationAccounts} item={selected} merchant={merchant} onMerchantChange={setMerchant} onCreateAccount={() => setAccountDialogOpen(true)} onCreateCategory={() => setCategoryDialogOpen(true)} onAccountChange={setAccountId} onApprove={approve} onCategoryChange={setCategoryId} onClose={closeReview} onConvertedAmountChange={setConvertedAmount} onDestinationChange={setDestinationAccountId} onDiscard={discard} state={selectedState} members={members} sharedBalanceTag={sharedBalanceTag} onSharedBalanceTagChange={setSharedBalanceTag} allocationsEnabled={allocationsEnabled} allocations={allocations} onAllocationsEnabledChange={setAllocationsEnabled} onAllocationsChange={setAllocations} onAcceptProposal={() => setProposalDialogOpen(true)} />
 
       <MessageConnectionDialog busy={connections.busy} credentials={connections.credentials} generated={connections.generated} onClose={() => setSetupOpen(false)} onCopy={connections.copy} onCreate={connections.create} onRevoke={connections.revoke} open={setupOpen} />
 
       <CreateCategoryDialog open={categoryDialogOpen} busy={creatingCategory} categoryType={selected?.kind === 'income' ? 'income' : 'expense'} onClose={() => setCategoryDialogOpen(false)} onCreate={(name) => void createCategoryAndSelect(name)} />
       <CreateAccountDialog open={accountDialogOpen} busy={creatingAccount} defaultCurrency={selected?.currency ?? 'EGP'} onClose={() => setAccountDialogOpen(false)} onCreate={(input) => void createAccountAndSelect(input)} />
+      {detailResolved && (
+        <Dialog open onClose={() => setDetailResolved(null)} fullWidth maxWidth="xs">
+          <DialogTitle>
+            {detailResolved.snapshot.description}
+            <Typography component="span" variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              {t('historyTab.resolvedOn', { name: detailResolved.resolvedByDisplayName, date: new Date(detailResolved.resolvedAt).toLocaleString() })}
+            </Typography>
+          </DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="amountValue">
+                  <Money amount={detailResolved.snapshot.amount} code={detailResolved.snapshot.currency} maxDigits={2} />
+                </Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip
+                    label={detailResolved.state === 'approved' ? t('historyTab.approved') : t('historyTab.discarded')}
+                    color={detailResolved.state === 'approved' ? 'success' : 'default'}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Box>
+              </Box>
+              <Divider />
+              <Stack spacing={1}>
+                {([
+                  [t('historyTab.detailBank'), providerBankName(detailResolved.snapshot.provider)?.toUpperCase() ?? detailResolved.snapshot.provider.toUpperCase()],
+                  [t('historyTab.detailKind'), detailResolved.snapshot.kind],
+                  [t('historyTab.detailDate'), detailResolved.snapshot.date],
+                  detailResolved.snapshot.accountHintLast4 ? [t('historyTab.detailCard'), `•• ${detailResolved.snapshot.accountHintLast4}`] : null,
+                  detailResolved.snapshot.counterparty ? [t('historyTab.detailMerchant'), detailResolved.snapshot.counterparty] : null,
+                ].filter(Boolean) as [string, string][]).map(([label, value]) => (
+                  <Stack key={label} direction="row" justifyContent="space-between" spacing={2}>
+                    <Typography variant="fieldHint" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{label}</Typography>
+                    <Typography variant="body2" sx={{ textAlign: 'end', minWidth: 0 }}>{value}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+              <Divider />
+              <Box>
+                <Typography variant="sectionLabel" color="primary">{t('reviewDialog.bankMessage')}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{detailResolved.snapshot.messagePreview}</Typography>
+              </Box>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button variant="contained" onClick={() => setDetailResolved(null)}>{t('historyTab.close')}</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {proposalDialogOpen && selected?.suggestedAccountProposal && (
+        <AccountProposalDialog
+          item={selected}
+          accounts={accounts}
+          busy={reviewBusy}
+          onClose={() => setProposalDialogOpen(false)}
+          onCreated={(accountId) => {
+            setProposalDialogOpen(false);
+            setAccountId(accountId);
+          }}
+        />
+      )}
     </Stack>
   );
 }

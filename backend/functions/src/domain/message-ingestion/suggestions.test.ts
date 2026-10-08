@@ -39,4 +39,29 @@ describe('pickSuggestions', () => {
       kind: 'expense', provider: 'bank-misr', amount: 10, currency: 'EGP', date: '2026-08-27', description: 'WE-Mobile-Pre', accountHintLast4: '2508', accountKind: 'credit-card',
     })).toMatchObject({ accountId: 'bm-card-account', conversionRequired: false });
   });
+
+  it('prefers a card issued by the message provider when two cards share the last4', () => {
+    const otherBankCredit: Card = { ...creditCard, id: 'cib-2508', name: 'CIB Card', bankId: 'cib', parentAccountId: 'bm-card-account' };
+    const cibAccount: Account = { ...egpCredit, id: 'cib-account', name: 'CIB Credit' };
+    const result = pickSuggestions([...accounts, cibAccount], [otherBankCredit, creditCard], {
+      kind: 'expense', provider: 'bank-misr', amount: 10, currency: 'EGP', date: '2026-08-27', description: 'WE', accountHintLast4: '2508', accountKind: 'credit-card',
+    });
+    expect(result.accountId).toBe('bm-card-account');
+  });
+
+  it('proposes creating the card when the message names an unknown card', () => {
+    const result = pickSuggestions(accounts, [], {
+      kind: 'expense', provider: 'bank-misr', amount: 10, currency: 'EGP', date: '2026-08-27', description: 'WE-Mobile-Pre', accountHintLast4: '2508', accountKind: 'credit-card',
+    });
+    expect(result.accountId).toBeUndefined();
+    expect(result.accountProposal).toEqual({ bankId: 'banque-misr', cardKind: 'credit', last4: '2508' });
+  });
+
+  it('proposes a debit card for an unknown debit-card message even with an account fallback', () => {
+    const result = pickSuggestions([egpRunning], [], {
+      kind: 'expense', provider: 'bank-misr', amount: 500, currency: 'EGP', date: '2026-08-27', description: 'POS purchase', accountHintLast4: '9999', accountKind: 'bank',
+    });
+    expect(result.accountId).toBe('bm-egp');
+    expect(result.accountProposal).toEqual({ bankId: 'banque-misr', cardKind: 'debit', last4: '9999' });
+  });
 });

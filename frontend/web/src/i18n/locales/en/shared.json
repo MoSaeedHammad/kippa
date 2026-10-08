@@ -30,6 +30,9 @@
   "accountPicker": {
     "tapToSelect": "Tap to select"
   },
+  "multiAccountPicker": {
+    "selectedCount": "{{count}} selected"
+  },
   "emptyLayout": {
     "logoAlt": "Kippa Logo"
   },

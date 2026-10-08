@@ -46,7 +46,10 @@
     "activityLog": "Activity Log",
     "remindersAndAlerts": "Reminders & Alerts",
     "allSpaces": "All spaces",
-    "importHistory": "Import history"
+    "importHistory": "Import history",
+    "recurring": "Recurring",
+    "spending": "Spending",
+    "merchants": "Merchants"
   },
   "sections": {
     "money": "Money",

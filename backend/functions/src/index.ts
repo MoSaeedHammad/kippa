@@ -26,6 +26,7 @@ export {
 } from './features/message-ingestion/messageIngestion.js';
 export { importMessageHistory, decideImportBatch } from './features/message-ingestion/messageHistoryImport.js';
 export { importRecordHistory } from './features/message-ingestion/recordHistoryImport.js';
+export { upsertMessageTemplate, testMessageTemplate } from './features/message-ingestion/messageTemplates.js';
 export { glmProxy } from './features/ai/glmProxy.js';
 export { upsertCategoryRule } from './features/categories/categoryRules.js';
 export {

@@ -33,7 +33,7 @@ import {
   FabmisrPattern,
   EgbankPattern,
 } from './bankBackgrounds';
-import { tierGradient } from './bankGradients';
+import { tierGradient, BANQUE_MISR_GRADIENT_CREDIT, BANQUE_MISR_GRADIENT_DEBIT } from './bankGradients';
 
 export type CardTier = {
   id: string;
@@ -164,7 +164,11 @@ export const BANKS: Record<string, BankDef> = {
     id: 'banque-misr',
     name: 'Banque Misr',
     logo: ({ kind }) => <BanqueMisrLogo kind={kind} />,
-    background: ({ tierId }) => ({ css: tierGradient(tierId, 'banque-misr'), overlay: <BanqueMisrPattern /> }),
+    background: ({ kind }) => ({
+      // BM signature faces: black for credit, gold for debit (tier-independent).
+      css: kind === 'credit' ? BANQUE_MISR_GRADIENT_CREDIT : BANQUE_MISR_GRADIENT_DEBIT,
+      overlay: <BanqueMisrPattern />,
+    }),
     tiers: BANQUE_MISR_TIERS,
     accentColor: '#C62828',
   },

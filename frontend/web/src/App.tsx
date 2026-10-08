@@ -29,6 +29,9 @@ const SharedBalancePage = lazy(() => import('@/features/shared-balance/SharedBal
 const SharedAccountsPage = lazy(() => import('@/features/shared-accounts/SpacesPage').then(m => ({ default: m.SpacesPage })));
 const Loans = lazy(() => import('@/features/loans/Loans').then(m => ({ default: m.Loans })));
 const MessageImport = lazy(() => import('@/features/message-import/MessageImport').then(m => ({ default: m.MessageImport })));
+const Recurring = lazy(() => import('@/features/recurring/Recurring').then(m => ({ default: m.Recurring })));
+const SpendingView = lazy(() => import('@/features/analytics/SpendingView').then(m => ({ default: m.SpendingView })));
+const MerchantsView = lazy(() => import('@/features/analytics/MerchantsView').then(m => ({ default: m.MerchantsView })));
 
 
 export default function App() {
@@ -95,6 +98,9 @@ export default function App() {
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="ai" element={<AiAssistant />} />
                 <Route path="loans" element={<Loans />} />
+                <Route path="recurring" element={<Recurring />} />
+                <Route path="spending" element={<SpendingView />} />
+                <Route path="merchants" element={<MerchantsView />} />
               </Route>
             </Routes>
           </Suspense>

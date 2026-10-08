@@ -1,0 +1,73 @@
+{
+  "page": {
+    "title": "Recurring transactions",
+    "subtitle": "Plan repeating expenses, income and transfers — each occurrence waits in Approvals when it comes due",
+    "create": "New recurring transaction"
+  },
+  "types": {
+    "expense": "EXPENSE",
+    "income": "INCOME",
+    "transfer": "TRANSFER"
+  },
+  "frequencies": {
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "status": {
+    "paused": "Paused",
+    "cancelled": "Cancelled"
+  },
+  "rule": {
+    "untitled": "Recurring entry",
+    "occurrences_one": "{{count}} occurrence created",
+    "occurrences_other": "{{count}} occurrences created",
+    "nextOccurrence": "Next: {{date}}",
+    "noUpcoming": "No upcoming occurrences",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "occurrences_zero": "{{count}} occurrences created",
+    "occurrences_two": "{{count}} occurrences created",
+    "occurrences_few": "{{count}} occurrences created",
+    "occurrences_many": "{{count}} occurrences created"
+  },
+  "fields": {
+    "amount": "Amount",
+    "account": "Account",
+    "sourceAccount": "From account",
+    "destinationAccount": "To account",
+    "destinationAmount": "Amount ({{currency}})",
+    "destinationAmountHint": "1 {{source}} → {{destination}} — enter the converted amount",
+    "category": "Category",
+    "merchant": "Merchant / beneficiary",
+    "merchantPlaceholder": "Merchant (optional)",
+    "description": "Description",
+    "occurs": "Occurs",
+    "startDate": "First occurrence",
+    "endDate": "End date",
+    "hasEnd": "End after a date"
+  },
+  "dialog": {
+    "createTitle": "New recurring transaction",
+    "editTitle": "Edit recurring transaction",
+    "subtitle": "Choose the type, the amount and how often it occurs — occurrences arrive in Approvals when due",
+    "cancel": "Cancel",
+    "create": "Create rule",
+    "save": "Save changes"
+  },
+  "empty": {
+    "title": "No recurring transactions yet",
+    "description": "Create a rule for rent, salary, subscriptions or regular transfers — Kippa asks you to confirm each occurrence when it comes due.",
+    "createFirst": "Create your first rule"
+  },
+  "toasts": {
+    "created": "Recurring transaction created",
+    "updated": "Recurring transaction updated",
+    "failed": "Could not save the recurring transaction",
+    "pauseSuccess": "Rule paused",
+    "resumeSuccess": "Rule resumed",
+    "cancelSuccess": "Rule cancelled"
+  }
+}

@@ -92,24 +92,29 @@ export function NbeLogo({ kind: _kind }: { kind: CardKind }) {
 
 // ---------------------------------------------------------------------------
 // Banque Misr — stylized lotus flower (pointed petals fanning upward)
+// Gold emblem on the black credit face, white on the gold debit face.
 // ---------------------------------------------------------------------------
-export function BanqueMisrLogo({ kind: _kind }: { kind: CardKind }) {
+export function BanqueMisrLogo({ kind }: { kind: CardKind }) {
+  const gold = kind === 'credit';
+  const emblem = gold ? '#D4AF37' : '#ffffff';
+  const emblemSoft = gold ? 'rgba(212,175,55,0.72)' : 'rgba(255,255,255,0.7)';
+  const emblemFaint = gold ? 'rgba(212,175,55,0.45)' : 'rgba(255,255,255,0.45)';
   // 5 pointed petals radiating up from a base, symmetric.
   return (
     <Stack direction="row" alignItems="center" spacing={1}>
       <svg viewBox="0 0 24 24" width={24} height={24} style={{ flexShrink: 0 }}>
         {/* base */}
-        <path d="M7,19 C9,17 15,17 17,19 L16,21 L8,21 Z" fill="#ffffff" opacity="0.85" />
+        <path d="M7,19 C9,17 15,17 17,19 L16,21 L8,21 Z" fill={emblem} opacity="0.85" />
         {/* center petal */}
-        <path d="M12,3 C12.8,7 12.8,11 12,15 C11.2,11 11.2,7 12,3 Z" fill="#ffffff" />
+        <path d="M12,3 C12.8,7 12.8,11 12,15 C11.2,11 11.2,7 12,3 Z" fill={emblem} />
         {/* inner-left petal */}
-        <path d="M9,4.5 C10,8 10.5,12 9.5,15.5 C8.2,12 7.8,8.5 9,4.5 Z" fill="rgba(255,255,255,0.7)" />
+        <path d="M9,4.5 C10,8 10.5,12 9.5,15.5 C8.2,12 7.8,8.5 9,4.5 Z" fill={emblemSoft} />
         {/* inner-right petal */}
-        <path d="M15,4.5 C14,8 13.5,12 14.5,15.5 C15.8,12 16.2,8.5 15,4.5 Z" fill="rgba(255,255,255,0.7)" />
+        <path d="M15,4.5 C14,8 13.5,12 14.5,15.5 C15.8,12 16.2,8.5 15,4.5 Z" fill={emblemSoft} />
         {/* outer-left petal */}
-        <path d="M6,7 C7.5,10 8,13 7,16 C5.5,13.5 5,10.5 6,7 Z" fill="rgba(255,255,255,0.45)" />
+        <path d="M6,7 C7.5,10 8,13 7,16 C5.5,13.5 5,10.5 6,7 Z" fill={emblemFaint} />
         {/* outer-right petal */}
-        <path d="M18,7 C16.5,10 16,13 17,16 C18.5,13.5 19,10.5 18,7 Z" fill="rgba(255,255,255,0.45)" />
+        <path d="M18,7 C16.5,10 16,13 17,16 C18.5,13.5 19,10.5 18,7 Z" fill={emblemFaint} />
       </svg>
       <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
         <Typography sx={smallNameStyle}>Banque</Typography>

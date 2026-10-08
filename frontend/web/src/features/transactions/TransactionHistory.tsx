@@ -1,22 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
   Stack,
-  Typography,
   TextField,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Card,
   Skeleton,
   Button,
@@ -25,6 +18,7 @@ import { SearchIcon } from '@/components/AppIcon';
 
 import {
   useAccounts,
+  useCards,
   useCategories,
   useTransactions,
   useLedgerLines,
@@ -36,10 +30,13 @@ import {
 import { useAppContext } from '@/hooks/useAppContext';
 import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { EditTransactionDialog } from './components/EditTransactionDialog';
+import { TransactionDetailDialog } from './components/TransactionDetailDialog';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
+import { PageHeader } from '@/features/shared/components/PageHeader';
 import { useTransactionHistoryUi } from './hooks/useTransactionHistoryUi';
 import { TransactionHistoryRow } from './components/TransactionHistoryRow';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
+import type { FinanceTransaction } from '@kippa/domain';
 
 export function TransactionHistory() {
   const { t } = useTranslation('transactions');
@@ -51,6 +48,7 @@ export function TransactionHistory() {
   
   // Filter States
   const { editingTx, loadMore, resetPage, searchTerm, selectedAccount, selectedCategory, selectedCycleId, setEditingTx, setSearchTerm, setSelectedAccount, setSelectedCategory, setSelectedCycleId, visibleCount } = useTransactionHistoryUi();
+  const [detailTx, setDetailTx] = useState<FinanceTransaction | null>(null);
   const selectedType = searchParams.get('type') ?? 'all';
 
   const handleSearch = (value: string) => { setSearchTerm(value); resetPage(); };
@@ -65,6 +63,7 @@ export function TransactionHistory() {
 
   // Queries & Mutations
   const { data: accounts = [], isLoading: accountsLoading } = useAccounts(householdId);
+  const { data: cards = [] } = useCards(householdId);
   const { data: members = [] } = useSharedBalanceMembers(householdId);
   // The "Issued by" column only earns its space when several people share the space.
   const memberNames = new Map(members.map((member) => [member.uid, member.displayName]));
@@ -140,16 +139,7 @@ export function TransactionHistory() {
   return (
     <Box sx={{ py: 0.5 }}>
       <Stack spacing={2.5}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
-          <Box>
-            <Typography variant="h1" sx={{ fontSize: '24px', fontWeight: 800, color: 'text.primary' }}>
-              {t('title')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {t('subtitle')}
-            </Typography>
-          </Box>
-        </Box>
+        <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
         <Stack spacing={1.5}>
           <TextField
@@ -222,37 +212,34 @@ export function TransactionHistory() {
           </Box>
         </Stack>
 
-        {/* Table Container */}
-        <TableContainer component={Card} sx={{ border: 0, boxShadow: 'none', overflow: 'hidden', '&:hover': { transform: 'none', boxShadow: 'none' } }}>
-          <Table sx={{ tableLayout: { xs: 'fixed', md: 'auto' } }}>
-            <TableHead>
-              <TableRow>
-                <TableCell align="center" sx={{ width: 64, py: 1.75 }}>{t('table.type')}</TableCell>
-                <TableCell sx={{ py: 1.75 }}>{t('table.transaction')}</TableCell>
-                <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.merchant')}</TableCell>
-                <TableCell sx={{ py: 1.75, display: { xs: 'none', lg: 'table-cell' } }}>{t('table.entryType')}</TableCell>
-                <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.accountInfo')}</TableCell>
-                {showIssuer && <TableCell sx={{ py: 1.75, display: { xs: 'none', md: 'table-cell' } }}>{t('table.issuedBy')}</TableCell>}
-                <TableCell align="right" sx={{ width: { xs: 120, sm: 160 }, py: 1.75 }}>{t('table.amount')}</TableCell>
-                <TableCell align="center" sx={{ width: { xs: 92, sm: 112 }, py: 1.75 }}>{t('table.actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredTxs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={showIssuer ? 8 : 7} sx={{ p: 2, borderBottom: 0 }}>
-                    <EmptyLayout
-                      icon={<SearchIcon sx={{ fontSize: 28 }} />}
-                      title={t('empty.title')}
-                      description={t('empty.description')}
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredTxs.slice(0, visibleCount).map((transaction) => <TransactionHistoryRow key={transaction.id} transaction={transaction} accounts={accounts} categories={categories} ledgerLines={ledgerLines} baseCurrency={baseCurrency} maskDigits={maskDigits} onEdit={setEditingTx} onVoid={handleVoid} issuedByName={showIssuer ? (memberNames.get(transaction.createdBy) ?? transaction.createdBy.slice(0, 6)) : undefined} />)
-              )}
-            </TableBody>
-          </Table>
+        {/* Approval-style transaction list */}
+        <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
+          {filteredTxs.length === 0 ? (
+            <Box sx={{ p: 2 }}>
+              <EmptyLayout
+                icon={<SearchIcon sx={{ fontSize: 28 }} />}
+                title={t('empty.title')}
+                description={t('empty.description')}
+              />
+            </Box>
+          ) : (
+            filteredTxs.slice(0, visibleCount).map((transaction) => (
+              <TransactionHistoryRow
+                key={transaction.id}
+                transaction={transaction}
+                accounts={accounts}
+                categories={categories}
+                cards={cards}
+                ledgerLines={ledgerLines}
+                baseCurrency={baseCurrency}
+                maskDigits={maskDigits}
+                onEdit={setEditingTx}
+                onVoid={handleVoid}
+                onOpen={setDetailTx}
+                issuedByName={showIssuer ? (memberNames.get(transaction.createdBy) ?? transaction.createdBy.slice(0, 6)) : undefined}
+              />
+            ))
+          )}
           {visibleCount < filteredTxs.length && (
             <Box sx={{ textAlign: 'center', py: 1.5 }}>
               <Button
@@ -264,7 +251,7 @@ export function TransactionHistory() {
               </Button>
             </Box>
           )}
-        </TableContainer>
+        </Card>
       </Stack>
 
       {/* Shared Edit Dialog */}
@@ -272,6 +259,18 @@ export function TransactionHistory() {
         open={Boolean(editingTx)}
         transaction={editingTx}
         onClose={() => setEditingTx(null)}
+      />
+
+      {/* Read-only detail popup (F4) */}
+      <TransactionDetailDialog
+        open={Boolean(detailTx)}
+        transaction={detailTx}
+        ledgerLines={ledgerLines}
+        accounts={accounts}
+        cards={cards}
+        categories={categories}
+        issuedByName={showIssuer && detailTx ? (memberNames.get(detailTx.createdBy) ?? detailTx.createdBy.slice(0, 6)) : undefined}
+        onClose={() => setDetailTx(null)}
       />
     </Box>
   );

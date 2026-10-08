@@ -128,5 +128,64 @@
     },
     "notTransactions": "Credit-card payments and statement/login alerts are detected but never create transactions — card payments open the card reconciliation flow instead.",
     "otherBanks": "The sender identifies the bank automatically, so HSBC and Bank Misr messages can be mixed in one export. Messages from other banks, or templates that changed, are counted as not recognized in the import result so you can spot what is missing."
+  },
+  "templates": {
+    "title": "Message templates",
+    "subtitle": "Teach Kippa your bank's message format with a regex — matched fields become pending transactions",
+    "new": "New template",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No templates yet. Create one to capture messages your bank sends in a format Kippa doesn't know.",
+    "test": "Test on sample",
+    "noMatch": "No match — check the pattern and the groups.",
+    "matchTitle": "{{kind}} · {{amount}} {{currency}}",
+    "kinds": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer"
+    },
+    "cardKinds": {
+      "credit": "Credit card",
+      "debit": "Debit card"
+    },
+    "fields": {
+      "name": "Template name",
+      "pattern": "Regex pattern (named groups)",
+      "amountGroup": "Amount group",
+      "currencyGroup": "Currency group",
+      "fallbackCurrency": "Fallback currency",
+      "merchantGroup": "Merchant group",
+      "last4Group": "Card last-4 group",
+      "dateGroup": "Date group",
+      "dateFormat": "Date format",
+      "cardKind": "Card kind",
+      "bank": "Bank",
+      "descriptionGroup": "Description group",
+      "sample": "Sample message",
+      "none": "—"
+    },
+    "help": {
+      "title": "How to write a template",
+      "intro": "Write a JavaScript regular expression and wrap the interesting parts in named groups. Kippa runs it against every message the built-in parser can't read.",
+      "patternLabel": "Example pattern",
+      "sampleLabel": "Example message it matches",
+      "groupsLabel": "Groups used",
+      "groupsBody": "Map the group names in the fields above — here: {{groups}}. The amount group is required; currency falls back to the fallback currency; last4 powers card detection and account proposals.",
+      "outro": "Use the tester with a real message before saving. Templates only apply to new and re-imported messages."
+    },
+    "dialog": {
+      "createTitle": "New message template",
+      "editTitle": "Edit message template",
+      "subtitle": "A named-group regex that extracts amount, currency, date, merchant and card digits",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "save": "Save changes"
+    },
+    "toasts": {
+      "created": "Template created",
+      "updated": "Template updated",
+      "removed": "Template deleted",
+      "failed": "Could not save the template"
+    }
   }
 }

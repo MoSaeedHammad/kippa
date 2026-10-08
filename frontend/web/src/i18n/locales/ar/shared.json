@@ -30,6 +30,9 @@
   "accountPicker": {
     "tapToSelect": "اضغط للاختيار"
   },
+  "multiAccountPicker": {
+    "selectedCount": "تم اختيار {{count}}"
+  },
   "emptyLayout": {
     "logoAlt": "شعار Kippa"
   },

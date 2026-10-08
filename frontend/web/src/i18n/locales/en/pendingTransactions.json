@@ -29,7 +29,8 @@
     "emptyTitle": "Nothing waiting for you",
     "emptyDescription": "Detected bank activity will appear here. No ledger entry is created until you approve it.",
     "detectedTitle": "Detected activity",
-    "detectedHint": "Tap an item to review it"
+    "detectedHint": "Tap an item to review it",
+    "templateChip": "template: {{name}}"
   },
   "historyTab": {
     "emptyTitle": "No review history yet",
@@ -39,7 +40,14 @@
     "approved": "Approved",
     "discarded": "Discarded",
     "restoring": "Restoring…",
-    "restore": "Restore"
+    "restore": "Restore",
+    "resolvedOn": "Resolved by {{name}} · {{date}}",
+    "detailBank": "Bank",
+    "detailKind": "Type",
+    "detailDate": "Date",
+    "detailCard": "Card",
+    "detailMerchant": "Merchant / beneficiary",
+    "close": "Close"
   },
   "reviewDialog": {
     "transferTitle": "Review transfer",
@@ -77,7 +85,22 @@
     "newCategory": "New category",
     "newAccount": "New account",
     "merchant": "Merchant / person",
-    "merchantHint": "Used to auto-suggest categories next time"
+    "merchantHint": "Used to auto-suggest categories next time",
+    "proposal": {
+      "banner": "{bank} card ••{last4} is not in your accounts yet",
+      "accept": "Create card",
+      "title": "Create {bank} card",
+      "subtitle": "Detected from the message — card ending {last4}",
+      "name": "Card name",
+      "network": "Network",
+      "creditLimit": "Credit limit ({currency})",
+      "paymentAccount": "Payment account",
+      "linkAccount": "Linked account",
+      "cancel": "Cancel",
+      "create": "Create & use it",
+      "created": "Created {name}",
+      "failed": "Could not create the card"
+    }
   },
   "connectionsDialog": {
     "title": "Connect SMS forwarding",
@@ -166,12 +189,38 @@
       "confirm": "Confirm",
       "skip": "Skip",
       "confirmPaid": "Confirm paid",
-      "confirmReceived": "Confirm received"
+      "confirmReceived": "Confirm received",
+      "confirmTransfer": "Confirm transfer"
     },
     "toasts": {
       "confirmed": "Occurrence recorded",
       "skipped": "Occurrence skipped",
       "failed": "Could not decide this occurrence"
+    },
+    "transfer": "Transfer",
+    "confirmDialog": {
+      "title": "Confirm occurrence",
+      "scheduled": "Scheduled",
+      "amount": "Amount",
+      "sourceAmount": "Source amount",
+      "amountHint": "Adjust if the actual amount differs",
+      "transferHint": "Transfer occurrences post at the scheduled amount",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    }
+  },
+  "loanDue": {
+    "title": "Loan installments due",
+    "subtitle": "Record the payment or skip it until the next due date",
+    "installmentChip": "Installment {{number}}/{{total}}",
+    "dueOn": "Due {{date}}",
+    "actions": {
+      "record": "Record payment",
+      "skip": "Skip"
+    },
+    "toasts": {
+      "recorded": "Payment recorded",
+      "failed": "Could not record the payment"
     }
   },
   "imported": {

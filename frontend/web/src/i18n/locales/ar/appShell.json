@@ -46,7 +46,10 @@
     "activityLog": "سجل النشاط",
     "remindersAndAlerts": "التذكيرات والتنبيهات",
     "allSpaces": "كل الفضاءات",
-    "importHistory": "استيراد السجل"
+    "importHistory": "استيراد السجل",
+    "recurring": "المتكررة",
+    "spending": "المصروفات",
+    "merchants": "التجّار"
   },
   "sections": {
     "money": "المال",

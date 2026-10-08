@@ -1,11 +1,35 @@
 import type { Account, Card } from '@kippa/domain';
 import type { ParsedFinancialMessage } from './parser.js';
 
+export type AccountProposal = {
+  /** Frontend bank preset id (e.g. 'banque-misr') derived from the message provider. */
+  bankId: string;
+  cardKind: 'debit' | 'credit';
+  last4: string;
+};
+
 export type Suggestions = {
   accountId?: string;
   destinationAccountId?: string;
   conversionRequired: boolean;
+  /** Set when the message names a card that does not exist yet — propose creating it. */
+  accountProposal?: AccountProposal;
 };
+
+/** Backend message `provider` labels → frontend bank preset ids (banks.tsx). */
+export const PROVIDER_BANK_IDS: Record<string, string> = {
+  'hsbc': 'hsbc',
+  'bank-misr': 'banque-misr',
+  'banque-misr': 'banque-misr',
+  'cib': 'cib',
+  'nbe': 'nbe',
+  'qnb': 'qnb',
+};
+
+export function providerToBankId(provider: string | undefined): string {
+  if (!provider) return 'other';
+  return PROVIDER_BANK_IDS[provider.toLowerCase()] ?? 'other';
+}
 
 /**
  * Pure account/card suggestion logic for a parsed bank message. Firestore-free
@@ -13,12 +37,16 @@ export type Suggestions = {
  */
 export function pickSuggestions(accounts: Account[], cards: Card[], parsed: ParsedFinancialMessage): Suggestions {
   const activeAccounts = accounts.filter((account) => account.isActive && account.currency === parsed.currency);
+  const providerBankId = providerToBankId(parsed.provider);
   const cardAccount = (hint: string | undefined, kind?: 'credit' | 'debit') => {
-    const card = cards.find((candidate) => candidate.isActive
+    if (!hint) return undefined;
+    const candidates = cards.filter((candidate) => candidate.isActive
       && (!kind || candidate.kind === kind)
-      && !!hint
       && candidate.last4 === hint);
-    return card?.parentAccountId;
+    // Prefer a card issued by the same bank as the message, but any last4
+    // match wins over no match at all.
+    const sameBank = candidates.find((candidate) => candidate.bankId === providerBankId);
+    return (sameBank ?? candidates[0])?.parentAccountId;
   };
 
   let accountId: string | undefined;
@@ -54,5 +82,17 @@ export function pickSuggestions(accounts: Account[], cards: Card[], parsed: Pars
     conversionRequired = !!account?.isActive && account.currency !== parsed.currency;
   }
 
-  return { accountId, destinationAccountId, conversionRequired };
+  // Propose creating the card when the message clearly names one (last4 + kind)
+  // and no existing card carries those digits — even when an account fallback
+  // already resolved, so the household can attach the card for future messages.
+  let accountProposal: AccountProposal | undefined;
+  const proposedKind = parsed.accountKind === 'credit-card' ? 'credit' : 'debit';
+  const hintMatched = parsed.accountHintLast4
+    ? !!cardAccount(parsed.accountHintLast4, proposedKind)
+    : true;
+  if (parsed.accountHintLast4 && !hintMatched) {
+    accountProposal = { bankId: providerBankId, cardKind: proposedKind, last4: parsed.accountHintLast4 };
+  }
+
+  return { accountId, destinationAccountId, conversionRequired, accountProposal };
 }

@@ -19,6 +19,7 @@ import reconciliationEn from './locales/en/reconciliation.json';
 import loansEn from './locales/en/loans.json';
 import aiEn from './locales/en/ai.json';
 import messageImportEn from './locales/en/messageImport.json';
+import recurringEn from './locales/en/recurring.json';
 import commonAr from './locales/ar/common.json';
 import appShellAr from './locales/ar/appShell.json';
 import authAr from './locales/ar/auth.json';
@@ -40,6 +41,7 @@ import reconciliationAr from './locales/ar/reconciliation.json';
 import loansAr from './locales/ar/loans.json';
 import aiAr from './locales/ar/ai.json';
 import messageImportAr from './locales/ar/messageImport.json';
+import recurringAr from './locales/ar/recurring.json';
 
 export const resources = {
   en: {
@@ -64,6 +66,7 @@ export const resources = {
     loans: loansEn,
     ai: aiEn,
     messageImport: messageImportEn,
+    recurring: recurringEn,
   },
   ar: {
     common: commonAr,
@@ -87,5 +90,6 @@ export const resources = {
     loans: loansAr,
     ai: aiAr,
     messageImport: messageImportAr,
+    recurring: recurringAr,
   },
 } as const;

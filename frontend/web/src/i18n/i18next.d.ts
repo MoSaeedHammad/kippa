@@ -20,6 +20,7 @@ import type reconciliation from './locales/en/reconciliation.json';
 import type loans from './locales/en/loans.json';
 import type ai from './locales/en/ai.json';
 import type messageImport from './locales/en/messageImport.json';
+import type recurring from './locales/en/recurring.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -46,6 +47,7 @@ declare module 'i18next' {
       loans: typeof loans;
       ai: typeof ai;
       messageImport: typeof messageImport;
+      recurring: typeof recurring;
     };
   }
 }

@@ -35,8 +35,7 @@
     "transferTitle": "Transfer",
     "entrySavedAria": "Entry saved",
     "tapAnywhere": "Tap anywhere to continue",
-    "transferPending": "Sent for approval",
-    "recurringCreated": "Recurring entry created"
+    "transferPending": "Sent for approval"
   },
   "keypad": {
     "sourceAmount": "Source Amount",
@@ -64,16 +63,10 @@
     "title": "No accounts to log entries against",
     "description": "Add an account first — you'll need one to record expenses, income, or transfers."
   },
-  "repeat": {
-    "label": "Repeat",
-    "none": "One time",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
-    "yearly": "Yearly"
-  },
   "split": {
-    "label": "Split between accounts",
     "single": "Single account",
-    "across": "Split across accounts"
+    "across": "Split between accounts",
+    "participants": "Split between",
+    "participantHint": "Picked accounts share the amount equally"
   }
 }

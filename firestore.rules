@@ -119,6 +119,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // User-defined regex message templates are managed only via the
+      // upsertMessageTemplate callable.
+      match /messageTemplates/{templateId} {
+        allow read: if isFullHouseholdMember(householdId);
+        allow write: if false;
+      }
+
       // Recurring income/expense rules are managed only via callables.
       match /recurringTransactionRules/{ruleId} {
         allow read: if isHouseholdMember(householdId);
@@ -147,6 +154,7 @@ service cloud.firestore {
           && collectionName != 'sharedBalanceEntries'
           && collectionName != 'recurringSharedEntryRules'
           && collectionName != 'categoryRules'
+          && collectionName != 'messageTemplates'
           && collectionName != 'recurringTransactionRules'
           && collectionName != 'fcmTokens'
           && collectionName != 'notificationSettings'

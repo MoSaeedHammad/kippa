@@ -11,12 +11,29 @@ import { requireFullHouseholdMember } from '../../libs/householdAccess.js';
 
 const MAX_ACTIVE_RULES_PER_HOUSEHOLD = 30;
 
-async function loadRuleContext(householdId: string, input: { accountId: string; categoryId: string | null; type: 'income' | 'expense' }): Promise<Account> {
+type RuleContextInput = {
+  accountId: string;
+  categoryId: string | null;
+  destinationAccountId: string | null;
+  type: RecurringTransactionRule['type'];
+};
+
+async function loadRuleContext(householdId: string, input: RuleContextInput): Promise<Account> {
   const db = getFirestore();
   const accountSnap = await db.doc(`households/${householdId}/accounts/${input.accountId}`).get();
   const account = accountSnap.data() as Account | undefined;
   if (!account?.isActive) {
     throw new HttpsError('failed-precondition', 'Choose an active account.');
+  }
+  if (input.destinationAccountId) {
+    const destinationSnap = await db.doc(`households/${householdId}/accounts/${input.destinationAccountId}`).get();
+    const destination = destinationSnap.data() as Account | undefined;
+    if (!destination?.isActive) {
+      throw new HttpsError('failed-precondition', 'Choose an active destination account.');
+    }
+    if (destination.id === account.id) {
+      throw new HttpsError('failed-precondition', 'Source and destination accounts must be different.');
+    }
   }
   if (input.categoryId) {
     const categorySnap = await db.doc(`households/${householdId}/categories/${input.categoryId}`).get();
@@ -28,10 +45,23 @@ async function loadRuleContext(householdId: string, input: { accountId: string; 
   return account;
 }
 
+/** Open budget cycle covering the given date, else the open cycle, else null. */
+export async function resolveBudgetCycleId(householdId: string, dateIso: string): Promise<string | null> {
+  const db = getFirestore();
+  const openSnap = await db.collection(`households/${householdId}/budgetCycles`).where('status', '==', 'open').limit(1).get();
+  if (openSnap.empty) return null;
+  const open = openSnap.docs[0].data() as { id?: string; startDate?: string; endDate?: string };
+  const openId = openSnap.docs[0].id;
+  if (open.startDate && open.endDate) {
+    return dateIso >= open.startDate && dateIso <= open.endDate ? openId : null;
+  }
+  return openId;
+}
+
 /**
- * Creates / pauses / resumes / cancels a recurring income or expense rule.
- * Occurrences are materialized daily as draft transactions and confirmed in
- * the Approvals page.
+ * Creates / pauses / resumes / cancels a recurring income, expense or
+ * transfer rule. Occurrences are materialized daily as draft transactions
+ * and confirmed in the Approvals page.
  */
 export const upsertRecurringTransactionRule = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -55,13 +85,26 @@ export const upsertRecurringTransactionRule = onCall(async (request) => {
       return result.value;
     })();
     const account = await loadRuleContext(householdId, input);
+    let destinationCurrency: string | null = null;
+    if (input.destinationAccountId) {
+      const destinationSnap = await db.doc(`households/${householdId}/accounts/${input.destinationAccountId}`).get();
+      destinationCurrency = (destinationSnap.data() as Account | undefined)?.currency ?? null;
+    }
+    // A destination amount only makes sense across currencies.
+    const destinationAmount = destinationCurrency && destinationCurrency !== account.currency
+      ? input.destinationAmount
+      : null;
     const activeCount = (await db.collection(`households/${householdId}/recurringTransactionRules`).where('status', '==', 'active').get()).size;
     if (activeCount >= MAX_ACTIVE_RULES_PER_HOUSEHOLD) {
       throw new HttpsError('failed-precondition', 'Too many active rules.');
     }
     const ruleId = `rtr_${crypto.randomUUID()}`;
     const rule: RecurringTransactionRule = {
-      id: ruleId, householdId, ...input, currency: account.currency,
+      id: ruleId,
+      householdId,
+      ...input,
+      destinationCurrency,
+      currency: account.currency,
       status: 'active', createdBy: uid,
       occurrencesCreated: 0, lastOccurrenceDate: null, resumedDate: null,
       createdAt: now, updatedAt: now,
@@ -91,8 +134,16 @@ export const upsertRecurringTransactionRule = onCall(async (request) => {
       if (!result.ok) throw new HttpsError('invalid-argument', result.error);
       return result.value;
     })();
-    await loadRuleContext(householdId, input);
-    await ruleRef.update({ ...input, updatedAt: now });
+    const account = await loadRuleContext(householdId, input);
+    let destinationCurrency: string | null = null;
+    if (input.destinationAccountId) {
+      const destinationSnap = await db.doc(`households/${householdId}/accounts/${input.destinationAccountId}`).get();
+      destinationCurrency = (destinationSnap.data() as Account | undefined)?.currency ?? null;
+    }
+    const destinationAmount = destinationCurrency && destinationCurrency !== account.currency
+      ? input.destinationAmount
+      : null;
+    await ruleRef.update({ ...input, destinationCurrency, destinationAmount, currency: account.currency, updatedAt: now });
     return { ruleId };
   }
   if (action === 'pause') {
@@ -112,13 +163,22 @@ export const upsertRecurringTransactionRule = onCall(async (request) => {
 export const confirmRecurringTransaction = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
-  const data = request.data as { householdId?: unknown; transactionId?: unknown; action?: unknown };
+  const data = request.data as { householdId?: unknown; transactionId?: unknown; action?: unknown; amount?: unknown };
   const householdId = typeof data.householdId === 'string' ? data.householdId.trim() : '';
   const transactionId = typeof data.transactionId === 'string' ? data.transactionId.trim() : '';
   const action = data.action;
   if (!householdId || !transactionId) throw new HttpsError('invalid-argument', 'householdId and transactionId are required.');
   if (action !== 'confirm' && action !== 'skip') {
     throw new HttpsError('invalid-argument', "action must be 'confirm' or 'skip'.");
+  }
+  // Optional amount adjustment — the actual paid/received amount may differ
+  // from the scheduled one.
+  let amountOverride: number | null = null;
+  if (data.amount != null) {
+    if (typeof data.amount !== 'number' || !Number.isFinite(data.amount) || data.amount <= 0) {
+      throw new HttpsError('invalid-argument', 'amount must be a positive number.');
+    }
+    amountOverride = data.amount;
   }
   const caller = await requireFullHouseholdMember(uid, householdId);
   const db = getFirestore();
@@ -136,30 +196,61 @@ export const confirmRecurringTransaction = onCall(async (request) => {
       transaction.update(transactionRef, { status: 'voided', updatedAt: now });
       return;
     }
-    // confirm — validate the account/category are still usable, then post.
-    const accountSnap = await transaction.get(db.doc(`households/${householdId}/accounts/${txn.recurringDraft.accountId}`));
+    const draft = txn.recurringDraft;
+    const amount = amountOverride ?? draft.amount;
+    // confirm — validate the accounts/category are still usable, then post.
+    const accountSnap = await transaction.get(db.doc(`households/${householdId}/accounts/${draft.accountId}`));
     if (!(accountSnap.data() as { isActive?: boolean } | undefined)?.isActive) {
       throw new HttpsError('failed-precondition', 'The account is no longer active — edit the rule first.');
     }
-    if (txn.recurringDraft.categoryId) {
-      const categorySnap = await transaction.get(db.doc(`households/${householdId}/categories/${txn.recurringDraft.categoryId}`));
+    const isTransfer = txn.type === 'transfer' && !!draft.destinationAccountId;
+    if (isTransfer) {
+      const destinationSnap = await transaction.get(db.doc(`households/${householdId}/accounts/${draft.destinationAccountId!}`));
+      if (!(destinationSnap.data() as { isActive?: boolean } | undefined)?.isActive) {
+        throw new HttpsError('failed-precondition', 'The destination account is no longer active — edit the rule first.');
+      }
+    }
+    if (draft.categoryId) {
+      const categorySnap = await transaction.get(db.doc(`households/${householdId}/categories/${draft.categoryId}`));
       const category = categorySnap.data() as Partial<Category> | undefined;
       if (!category?.isActive || category.type !== txn.type) {
         throw new HttpsError('failed-precondition', 'The category is no longer valid — edit the rule first.');
       }
     }
-    transaction.update(transactionRef, { status: 'posted', updatedAt: now });
-    transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_main`), {
-      id: `${transactionId}_main`, householdId, transactionId, accountId: txn.recurringDraft.accountId,
-      signedAmount: txn.type === 'income' ? txn.recurringDraft.amount : -txn.recurringDraft.amount,
-      currency: txn.recurringDraft.currency, createdAt: now,
-    });
+    const budgetCycleId = await resolveBudgetCycleId(householdId, txn.date);
+    const updatedDraft = { ...draft, amount };
+    transaction.update(transactionRef, { status: 'posted', updatedAt: now, budgetCycleId, recurringDraft: updatedDraft });
+    if (isTransfer) {
+      const destinationAmount = draft.destinationAmount ?? amount;
+      const destinationCurrency = draft.destinationCurrency ?? (accountSnap.data() as { currency?: string } | undefined)?.currency ?? draft.currency;
+      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
+        id: `${transactionId}_source`, householdId, transactionId, accountId: draft.accountId,
+        signedAmount: -amount, currency: draft.currency, createdAt: now,
+      });
+      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_destination`), {
+        id: `${transactionId}_destination`, householdId, transactionId, accountId: draft.destinationAccountId,
+        signedAmount: destinationAmount, currency: destinationCurrency, createdAt: now,
+      });
+      if (draft.currency !== destinationCurrency) {
+        transaction.set(db.doc(`households/${householdId}/conversionDetails/${transactionId}`), {
+          transactionId, fromCurrency: draft.currency, toCurrency: destinationCurrency,
+          fromAmount: amount, toAmount: destinationAmount,
+          effectiveRate: destinationAmount / amount, rateSource: 'manual',
+        });
+      }
+    } else {
+      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_main`), {
+        id: `${transactionId}_main`, householdId, transactionId, accountId: draft.accountId,
+        signedAmount: txn.type === 'income' ? amount : -amount,
+        currency: draft.currency, createdAt: now,
+      });
+    }
     transaction.create(db.doc(`households/${householdId}/auditLog/${transactionId}`), {
       id: transactionId, householdId, userId: uid,
       userDisplayName: caller.displayName || 'User', userPhotoURL: caller.photoURL ?? null,
       action: 'transaction_created',
-      summary: `${caller.displayName || 'User'} confirmed recurring ${txn.type}: ${txn.recurringDraft.amount} ${txn.recurringDraft.currency} — ${txn.description}`,
-      details: { transactionId, recurring: true },
+      summary: `${caller.displayName || 'User'} confirmed recurring ${txn.type}: ${amount} ${draft.currency} — ${txn.description}`,
+      details: { transactionId, recurring: true, adjusted: amountOverride != null },
       createdAt: now,
     });
   });

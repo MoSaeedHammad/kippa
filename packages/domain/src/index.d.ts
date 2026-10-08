@@ -182,28 +182,44 @@ export type FinanceTransaction = {
   recurringRuleId?: string | null;
   /** Audit marker for entries approved from an ingested or imported bank message / record. */
   importedFrom?: { kind: 'financial-message'; pendingId: string; provider: string; source: string } | null;
-  /** Embedded facts for confirming a recurring draft (ledger line written at confirm time). */
+  /**
+   * Embedded facts for confirming a recurring draft (ledger lines are written
+   * at confirm time). Transfer rules carry the destination fields instead of
+   * a category.
+   */
   recurringDraft?: {
     amount: number;
     currency: CurrencyCode;
     accountId: string;
     categoryId: string | null;
+    merchant?: string | null;
+    destinationAccountId?: string | null;
+    destinationAmount?: number | null;
+    destinationCurrency?: CurrencyCode | null;
   } | null;
 };
 
 /**
- * A recurring income or expense. The daily cron materializes due occurrences
- * as draft transactions; a full member confirms (posts) or skips (voids)
- * each one in the Approvals page.
+ * A recurring income, expense or transfer. The daily cron materializes due
+ * occurrences as draft transactions; a full member confirms (posts) or skips
+ * (voids) each one in the Approvals page.
  */
 export type RecurringTransactionRule = {
   id: string;
   householdId: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   amount: number;
   currency: CurrencyCode;
   accountId: string;
   categoryId: string | null;
+  /** Transfer rules only: the receiving account. */
+  destinationAccountId?: string | null;
+  /** Transfer rules only: amount in the destination currency (cross-currency). */
+  destinationAmount?: number | null;
+  /** Transfer rules only: currency of the destination account. */
+  destinationCurrency?: CurrencyCode | null;
+  /** Optional merchant / beneficiary captured with expense or income rules. */
+  merchant?: string | null;
   description: string;
   frequency: 'weekly' | 'monthly' | 'yearly';
   anchorDate: string;
@@ -475,6 +491,44 @@ export type AuditLogEntry = {
   createdAt: string;
 };
 
+/**
+ * A user-defined regex template that extracts a financial message's fields
+ * (amount, currency, date, merchant, card last4) via named capture groups.
+ * Applied by ingestion when the built-in parser has no match.
+ */
+export type MessageTemplate = {
+  id: string;
+  householdId: string;
+  name: string;
+  /** Regex source using named groups, e.g. (?<amount>[\d,]+). Case-insensitive. */
+  pattern: string;
+  kind: 'expense' | 'income' | 'transfer';
+  /** Name of the group carrying the amount. */
+  amountGroup: string;
+  /** Name of the group carrying the ISO currency code (optional). */
+  currencyGroup?: string | null;
+  /** Fallback ISO currency when no currencyGroup (required then). */
+  currency?: CurrencyCode | null;
+  /** Name of the group carrying the message date (optional). */
+  dateGroup?: string | null;
+  /** Token layout of the date group: dd/MM/yyyy, dd-MM-yyyy or yyyy-MM-dd. */
+  dateFormat?: 'dd/MM/yyyy' | 'dd-MM-yyyy' | 'yyyy-MM-dd' | null;
+  /** Name of the group carrying the merchant / beneficiary (optional). */
+  merchantGroup?: string | null;
+  /** Name of the group carrying the card/account last digits (optional). */
+  last4Group?: string | null;
+  /** Card kind assumed when a last4 matches — drives account proposals. */
+  cardKind?: 'debit' | 'credit' | null;
+  /** Frontend bank preset id used for account proposals and labels. */
+  bankId?: string | null;
+  /** Name of the group carrying a short description (optional). */
+  descriptionGroup?: string | null;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PendingFinancialMessage = {
   id: string;
   householdId: string;
@@ -492,6 +546,14 @@ export type PendingFinancialMessage = {
   destinationHintLast4?: string | null;
   suggestedAccountId?: string | null;
   suggestedDestinationAccountId?: string | null;
+  /**
+   * The message names a bank card that does not exist in the household yet —
+   * shown in the review dialog as a one-click creation proposal.
+   */
+  suggestedAccountProposal?: { bankId: string; cardKind: 'debit' | 'credit'; last4: string } | null;
+  /** Set when a user-defined regex template matched the message. */
+  matchedTemplateId?: string | null;
+  matchedTemplateName?: string | null;
   /** Strictly matched active loan; approval records the next installment without a category. */
   suggestedLoanId?: string | null;
   /** Category suggested by a merchant-pattern rule match (overridable at approval). */

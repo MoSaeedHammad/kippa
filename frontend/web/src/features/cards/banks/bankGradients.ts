@@ -55,3 +55,11 @@ export function tierGradient(tierId: string | undefined, bankId: string): string
   // 3. Bank default brand gradient
   return BANK_DEFAULT_GRADIENT[bankId] ?? BANK_DEFAULT_GRADIENT.other;
 }
+
+// ---------------------------------------------------------------------------
+// Banque Misr signature card faces (black credit / gold debit, per BM brand)
+// ---------------------------------------------------------------------------
+export const BANQUE_MISR_GRADIENT_CREDIT =
+  'linear-gradient(150deg, #060606 0%, #232326 42%, #101013 68%, #050505 100%)';
+export const BANQUE_MISR_GRADIENT_DEBIT =
+  'linear-gradient(150deg, #7A5A14 0%, #B08A24 35%, #D9B54A 68%, #EED98F 100%)';

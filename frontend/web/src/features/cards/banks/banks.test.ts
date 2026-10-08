@@ -76,6 +76,14 @@ describe('bank catalog', () => {
     expect(advance).toMatch(/7A0A10|4A0205/); // HSBC credit gradient signature
   });
 
+  it('Banque Misr faces are black for credit and gold for debit', () => {
+    const credit = BANKS['banque-misr'].background({ kind: 'credit', tierId: 'platinum' }).css;
+    const debit = BANKS['banque-misr'].background({ kind: 'debit', tierId: 'gold' }).css;
+    expect(credit).toMatch(/060606|232326/); // black credit face signature
+    expect(debit).toMatch(/D9B54A|B08A24/); // gold debit face signature
+    expect(credit).not.toBe(debit);
+  });
+
   it('every non-other bank has a pattern overlay', () => {
     for (const b of BANK_LIST) {
       if (b.id === 'other') continue;

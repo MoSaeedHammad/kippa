@@ -76,5 +76,15 @@
     "quick": "Quick",
     "ingested": "Ingested",
     "imported": "Imported"
+  },
+  "detail": {
+    "type": "Type",
+    "bank": "Bank",
+    "loan": "Loan",
+    "loanInstallment": "Installment {{installment}}",
+    "originalCharge": "Original charge",
+    "status": "Status",
+    "subtitleTitle": "Summary line",
+    "close": "Close"
   }
 }

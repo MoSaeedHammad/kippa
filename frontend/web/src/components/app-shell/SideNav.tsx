@@ -43,6 +43,8 @@ const menuItems: NavItem[] = [
     children: [
       { labelKey: 'statements', path: '/cycles' },
       { labelKey: 'categories', path: '/categories' },
+      { labelKey: 'spending', path: '/spending' },
+      { labelKey: 'merchants', path: '/merchants' },
     ],
   },
   {
@@ -52,6 +54,7 @@ const menuItems: NavItem[] = [
     children: [
       { labelKey: 'allTransactions', path: '/transactions' },
       { labelKey: 'approvals', path: '/pending' },
+      { labelKey: 'recurring', path: '/recurring' },
       { labelKey: 'importHistory', path: '/import-messages' },
       { labelKey: 'expenses', path: '/transactions?type=expense' },
       { labelKey: 'income', path: '/transactions?type=income' },

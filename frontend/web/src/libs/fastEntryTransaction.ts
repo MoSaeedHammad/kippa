@@ -30,6 +30,22 @@ export function buildFastEntryTransaction(input: Input) {
 export type SplitAllocation = { accountId: string; amount: number };
 
 /**
+ * Splits a total equally across the given accounts, cent-exact: the rounding
+ * remainder (sub-cent) is absorbed by the first account so the shares always
+ * sum to the entry amount.
+ */
+export function equalSplitAllocations(totalAmount: number, accountIds: string[]): SplitAllocation[] {
+  if (!accountIds.length) throw new Error('Add at least one account to split between');
+  const cents = Math.round(totalAmount * 100);
+  const shareCents = Math.floor(cents / accountIds.length);
+  const remainder = cents - shareCents * accountIds.length;
+  return accountIds.map((accountId, index) => ({
+    accountId,
+    amount: (shareCents + (index === 0 ? remainder : 0)) / 100,
+  }));
+}
+
+/**
  * Builds the ledger lines for an expense/income entry split across several
  * accounts: one signed line per allocation (negative for expense), every
  * allocation positive, unique, and the total equal to the entry amount.

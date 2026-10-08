@@ -6,7 +6,8 @@ import type { Account, Card, Category, FinanceTransaction, Loan, PendingFinancia
 import { buildMessagePreview, parseFinancialMessage, type ParsedFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import { settledAmounts } from '../../domain/message-ingestion/conversion.js';
 import { extractMessage, extractSender, extractSmsDate } from '../../domain/message-ingestion/ingestBody.js';
-import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
+import { pickSuggestions, type Suggestions } from '../../domain/message-ingestion/suggestions.js';
+import { resolveTemplateMatch } from './messageTemplates.js';
 import { daysBetween, installmentDate, matchLoanSuggestion } from '../../domain/message-ingestion/loanSuggestion.js';
 import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferLegs.js';
 import { validateSharedBalanceTag } from '../../domain/shared-balance/sharedBalance.js';
@@ -91,7 +92,7 @@ function credentialMatches(credential: IngestionCredential, suppliedSecret: stri
 async function resolveSuggestions(
   householdId: string,
   parsed: ParsedFinancialMessage,
-): Promise<{ accountId?: string; destinationAccountId?: string; conversionRequired: boolean }> {
+): Promise<Suggestions> {
   const db = getFirestore();
   const [accountsSnapshot, cardsSnapshot] = await Promise.all([
     db.collection(`households/${householdId}/accounts`).get(),
@@ -265,7 +266,14 @@ export const ingestFinancialMessage = onRequest(
     }
     const source = cleanSource((request.body as IngestBody).source);
     const sender = extractSender(request.body);
-    const parsedResult = parseFinancialMessage(message, source, sender);
+    let parsedResult = parseFinancialMessage(message, source, sender);
+    let templateMatch: Awaited<ReturnType<typeof resolveTemplateMatch>> = null;
+    // User-defined regex templates rescue messages the built-in parser has no
+    // regex for (but not ones it deliberately ignores, like statements).
+    if (parsedResult.outcome === 'unsupported') {
+      templateMatch = await resolveTemplateMatch(credential.householdId, message, new Date().toISOString().slice(0, 10));
+      if (templateMatch) parsedResult = { outcome: 'matched', parsed: templateMatch.parsed };
+    }
     // Forwarders carry the real SMS timestamp (receivedStamp); trust it over
     // the arrival date so approvals book the transaction on the SMS day.
     if (parsedResult.outcome === 'matched') {
@@ -425,6 +433,9 @@ export const ingestFinancialMessage = onRequest(
       destinationHintLast4: parsed.destinationHintLast4 ?? null,
       suggestedAccountId: suggestions.accountId ?? null,
       suggestedDestinationAccountId: suggestions.destinationAccountId ?? null,
+      suggestedAccountProposal: suggestions.accountProposal ?? null,
+      matchedTemplateId: templateMatch?.templateId ?? null,
+      matchedTemplateName: templateMatch?.templateName ?? null,
       suggestedLoanId: loanSuggestion?.loanId ?? null,
       suggestedLoanName: loanSuggestion?.loanName ?? null,
       suggestedLoanInstallmentNumber: loanSuggestion?.installmentNumber ?? null,
