@@ -556,8 +556,8 @@ export type MessageTemplate = {
   currency?: CurrencyCode | null;
   /** Name of the group carrying the message date (optional). */
   dateGroup?: string | null;
-  /** Token layout of the date group: dd/MM/yyyy, dd-MM-yyyy or yyyy-MM-dd. */
-  dateFormat?: 'dd/MM/yyyy' | 'dd-MM-yyyy' | 'yyyy-MM-dd' | null;
+  /** Token layout of the date group: dd/MM/yyyy, dd-MM-yyyy, yyyy-MM-dd, dd/MM or ddMMMyy. */
+  dateFormat?: 'dd/MM/yyyy' | 'dd-MM-yyyy' | 'yyyy-MM-dd' | 'dd/MM' | 'ddMMMyy' | null;
   /** Name of the group carrying the merchant / beneficiary (optional). */
   merchantGroup?: string | null;
   /** Name of the group carrying the card/account last digits (optional). */
@@ -568,6 +568,8 @@ export type MessageTemplate = {
   bankId?: string | null;
   /** Name of the group carrying a short description (optional). */
   descriptionGroup?: string | null;
+  /** Name of the group carrying the bank reference number (optional); folded into the description. */
+  referenceGroup?: string | null;
   /**
    * When true the template is tried BEFORE the built-in bank regexes, so an
    * edited copy of a predefined rule overrides them. Ignored-noise messages

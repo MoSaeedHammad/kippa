@@ -17,6 +17,7 @@ export type NormalizedMessageTemplate = {
   cardKind: 'debit' | 'credit' | null;
   bankId: string | null;
   descriptionGroup: string | null;
+  referenceGroup: string | null;
   overrideBuiltIn: boolean;
   isActive: boolean;
 };
@@ -66,7 +67,7 @@ export function validateMessageTemplate(
   }
   const dateGroup = groupName(raw.dateGroup);
   const dateFormatRaw = typeof raw.dateFormat === 'string' ? raw.dateFormat : '';
-  const dateFormat = (['dd/MM/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd'] as const)
+  const dateFormat = (['dd/MM/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd', 'dd/MM', 'ddMMMyy'] as const)
     .find((format) => format === dateFormatRaw) ?? null;
   if (dateGroup && !dateFormat) {
     return { ok: false, error: 'Pick a date format for the date group.' };
@@ -77,11 +78,12 @@ export function validateMessageTemplate(
   const cardKind = cardKindRaw === 'debit' || cardKindRaw === 'credit' ? cardKindRaw : null;
   const bankId = typeof raw.bankId === 'string' && raw.bankId.trim() ? raw.bankId.trim() : null;
   const descriptionGroup = groupName(raw.descriptionGroup);
+  const referenceGroup = groupName(raw.referenceGroup);
   const overrideBuiltIn = raw.overrideBuiltIn === true;
   const isActive = raw.isActive === false ? false : true;
 
   if (existingGroups && existingGroups.namedGroups.length > 0) {
-    const missing = [amountGroup, currencyGroup, dateGroup, merchantGroup, last4Group, descriptionGroup]
+    const missing = [amountGroup, currencyGroup, dateGroup, merchantGroup, last4Group, descriptionGroup, referenceGroup]
       .filter((group, index) => {
         const required = index === 0 || (group !== null && group !== amountGroup);
         return required && group && !existingGroups.namedGroups.includes(group);
@@ -96,15 +98,37 @@ export function validateMessageTemplate(
     value: {
       name, pattern, kind: kind as MessageTemplate['kind'], amountGroup, currencyGroup, currency,
       dateGroup, dateFormat, merchantGroup, last4Group, cardKind, bankId, descriptionGroup,
-      overrideBuiltIn, isActive,
+      referenceGroup, overrideBuiltIn, isActive,
     },
   };
 }
 
+const MONTHS_SHORT: Record<string, string> = {
+  JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+  JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12',
+};
+
 function parseTemplateDate(text: string, format: NonNullable<MessageTemplate['dateFormat']>): string | null {
-  const tokens = format.split(/[-/]/);
+  if (format === 'dd/MM') {
+    // Day/month-only stamps (ATM SMS style) — the bank omits the year.
+    const match = text.match(/^(\d{2})\/(\d{2})$/);
+    const day = match ? Number(match[1]) : NaN;
+    const month = match ? Number(match[2]) : NaN;
+    if (!day || !month || month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return `${new Date().getUTCFullYear()}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+  if (format === 'ddMMMyy') {
+    const match = text.match(/^(\d{2})([A-Za-z]{3})(\d{2}|\d{4})$/);
+    if (!match) return null;
+    const month = MONTHS_SHORT[match[2].toUpperCase()];
+    if (!month) return null;
+    const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+    return `${year}-${month}-${match[1]}`;
+  }
   const values = text.split(/[-/]/).map((value) => Number(value));
-  if (values.some((value) => !Number.isFinite(value)) || tokens.length !== 3 || values.length !== 3) return null;
+  if (values.some((value) => !Number.isFinite(value))) return null;
+  const tokens = format.split(/[-/]/);
+  if (tokens.length !== 3 || values.length !== 3) return null;
   const day = values[tokens.indexOf('dd')];
   const month = values[tokens.indexOf('MM')];
   const year = values[tokens.indexOf('yyyy')];
@@ -118,7 +142,7 @@ function parseTemplateDate(text: string, format: NonNullable<MessageTemplate['da
  */
 export function applyMessageTemplate(
   messageText: string,
-  template: Pick<MessageTemplate, 'id' | 'name' | 'pattern' | 'kind' | 'amountGroup' | 'currencyGroup' | 'currency' | 'dateGroup' | 'dateFormat' | 'merchantGroup' | 'last4Group' | 'cardKind' | 'bankId' | 'descriptionGroup'>,
+  template: Pick<MessageTemplate, 'id' | 'name' | 'pattern' | 'kind' | 'amountGroup' | 'currencyGroup' | 'currency' | 'dateGroup' | 'dateFormat' | 'merchantGroup' | 'last4Group' | 'cardKind' | 'bankId' | 'descriptionGroup' | 'referenceGroup'>,
   todayIso: string,
 ): TemplateMatch | null {
   let regex: RegExp;
@@ -144,7 +168,11 @@ export function applyMessageTemplate(
   const merchant = group(template.merchantGroup) ?? null;
   const last4raw = group(template.last4Group)?.replace(/\D/g, '');
   const accountHintLast4 = last4raw ? last4raw.slice(-4) : undefined;
-  const description = (group(template.descriptionGroup) || merchant || template.name).slice(0, 120);
+  const reference = group(template.referenceGroup)?.replace(/\s+/g, '') || undefined;
+  // The reference rides along in the copy so users can match the payout to
+  // their bank statement even after the raw message is discarded.
+  const baseDescription = (group(template.descriptionGroup) || merchant || template.name).slice(0, 120);
+  const description = reference ? `${baseDescription} · ref ${reference}`.slice(0, 160) : baseDescription;
 
   return {
     templateId: template.id,
@@ -158,6 +186,7 @@ export function applyMessageTemplate(
       description,
       counterparty: merchant ?? undefined,
       accountHintLast4,
+      reference,
       accountKind: accountHintLast4 && template.cardKind === 'credit' ? 'credit-card' : 'bank',
     },
   };

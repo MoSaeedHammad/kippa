@@ -32,7 +32,7 @@ import { BANK_LIST } from '@/features/cards/banks/banks';
 import { useQueryClient } from '@tanstack/react-query';
 
 const KINDS = ['expense', 'income', 'transfer'] as const;
-const DATE_FORMATS = ['dd/MM/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd'] as const;
+const DATE_FORMATS = ['dd/MM/yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd', 'dd/MM', 'ddMMMyy'] as const;
 
 const EXAMPLE_PATTERN = 'بطاقة بنك مصر الائتمانية\\s*\\*+\\s*(?<last4>\\d{4})[،,]?\\s*تم خصم مبلغ\\s*(?:(?<currency>EGP|USD)\\s*)?(?<amount>[\\d,]+(?:\\.\\d{1,2})?)';
 const EXAMPLE_SAMPLE = 'بطاقة بنك مصر الائتمانية **2508، تم خصم مبلغ EGP 10 في WE-Mobile-Pre بتاريخ 27/08/2026';
@@ -65,6 +65,7 @@ function TemplateDialog({ open, template, prefill, onClose }: {
   const [cardKind, setCardKind] = useState<'debit' | 'credit'>(template?.cardKind ?? prefill?.cardKind ?? 'credit');
   const [bankId, setBankId] = useState(template?.bankId ?? prefill?.bankId ?? 'other');
   const [descriptionGroup, setDescriptionGroup] = useState(template?.descriptionGroup ?? prefill?.descriptionGroup ?? '');
+  const [referenceGroup, setReferenceGroup] = useState(template?.referenceGroup ?? prefill?.referenceGroup ?? '');
   const [overrideBuiltIn, setOverrideBuiltIn] = useState<boolean>(template?.overrideBuiltIn ?? prefill?.overrideBuiltIn ?? false);
   const [sample, setSample] = useState(prefill?.sample ?? '');
   const [testResult, setTestResult] = useState<TemplateTestMatch | null | undefined>(undefined);
@@ -84,6 +85,7 @@ function TemplateDialog({ open, template, prefill, onClose }: {
     cardKind: last4Group.trim() ? cardKind : null,
     bankId: bankId || null,
     descriptionGroup: descriptionGroup.trim() || null,
+    referenceGroup: referenceGroup.trim() || null,
     overrideBuiltIn,
     isActive: true,
   });
@@ -208,7 +210,10 @@ function TemplateDialog({ open, template, prefill, onClose }: {
               ))}
             </TextField>
           </Stack>
-          <TextField fullWidth label={t('templates.fields.descriptionGroup')} value={descriptionGroup} onChange={(event) => setDescriptionGroup(event.target.value)} placeholder={t('templates.fields.none')} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField fullWidth label={t('templates.fields.descriptionGroup')} value={descriptionGroup} onChange={(event) => setDescriptionGroup(event.target.value)} placeholder={t('templates.fields.none')} />
+            <TextField fullWidth label={t('templates.fields.referenceGroup')} value={referenceGroup} onChange={(event) => setReferenceGroup(event.target.value)} placeholder={t('templates.fields.none')} />
+          </Stack>
 
           <FormControlLabel
             control={<Switch checked={overrideBuiltIn} onChange={(event) => setOverrideBuiltIn(event.target.checked)} />}

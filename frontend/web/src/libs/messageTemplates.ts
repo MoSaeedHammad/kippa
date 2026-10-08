@@ -16,12 +16,14 @@ export type MessageTemplateInput = {
   currencyGroup?: string | null;
   currency?: string | null;
   dateGroup?: string | null;
-  dateFormat?: 'dd/MM/yyyy' | 'dd-MM-yyyy' | 'yyyy-MM-dd' | null;
+  dateFormat?: 'dd/MM/yyyy' | 'dd-MM-yyyy' | 'yyyy-MM-dd' | 'dd/MM' | 'ddMMMyy' | null;
   merchantGroup?: string | null;
   last4Group?: string | null;
   cardKind?: 'debit' | 'credit' | null;
   bankId?: string | null;
   descriptionGroup?: string | null;
+  /** Folded into the description as "… · ref X" so payouts match statements. */
+  referenceGroup?: string | null;
   /** Run before the built-in bank rules instead of only as a fallback. */
   overrideBuiltIn?: boolean | null;
   isActive?: boolean;

@@ -161,6 +161,7 @@
       "cardKind": "Card kind",
       "bank": "Bank",
       "descriptionGroup": "Description group",
+      "referenceGroup": "Reference group",
       "sample": "Sample message",
       "none": "—"
     },

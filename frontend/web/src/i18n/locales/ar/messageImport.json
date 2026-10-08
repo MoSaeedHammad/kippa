@@ -161,6 +161,7 @@
       "cardKind": "نوع البطاقة",
       "bank": "البنك",
       "descriptionGroup": "مجموعة الوصف",
+      "referenceGroup": "مجموعة المرجع",
       "sample": "رسالة عينة",
       "none": "—"
     },

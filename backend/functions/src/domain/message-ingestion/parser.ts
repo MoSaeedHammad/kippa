@@ -8,6 +8,8 @@ export type ParsedFinancialMessage = {
   counterparty?: string;
   accountHintLast4?: string;
   destinationHintLast4?: string;
+  /** Bank reference number (e.g. HSBC IPN `with reference e33925a9`) kept for statement matching. */
+  reference?: string;
   accountKind: 'bank' | 'credit-card';
   destinationKind?: 'cash' | 'credit-card' | 'bank';
   /** Marks one leg of a multi-message cross-currency transfer so the ingestion layer can merge them. */
@@ -41,6 +43,13 @@ function compactDate(value: string): string {
 function numericDate(value: string): string {
   const match = value.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
   return match ? `${match[3]}-${match[2]}-${match[1]}` : new Date().toISOString().slice(0, 10);
+}
+
+/** dd/MM/yyyy or dd-MON-yyyy (Bank Misr mixes both across message variants). */
+function misrDate(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (/[A-Za-z]{3}/.test(value)) return compactDate(value);
+  return numericDate(value);
 }
 
 function dayMonthDate(value: string): string {
@@ -82,8 +91,20 @@ const CREDIT_CARD_KEYWORDS = /credit\s*card|بطاقة\s*(?:بنك\s*مصر\s*)?
  * user rules must never turn noise into transactions.
  */
 export function isIgnoredFinancialMessage(text: string): boolean {
-  if (/statement date|minimum amount due|min\.?\s*amt due|total amt due/i.test(text)) return true;
+  if (/statement date|minimum amount due|min\.?\s*amt due|total amt due|statement is issued with total|statement password|keep it private/i.test(text)) return true;
   if (/تم تسجيل الدخول/.test(text)) return true;
+  // Security alerts, PIN/OTP verifications, declines and other no-money-moved
+  // messages — the real purchase arrives in its own SMS.
+  if (/Transfer to third party account is done|biller or payment information is added/i.test(text)) return true;
+  if (/use PIN \d+ to (?:pay|complete)|complete the registration of your account/i.test(text)) return true;
+  if (/was declined|due to invalid PIN|was\s+not successful|Happy Birthday|has been authenticated to access/i.test(text)) return true;
+  if (/IPN PIN/i.test(text)) return true;
+  if (/تم رفض (?:العملية|المعاملة)|تم الغاء ايداع/.test(text)) return true;
+  if (/الافصاح عن الكود OTP|Deposit OTP/.test(text)) return true;
+  // Bank Misr service noise: branch surveys, request tracking, promos.
+  if (/شكرا لزيارتك فرع|تسجيل طلبكم|يرجي مراجعة البنك|طلب الحصول علي القرض/.test(text)) return true;
+  // Returned cheques move no money; the rest are onboarding/service messages.
+  if (/cheque no\.?\s*\d+ for .+ was returned|secure key activation code|HSBC Expat application|has been updated\.? If you have not initiated/i.test(text)) return true;
   return false;
 }
 
@@ -186,6 +207,26 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
     };
   }
 
+  // Card payments — money moving to your own credit card, not spending.
+  // These run BEFORE the plain "Transfer from" rule, whose prefix they share.
+  const transferToCard = text.match(
+    /From HSBC:\s*\d{2}[A-Z]{3}\d{2}\s+Transfer from\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)-\s+to your Credit Card ending (?:with\s*)?(\d{4})/i,
+  );
+  const thankYouCardPayment = text.match(
+    /Thank you for the payment of\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+for Credit Card ending (?:with\s*)?\*{3}\s*(\d{4})/i,
+  );
+  if (transferToCard || thankYouCardPayment) {
+    const value = transferToCard ? transferToCard[3] : thankYouCardPayment![2];
+    const currencyToken = transferToCard ? transferToCard[2] : thankYouCardPayment![1];
+    const cardLast4 = transferToCard ? transferToCard[4] : thankYouCardPayment![3];
+    return {
+      outcome: 'notification',
+      title: 'Credit-card payment detected',
+      message: `${amount(value)} ${currencyToken.toUpperCase()} paid to card •${cardLast4}. Match it to the charges you paid.`,
+      deepLink: '/accounts',
+    };
+  }
+
   // Some recurring HSBC debits (including loan installments) omit the
   // "Phone Banking" prefix. The trailing minus is the authoritative debit
   // signal; ingestion can then safely match it to a known commitment.
@@ -200,6 +241,120 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
         description: 'Bank transfer debit',
         accountHintLast4: last4(bankTransferDebit[2]), accountKind: 'bank',
         currency: bankTransferDebit[3].toUpperCase(), amount: amount(bankTransferDebit[4]),
+      },
+    };
+  }
+
+  // Reversals put money back after a failed movement — plain income.
+  const ipnReversal = text.match(
+    /(?:HSBC Account\s*)?\*+(\d{4})\s+was reversed with IPN outward transfer for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference\s+([A-Za-z0-9-]+)/i,
+  );
+  if (ipnReversal) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider, accountKind: 'bank', accountHintLast4: ipnReversal[1],
+        currency: ipnReversal[2].toUpperCase(), amount: amount(ipnReversal[3]),
+        date: numericDate(ipnReversal[4]), counterparty: cleanParty(ipnReversal[5]),
+        description: `Reversal of transfer to ${cleanParty(ipnReversal[5])} (ref ${ipnReversal[6]})`,
+        reference: ipnReversal[6],
+      },
+    };
+  }
+
+  const atmReversal = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+ATM Reversal of Cash Withdrawal from\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\+/i,
+  );
+  if (atmReversal) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider, date: compactDate(atmReversal[1]),
+        description: 'ATM withdrawal reversal', counterparty: 'ATM',
+        accountHintLast4: last4(atmReversal[2]), accountKind: 'bank',
+        currency: atmReversal[3].toUpperCase(), amount: amount(atmReversal[4]),
+      },
+    };
+  }
+
+  const cashDeposit = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+Cash Deposit to\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\+/i,
+  );
+  if (cashDeposit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'transfer', provider, date: compactDate(cashDeposit[1]),
+        description: 'Cash deposit at branch', destinationKind: 'bank',
+        destinationHintLast4: last4(cashDeposit[2]), accountHintLast4: undefined,
+        accountKind: 'bank',
+        currency: cashDeposit[3].toUpperCase(), amount: amount(cashDeposit[4]),
+      },
+    };
+  }
+
+  const chequeCredit = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+Cheque to\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\+/i,
+  );
+  if (chequeCredit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider, date: compactDate(chequeCredit[1]),
+        description: 'Cheque deposit', counterparty: 'Cheque',
+        accountHintLast4: last4(chequeCredit[2]), accountKind: 'bank',
+        currency: chequeCredit[3].toUpperCase(), amount: amount(chequeCredit[4]),
+      },
+    };
+  }
+
+  // Internet Banking / TT payments — no counterparty is named, so the app's
+  // bank-message convention applies: money in = income, money out = expense.
+  const internetBanking = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+(Internet Banking )?(TT Payment|Transfer) (to|from)\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)[+-]/i,
+  );
+  if (internetBanking) {
+    const [, date, , channel, direction, account, currencyToken, value] = internetBanking;
+    const incoming = direction === 'to';
+    const label = channel === 'TT Payment' ? (incoming ? 'TT payment in' : 'TT payment out') : incoming ? 'Internet banking transfer in' : 'Internet banking transfer out';
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: incoming ? 'income' : 'expense', provider, date: compactDate(date),
+        description: label,
+        accountHintLast4: last4(account), accountKind: 'bank',
+        currency: currencyToken.toUpperCase(), amount: amount(value),
+      },
+    };
+  }
+
+  const salaryCredit = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+Salary to\s+([^\s]+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\+/i,
+  );
+  if (salaryCredit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider, date: compactDate(salaryCredit[1]),
+        description: 'Salary', counterparty: 'Employer',
+        accountHintLast4: last4(salaryCredit[2]), accountKind: 'bank',
+        currency: salaryCredit[3].toUpperCase(), amount: amount(salaryCredit[4]),
+      },
+    };
+  }
+
+  const chequeDebit = text.match(
+    /From HSBC:\s*(\d{2}[A-Z]{3}\d{2})\s+Cheque from\s+([^\s]+)\s+with cheque no #(\d+)\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)-/i,
+  );
+  if (chequeDebit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider, date: compactDate(chequeDebit[1]),
+        description: `Cheque #${chequeDebit[3]}`, counterparty: 'Cheque',
+        accountHintLast4: last4(chequeDebit[2]), accountKind: 'bank',
+        currency: chequeDebit[4].toUpperCase(), amount: amount(chequeDebit[5]),
+        reference: chequeDebit[3],
       },
     };
   }
@@ -220,7 +375,7 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
   }
 
   const ipnInward = text.match(
-    /(?:HSBC Account\s*)?\*+(\d{4})\s+was credited with IPN inward transfer for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference/i,
+    /(?:HSBC Account\s*)?\*+(\d{4})\s+was credited with IPN inward transfer for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference\s+([A-Za-z0-9-]+)/i,
   );
   if (ipnInward) {
     return {
@@ -228,14 +383,15 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
       parsed: {
         kind: 'income', provider, accountKind: 'bank', accountHintLast4: ipnInward[1],
         currency: ipnInward[2].toUpperCase(), amount: amount(ipnInward[3]),
-        date: numericDate(ipnInward[4]), description: `Transfer from ${cleanParty(ipnInward[5])}`,
-        counterparty: cleanParty(ipnInward[5]),
+        date: numericDate(ipnInward[4]), counterparty: cleanParty(ipnInward[5]),
+        description: `Transfer from ${cleanParty(ipnInward[5])} (ref ${ipnInward[6]})`,
+        reference: ipnInward[6],
       },
     };
   }
 
   const ipnPurchase = text.match(
-    /(?:Your\s+)?HSBC Account\s*\*+(\d{4})\s+was debited with IPN purchase for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference/i,
+    /(?:Your\s+)?HSBC Account\s*\*+(\d{4})\s+was debited with IPN purchase for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+from\s+(.+?)\s+with reference\s+([A-Za-z0-9-]+)/i,
   );
   if (ipnPurchase) {
     return {
@@ -243,14 +399,15 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
       parsed: {
         kind: 'expense', provider, accountKind: 'bank', accountHintLast4: ipnPurchase[1],
         currency: ipnPurchase[2].toUpperCase(), amount: amount(ipnPurchase[3]),
-        date: numericDate(ipnPurchase[4]), description: `Purchase from ${cleanParty(ipnPurchase[5])}`,
-        counterparty: cleanParty(ipnPurchase[5]),
+        date: numericDate(ipnPurchase[4]), counterparty: cleanParty(ipnPurchase[5]),
+        description: `Purchase from ${cleanParty(ipnPurchase[5])} (ref ${ipnPurchase[6]})`,
+        reference: ipnPurchase[6],
       },
     };
   }
 
   const ipnOutward = text.match(
-    /(?:Your\s+)?HSBC Account\s*\*+(\d{4})\s+was debited with IPN outward transfer for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+to\s+(.+?)\s+with reference/i,
+    /(?:Your\s+)?HSBC Account\s*\*+(\d{4})\s+was debited with IPN outward transfer for\s+([A-Z]{3})\s+([\d,]+(?:\.\d{1,2})?)\s+on\s+(\d{2}-\d{2}-\d{4})(?:\s+\d{2}:\d{2})?\s+to\s+(.+?)\s+with reference\s+([A-Za-z0-9-]+)/i,
   );
   if (ipnOutward) {
     return {
@@ -258,8 +415,9 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
       parsed: {
         kind: 'expense', provider, accountKind: 'bank', accountHintLast4: ipnOutward[1],
         currency: ipnOutward[2].toUpperCase(), amount: amount(ipnOutward[3]),
-        date: numericDate(ipnOutward[4]), description: `Transfer to ${cleanParty(ipnOutward[5])}`,
-        counterparty: cleanParty(ipnOutward[5]),
+        date: numericDate(ipnOutward[4]), counterparty: cleanParty(ipnOutward[5]),
+        description: `Transfer to ${cleanParty(ipnOutward[5])} (ref ${ipnOutward[6]})`,
+        reference: ipnOutward[6],
       },
     };
   }
@@ -380,6 +538,115 @@ export function parseFinancialMessage(raw: string, source = 'sms', senderHint = 
         date: dayMonthDate(misrMachineCredit[5]),
         description: 'Cash deposit at machine', destinationKind: 'bank',
       }),
+    };
+  }
+
+  // Instant transfer into a card, naming the sender and reference number —
+  // the richer variant of the plain "تم اضافة مبلغ" message.
+  const misrInstantInRef = text.match(
+    new RegExp(`تم إضافة تحويل لحظي الي بطاقة رقم\\s*([\\dx*]+)\\s*بمبلغ\\s*${AMOUNT_TOKEN}\\s*(?:جم|${CURRENCY_TOKEN})?\\s*من\\s*(.+?)\\s*رقم مرجعي\\s*(\\d+)\\s*يوم\\s*(\\d{2}/\\d{2}/\\d{4})`, 'i'),
+  );
+  if (misrInstantInRef) {
+    return {
+      outcome: 'matched',
+      parsed: refineCardKind(text, {
+        kind: 'income', provider: 'bank-misr', accountKind: 'bank',
+        accountHintLast4: last4(misrInstantInRef[1]),
+        currency: normalizeCurrencyToken(misrInstantInRef[3]) ?? 'EGP', amount: amount(misrInstantInRef[2]),
+        date: misrDate(misrInstantInRef[6]),
+        counterparty: cleanParty(misrInstantInRef[4]),
+        description: `Instant transfer from ${cleanParty(misrInstantInRef[4])} (ref ${misrInstantInRef[5]})`,
+        reference: misrInstantInRef[5],
+      }),
+    };
+  }
+
+  // Instant transfer out naming the beneficiary and reference number.
+  const misrInstantOutRef = text.match(
+    new RegExp(`تم تنفيذ تحويل لحظي من حسابكم رقم\\s*([\\dx*]+)\\s*بمبلغ\\s*${AMOUNT_TOKEN}\\s*(?:جم|${CURRENCY_TOKEN})?\\s*[إا]لى\\s*(.+?)\\s*رقم مرجعي\\s*(\\d+)\\s*يوم\\s*(\\d{2}/\\d{2}/\\d{4})`, 'i'),
+  );
+  if (misrInstantOutRef) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', provider: 'bank-misr', accountKind: 'bank',
+        accountHintLast4: last4(misrInstantOutRef[1]),
+        currency: normalizeCurrencyToken(misrInstantOutRef[3]) ?? 'EGP', amount: amount(misrInstantOutRef[2]),
+        date: misrDate(misrInstantOutRef[6]),
+        counterparty: cleanParty(misrInstantOutRef[4]),
+        description: `Instant transfer to ${cleanParty(misrInstantOutRef[4])} (ref ${misrInstantOutRef[5]})`,
+        reference: misrInstantOutRef[5],
+      },
+    };
+  }
+
+  // Branch cash deposit: "تم ايداع مبلغ 5000EGP فى حساب رقم xxx7391 فى 15/06/2026".
+  const misrBranchDeposit = text.match(
+    new RegExp(`تم [إا]?يداع مبلغ\\s*${AMOUNT_TOKEN}\\s*(?:جم|${CURRENCY_TOKEN})?\\s*فى (?:حساب|البطاقة)(?:ي|ى)?\\s*رقم\\s*[x*]*([\\dx*]+)\\s*فى\\s*(\\d{2}/\\d{2}/\\d{4})`, 'i'),
+  );
+  if (misrBranchDeposit) {
+    return {
+      outcome: 'matched',
+      parsed: refineCardKind(text, {
+        kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
+        accountHintLast4: undefined, destinationHintLast4: last4(misrBranchDeposit[3]),
+        currency: normalizeCurrencyToken(misrBranchDeposit[2]) ?? 'EGP', amount: amount(misrBranchDeposit[1]),
+        date: misrDate(misrBranchDeposit[4]),
+        description: 'Cash deposit at branch', destinationKind: 'bank',
+      }),
+    };
+  }
+
+  // Branch cash withdrawal: "تم سحب مبلغ 200USD نقداً من حساب رقم xxx7391 فى 12/06/2026".
+  const misrBranchWithdrawal = text.match(
+    new RegExp(`تم سحب مبلغ\\s*${AMOUNT_TOKEN}\\s*(?:جم|${CURRENCY_TOKEN})?\\s*نقدا?[ً]?\\s*من حساب(?:ي|ى)?\\s*رقم\\s*[x*]*([\\dx*]+)\\s*فى\\s*(\\d{2}/\\d{2}/\\d{4})`, 'i'),
+  );
+  if (misrBranchWithdrawal) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'transfer', provider: 'bank-misr', accountKind: 'bank',
+        accountHintLast4: last4(misrBranchWithdrawal[3]),
+        currency: normalizeCurrencyToken(misrBranchWithdrawal[2]) ?? 'EGP', amount: amount(misrBranchWithdrawal[1]),
+        date: misrDate(misrBranchWithdrawal[4]),
+        description: 'Cash withdrawal at branch', destinationKind: 'cash',
+      },
+    };
+  }
+
+  // Refund of a card purchase: "تم رد المعاملة بقيمة 1229EGP للبطاقة *****2508، بتاريخ 12/11/2025 من Uber ،".
+  const misrRefund = text.match(
+    new RegExp(`تم رد المعاملة بقيمة\\s*${AMOUNT_TOKEN}\\s*(?:جم|${CURRENCY_TOKEN})?\\s*للبطاقة\\s*[x*]*([\\dx*]+)\\s*[،,]?\\s*بتاريخ\\s*(\\d{2}/\\d{2}/\\d{4})\\s*من\\s*(.+?)[،,]`, 'i'),
+  );
+  if (misrRefund) {
+    return {
+      outcome: 'matched',
+      parsed: refineCardKind(text, {
+        kind: 'income', provider: 'bank-misr', accountKind: 'credit-card',
+        accountHintLast4: last4(misrRefund[3]),
+        currency: normalizeCurrencyToken(misrRefund[2]) ?? 'EGP', amount: amount(misrRefund[1]),
+        date: numericDate(misrRefund[4]),
+        counterparty: cleanParty(misrRefund[5]),
+        description: `Refund from ${cleanParty(misrRefund[5])}`,
+      }),
+    };
+  }
+
+  // Terminal credit: "Dear Customer, your account 1000026… is credited by 5000 on 20/06/2026 … terminal …".
+  const misrTerminalCredit = text.match(
+    new RegExp(`your account\\s*[\\dx*]+\\s*is credited by\\s*${AMOUNT_TOKEN}\\s*on\\s*(\\d{2}/\\d{2}/\\d{4})`, 'i'),
+  );
+  if (misrTerminalCredit) {
+    return {
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', provider: 'bank-misr', accountKind: 'bank',
+        currency: 'EGP', amount: amount(misrTerminalCredit[1]),
+        date: misrTerminalCredit[3]
+          ? `${misrTerminalCredit[3]}-${misrTerminalCredit[2].slice(3, 5)}-${misrTerminalCredit[2].slice(0, 2)}`
+          : dayMonthDate(misrTerminalCredit[2]),
+        description: 'Cash deposit at terminal', destinationKind: 'bank',
+      },
     };
   }
 

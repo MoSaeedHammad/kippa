@@ -17,19 +17,40 @@ describe('parseFinancialMessage', () => {
     expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', accountKind: 'credit-card', accountHintLast4: '7281', amount: 999.99, description: 'OPENAI *CHATGPT SUBSCR' } });
   });
 
-  it('treats IPN inward as ordinary income', () => {
+  it('treats IPN inward as ordinary income with the instapay beneficiary and reference', () => {
     const result = parseFinancialMessage('********1001 was credited with IPN inward transfer for EGP 225.00 on 17-07-2026 04:06 from person314271@instapay with reference e33925a9.');
-    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', amount: 225, accountHintLast4: '1001', counterparty: 'person314271@instapay' } });
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', amount: 225, accountHintLast4: '1001',
+        counterparty: 'person314271@instapay', reference: 'e33925a9',
+        description: 'Transfer from person314271@instapay (ref e33925a9)',
+      },
+    });
   });
 
   it('treats IPN purchase (debit from a merchant) as an ordinary expense', () => {
     const result = parseFinancialMessage('Your HSBC Account ********1001 was debited with IPN purchase for EGP 124.00 on 09-08-2026 01:39 from Nat Gas with reference c94e683c.');
-    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', amount: 124, accountHintLast4: '1001', currency: 'EGP', counterparty: 'Nat Gas', description: 'Purchase from Nat Gas' } });
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', amount: 124, accountHintLast4: '1001', currency: 'EGP',
+        counterparty: 'Nat Gas', reference: 'c94e683c',
+        description: 'Purchase from Nat Gas (ref c94e683c)',
+      },
+    });
   });
 
   it('treats IPN outward as an ordinary expense', () => {
     const result = parseFinancialMessage('Your HSBC Account ********1001 was debited with IPN outward transfer for EGP 2,856.86 on 30-07-2026 03:47 to PERSON NAME with reference aaeb38db.');
-    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', amount: 2856.86, accountHintLast4: '1001', description: 'Transfer to PERSON NAME' } });
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', amount: 2856.86, accountHintLast4: '1001',
+        counterparty: 'PERSON NAME', reference: 'aaeb38db',
+        description: 'Transfer to PERSON NAME (ref aaeb38db)',
+      },
+    });
   });
 
   it('parses a Phone Banking Transfer debit leg (from)', () => {
@@ -38,6 +59,97 @@ describe('parseFinancialMessage', () => {
       outcome: 'matched',
       parsed: { kind: 'transfer', transferLeg: 'debit', mergeKey: 'phone-banking-transfer', amount: 2000, currency: 'USD', accountHintLast4: '6017' },
     });
+  });
+
+  it('parses TT and Internet Banking payments as income in / expense out', () => {
+    const credit = parseFinancialMessage('From HSBC: 18NOV21 TT Payment to 074-069***-001 EGP 200,000.00+ Your available balance is EGP 206,464.42');
+    expect(credit).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', description: 'TT payment in', amount: 200000, accountHintLast4: '9001' } });
+    const ibCredit = parseFinancialMessage('From HSBC: 25JUL21 Internet Banking Transfer to 074-069***-001 EGP 1,000.00+ Your available balance is EGP 1,030.67');
+    expect(ibCredit).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', description: 'Internet banking transfer in', amount: 1000 } });
+    const ibDebit = parseFinancialMessage('From HSBC: 18JUL21 Internet Banking Transfer from 074-069***-001 EGP 1,000.00- Your available balance is EGP 30.67');
+    expect(ibDebit).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', description: 'Internet banking transfer out', amount: 1000 } });
+    const ttDebit = parseFinancialMessage('From HSBC: 18AUG21 Internet Banking TT Payment from 074-069***-001 EGP 30,000.00- Your available balance is EGP 1,367.24');
+    expect(ttDebit).toMatchObject({ outcome: 'matched', parsed: { kind: 'expense', description: 'TT payment out', amount: 30000 } });
+  });
+
+  it('parses a salary credit', () => {
+    const result = parseFinancialMessage('From HSBC: 27JUL21 Salary to 074-069***-001 EGP 27,928.69+ Your available balance is EGP 28,959.36');
+    expect(result).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', description: 'Salary', amount: 27928.69 } });
+  });
+
+  it('parses a cheque debit with the cheque number as reference', () => {
+    const result = parseFinancialMessage('From HSBC: 23NOV21 Cheque from 074-069***-001 with cheque no #107453 EGP 116,155.00- Your available balance is EGP 88,809.42');
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: { kind: 'expense', description: 'Cheque #107453', reference: '107453', amount: 116155 },
+    });
+  });
+
+  it('treats card payments as notifications, not transactions', () => {
+    const transferToCard = parseFinancialMessage('From HSBC: 28SEP21 Transfer from 074-069***-001 EGP 1,889.43- to your Credit Card ending with 5986 as per your instruction. Your available balance is EGP 29,610.90');
+    expect(transferToCard.outcome).toBe('notification');
+    const thankYou = parseFinancialMessage('From HSBC: Thank you for the payment of EGP 2,412.12 for Credit Card ending *** 5986.');
+    expect(thankYou.outcome).toBe('notification');
+  });
+
+  it('parses a Bank Misr instant transfer in with sender and reference', () => {
+    const result = parseFinancialMessage('تم إضافة تحويل لحظي الي بطاقة رقم 452829******2508 بمبلغ 3000 من MOHAMED SAID MAHMOUD MOHAMED رقم مرجعي 184104 يوم 18/11/2025 الساعه 14:28 للمزيد اتصل علي 19888');
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: {
+        kind: 'income', amount: 3000, accountHintLast4: '2508',
+        counterparty: 'MOHAMED SAID MAHMOUD MOHAMED', reference: '184104',
+        description: 'Instant transfer from MOHAMED SAID MAHMOUD MOHAMED (ref 184104)',
+      },
+    });
+  });
+
+  it('parses a Bank Misr instant transfer out with beneficiary and reference', () => {
+    const result = parseFinancialMessage('تم تنفيذ تحويل لحظي من حسابكم رقم 0634701368999001 بمبلغ 500 جم إلى GHADEER FATHY MOHAMED رقم مرجعي 123456 يوم 25/03/2026 الساعه 10:11 للمزيد اتصل ب 19888');
+    expect(result).toMatchObject({
+      outcome: 'matched',
+      parsed: {
+        kind: 'expense', amount: 500, currency: 'EGP',
+        counterparty: 'GHADEER FATHY MOHAMED', reference: '123456',
+        description: 'Instant transfer to GHADEER FATHY MOHAMED (ref 123456)',
+      },
+    });
+  });
+
+  it('parses Bank Misr branch cash deposits and withdrawals', () => {
+    const deposit = parseFinancialMessage('تم ايداع مبلغ 5000EGP فى حساب رقم xxx7391 فى 15/06/2026');
+    expect(deposit).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', destinationKind: 'bank', amount: 5000, currency: 'EGP', destinationHintLast4: '7391' } });
+    const depositUsd = parseFinancialMessage('تم ايداع مبلغ 2000USD فى حساب رقم xxx7391 فى 12/05/2026');
+    expect(depositUsd).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', currency: 'USD', amount: 2000 } });
+    const withdrawal = parseFinancialMessage('تم سحب مبلغ 200USD نقداً من حساب رقم xxx7391 فى 12/06/2026');
+    expect(withdrawal).toMatchObject({ outcome: 'matched', parsed: { kind: 'transfer', destinationKind: 'cash', amount: 200, currency: 'USD' } });
+  });
+
+  it('parses a Bank Misr card refund and a terminal credit', () => {
+    const refund = parseFinancialMessage('عميلنا العزيز، تم رد المعاملة بقيمة 1229EGP للبطاقة *****2508، بتاريخ 12/11/2025 من Uber ، للاطلاع على معاملاتكم اضغط bnkmsr.com/online');
+    expect(refund).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', counterparty: 'Uber', amount: 1229, description: 'Refund from Uber' } });
+    const terminal = parseFinancialMessage('Dear Customer, your account 1000026834001 is credited by 5000 on 20/06/2026 14:06 , terminal 01880127 , for more info. call 19888');
+    expect(terminal).toMatchObject({ outcome: 'matched', parsed: { kind: 'income', amount: 5000, description: 'Cash deposit at terminal' } });
+  });
+
+  it('ignores security alerts, PIN/OTP messages, declines and service noise', () => {
+    const noise = [
+      'From HSBC: Transfer to third party account is done from your account via Internet Banking. If you have not done this transaction, please contact HSBC Egypt',
+      'From HSBC: A biller or payment information is added on your profile via Internet Banking. If you have not done this transaction,please contact HSBC Egypt',
+      'Please use PIN 405365 to complete your transaction for EGP20.0 with HSBC card ending 5986. If you did not request a PIN, please call us.',
+      'Use PIN 742373 to pay EUR 2.50 at Comutitres - with HSBC card ending 2930. Call the number on the card\'s back if you didn\'t do this transaction.',
+      'Transaction EGP 350.00 on Card ending *** 3171 was declined due to invalid PIN.',
+      'عميلنا العزيز، برجاء عدم الافصاح عن الكود OTP: 23189 الصالح لمره واحدة لإتمام معاملة الدفع بمبلغ EGP 86.00 من WAFFARHA بطاقة رقم xxxx-xxxx-xxxx-2508',
+      'From HSBC: The HSBC Team wishes you a Happy Birthday and many happy returns of the day!',
+      'From HSBC: This is to notify you that your transaction via HSBC Online/Mobile Banking was  not successful.',
+      'Dear customer, your card ****2508 statement is issued with total EGP 24067.17, minimum due is EGP 1203.36, due before 26/01/2026',
+      'عميلنا العزيز، تم رفض العملية بالبطاقة ****2508 لتجاوز حد الاستخدام الدولي ،  الرصيد المتاح بالبطاقة EGP 294438',
+      'عميلنا العزيز، تم الغاء ايداع مبلغ 2000USD فى حساب رقم xxx7391 فى 12/06/2026',
+      'Your HSBC Account XXX001 IPN PIN has been set successfully.',
+    ];
+    for (const text of noise) {
+      expect(parseFinancialMessage(text).outcome, text.slice(0, 40)).toBe('ignored');
+    }
   });
 
   it('parses a Phone Banking Transfer credit leg (to)', () => {
