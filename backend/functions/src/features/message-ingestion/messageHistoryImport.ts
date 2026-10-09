@@ -26,6 +26,7 @@ import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferL
 import { matchLoanSuggestion } from '../../domain/message-ingestion/loanSuggestion.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
 import { matchCategoryByPattern } from '../../domain/categories/categoryMatching.js';
+import { convertAtRate, fetchFxRate } from '../../libs/fxRates.js';
 import {
   approvePendingFinancialMessage,
   assertString,
@@ -435,8 +436,10 @@ export async function commitChunk(
  * Bulk decision for a staged history import. Every item goes through the
  * exact per-item approve/discard handler via `.run()`, so receipts, audit
  * log, loan locks and ledger lines stay consistent with single approvals.
- * Items that cannot be resolved safely are skipped with a reason and remain
- * pending for manual review.
+ * Foreign-currency charges are converted at the live mid-market rate (the
+ * original charge is preserved on the transaction); only items that cannot
+ * be resolved safely — no suggested account, no destination, or no available
+ * rate — are skipped with a reason and remain pending for manual review.
  *
  * The caller pages through the batch with `cursor` (the order key of the
  * previous window's last doc). Positioning is key-based, so blocked items
@@ -482,6 +485,13 @@ export const decideImportBatch = onCall(
     let approved = 0;
     let discarded = 0;
     const skipped: { pendingId: string; reason: string }[] = [];
+    // Conversion targets: suggested account currencies, loaded once per call;
+    // FX rates are fetched once per currency pair and shared by the window.
+    const accountCurrencies = new Map(
+      (await db.collection(`households/${householdId}/accounts`).get())
+        .docs.map((doc) => [doc.id, (doc.data() as Account).currency as string]),
+    );
+    const rateCache = new Map<string, number | null>();
     for (const entry of slice) {
       const pendingId = entry.id;
       try {
@@ -491,10 +501,6 @@ export const decideImportBatch = onCall(
           continue;
         }
         const pending = entry.doc.data() as PendingFinancialMessage;
-        if (pending.conversionRequired) {
-          skipped.push({ pendingId, reason: 'needs_conversion' });
-          continue;
-        }
         if (!pending.suggestedAccountId) {
           skipped.push({ pendingId, reason: 'needs_account' });
           continue;
@@ -502,6 +508,29 @@ export const decideImportBatch = onCall(
         if (pending.kind === 'transfer' && !pending.suggestedDestinationAccountId) {
           skipped.push({ pendingId, reason: 'needs_destination' });
           continue;
+        }
+        // Foreign-currency charges auto-approve at the live mid-market rate
+        // (same sources the web app uses); the transaction keeps the original
+        // charge as originalCharge so the history stays faithful. When no
+        // rate is available the item stays pending for a manual amount.
+        let convertedAmount: number | undefined;
+        if (pending.conversionRequired) {
+          const targetCurrency = accountCurrencies.get(pending.suggestedAccountId);
+          if (!targetCurrency) {
+            skipped.push({ pendingId, reason: 'needs_account' });
+            continue;
+          }
+          const rateKey = `${pending.currency}>${targetCurrency}`;
+          let rate = rateCache.get(rateKey);
+          if (rate === undefined) {
+            rate = await fetchFxRate(pending.currency, targetCurrency);
+            rateCache.set(rateKey, rate);
+          }
+          if (rate == null) {
+            skipped.push({ pendingId, reason: 'needs_conversion' });
+            continue;
+          }
+          convertedAmount = convertAtRate(pending.amount, rate);
         }
         // Category is intentionally omitted: the approve handler falls back
         // to the stored suggestion, then merchant-pattern rules, and posts
@@ -511,6 +540,7 @@ export const decideImportBatch = onCall(
           pendingId,
           accountId: pending.suggestedAccountId,
           destinationAccountId: pending.kind === 'transfer' ? pending.suggestedDestinationAccountId! : undefined,
+          convertedAmount,
         });
         approved++;
       } catch (error) {
