@@ -19,6 +19,8 @@ import { Money } from '@/components/Money';
 import { computeSharedBalance } from '@/libs/sharedBalance';
 import { availableYears, filterEntriesByPeriod, type EntryPeriodFilter } from '@/libs/entryHistoryFilter';
 import { useAppContext } from '@/hooks/useAppContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/features/shared/components/ListPagination';
 import {
   useDecideSharedBalanceEntryMutation,
   useEditSharedBalanceEntryMutation,
@@ -59,6 +61,7 @@ export function SharedBalancePage() {
   ).length;
   const years = availableYears(entries);
   const visibleEntries = filterEntriesByPeriod(entries, periodFilter);
+  const entriesPage = usePagedList(visibleEntries, 10);
   const isFiltering = visibleEntries.length !== entries.length;
   const busy = proposeMutation.isPending || decideMutation.isPending || editMutation.isPending || upsertRuleMutation.isPending;
 
@@ -205,7 +208,7 @@ export function SharedBalancePage() {
                 </Typography>
               </Box>
             ) : (
-              visibleEntries.map((entry) => (
+              entriesPage.pageItems.map((entry) => (
                 <SharedBalanceEntryItem
                   key={`${entry.id}_r${entry.revision}`}
                   entry={entry}
@@ -218,6 +221,13 @@ export function SharedBalancePage() {
                 />
               ))
             )}
+            <ListPagination
+              page={entriesPage.page}
+              pageCount={entriesPage.pageCount}
+              total={entriesPage.total}
+              pageSize={10}
+              onChange={entriesPage.setPage}
+            />
           </Card>
         </Stack>
       )}

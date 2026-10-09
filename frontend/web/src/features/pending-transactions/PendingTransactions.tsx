@@ -42,6 +42,8 @@ import {
 } from '@/hooks/useFinance';
 import type { AccountType, PendingFinancialMessage, ResolvedPendingFinancialMessage } from '@kippa/domain';
 import { groupImportedPending } from '@/libs/messageHistoryImport';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/features/shared/components/ListPagination';
 import { ledgerLib } from '@/libs/ledger';
 import { currencyLib } from '@/libs/currency';
 import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
@@ -123,6 +125,8 @@ export function PendingTransactions() {
     () => pending.filter((item) => !item.importBatchId),
     [pending],
   );
+  const livePage = usePagedList(livePending, 10);
+  const resolvedPage = usePagedList(resolved, 10);
   const viewerUid = userProfile?.uid ?? '';
   const pendingShared = sharedEntries.filter((entry) => entry.status === 'pending');
   const transfersAwaitingViewer = draftTransfers.filter((draft) => {
@@ -417,7 +421,7 @@ export function PendingTransactions() {
             <CardHeading icon={<HistoryIcon variant="Bulk" />} title={t('reviewTab.detectedTitle')} subtitle={t('reviewTab.detectedHint')} />
           </Box>
           <Divider />
-          {livePending.map((item, index) => (
+          {livePage.pageItems.map((item, index) => (
             <Box key={item.id}>
               <TransactionListItem
                 leading={(itemStates[item.id] ?? 'idle') === 'idle'
@@ -435,9 +439,16 @@ export function PendingTransactions() {
                 onClick={() => openReview(item)}
                 disabled={(itemStates[item.id] ?? 'idle') !== 'idle'}
               />
-              {index < livePending.length - 1 && <TransactionListItemDivider />}
+              {index < livePage.pageItems.length - 1 && <TransactionListItemDivider />}
             </Box>
           ))}
+          <ListPagination
+            page={livePage.page}
+            pageCount={livePage.pageCount}
+            total={livePage.total}
+            pageSize={10}
+            onChange={livePage.setPage}
+          />
         </Card>
       ))}
 
@@ -461,7 +472,7 @@ export function PendingTransactions() {
             <CardHeading icon={<HistoryIcon variant="Bulk" />} title={t('historyTab.title')} subtitle={t('historyTab.subtitle')} />
           </Box>
           <Divider />
-          {resolved.map((item, index) => {
+          {resolvedPage.pageItems.map((item, index) => {
             const restoring = restoreMutation.isPending && restoreMutation.variables?.pendingId === item.id;
             return (
               <Box key={item.id}>
@@ -492,10 +503,17 @@ export function PendingTransactions() {
                     </Button>
                   ) : undefined}
                 />
-                {index < resolved.length - 1 && <TransactionListItemDivider />}
+                {index < resolvedPage.pageItems.length - 1 && <TransactionListItemDivider />}
               </Box>
             );
           })}
+          <ListPagination
+            page={resolvedPage.page}
+            pageCount={resolvedPage.pageCount}
+            total={resolvedPage.total}
+            pageSize={10}
+            onChange={resolvedPage.setPage}
+          />
         </Card>
       ))}
 

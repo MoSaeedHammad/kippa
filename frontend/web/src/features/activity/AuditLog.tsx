@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Box,
-  Button,
   Card,
   CardContent,
   Divider,
@@ -47,6 +46,8 @@ import { usePrivacyMask } from '@/hooks/usePrivacyMask';
 import { AuditAction, AuditLogEntry } from '@kippa/domain';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
+import { ListPagination } from '@/features/shared/components/ListPagination';
+import { usePagedList } from '@/hooks/usePagedList';
 import type activityEn from '@/i18n/locales/en/activity.json';
 
 interface ActionVisual {
@@ -196,15 +197,13 @@ export function AuditLog() {
   const [selectedAction, setSelectedAction] = useState('all');
   const [selectedMember, setSelectedMember] = useState('all');
 
-  const handleSearch = (value: string) => { setSearchTerm(value); resetPage(); };
-  const handleActionChange = (value: string) => { setSelectedAction(value); resetPage(); };
-  const handleMemberChange = (value: string) => { setSelectedMember(value); resetPage(); };
+  const handleSearch = (value: string) => { setSearchTerm(value); auditPage.setPage(1); };
+  const handleActionChange = (value: string) => { setSelectedAction(value); auditPage.setPage(1); };
+  const handleMemberChange = (value: string) => { setSelectedMember(value); auditPage.setPage(1); };
 
-  // Pagination State
-  const PAGE_SIZE = 25;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const resetPage = () => setVisibleCount(PAGE_SIZE);
-
+  // Pagination — same client-paged concept as every other long list. The
+  // handlers below close over `auditPage`, which is declared after the
+  // filtered list it pages.
   // Clear the unread badge as soon as the feed is opened.
   useEffect(() => {
     markSeen();
@@ -245,7 +244,9 @@ export function AuditLog() {
     });
   }, [entries, searchTerm, selectedAction, selectedMember]);
 
-  const visibleEntries = filteredEntries.slice(0, visibleCount);
+  // Pagination — same client-paged concept as every other long list.
+  const auditPage = usePagedList(filteredEntries, 10);
+  const visibleEntries = auditPage.pageItems;
 
   return (
     <Box sx={{ py: 0.5 }}>
@@ -343,13 +344,13 @@ export function AuditLog() {
                   ) : visibleEntries.map(entry => <AuditLogRow key={entry.id} entry={entry} />)}
                 </TableBody>
               </Table>
-              {visibleCount < filteredEntries.length && (
-                <Box sx={{ textAlign: 'center', py: 1.5 }}>
-                  <Button size="small" onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}>
-                    {t('loadMore', { count: filteredEntries.length - visibleCount })}
-                  </Button>
-                </Box>
-              )}
+              <ListPagination
+                page={auditPage.page}
+                pageCount={auditPage.pageCount}
+                total={auditPage.total}
+                pageSize={10}
+                onChange={auditPage.setPage}
+              />
             </TableContainer>
           </>
         )}

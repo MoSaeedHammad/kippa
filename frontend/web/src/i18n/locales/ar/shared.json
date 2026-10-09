@@ -41,5 +41,8 @@
     "baseEquivalentUnavailable": "المكافئ بالعملة الأساسية غير متاح",
     "currentRate": "السعر الحالي: 1 {{from}} =",
     "rateUnavailable": "لا يوجد سعر حالي لـ {{from}}/{{to}}"
+  },
+  "pagination": {
+    "range": "{{from}}–{{to}} من {{total}}"
   }
 }

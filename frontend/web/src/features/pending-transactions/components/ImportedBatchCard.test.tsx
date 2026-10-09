@@ -65,7 +65,7 @@ const item = (overrides: Partial<PendingFinancialMessage>): PendingFinancialMess
   createdAt: '2026-10-01T00:00:00.000Z', status: 'pending', ...overrides,
 });
 
-const renderCard = () => {
+const renderCard = (items?: PendingFinancialMessage[]) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -74,7 +74,7 @@ const renderCard = () => {
         <ImportedBatchCard
           householdId="h"
           batchId="his_test0001"
-          items={[
+          items={items ?? [
             item({ id: 'p1' }),
             item({ id: 'p2', kind: 'income', amount: 1200, date: '2025-03-14', description: 'Salary' }),
           ]}
@@ -198,4 +198,20 @@ it('re-runs classification from the Refine button without approving anything', a
   expect(refineBatch).toHaveBeenCalledWith({ householdId: 'h', batchId: 'his_test0001', maxItems: 100 }, expect.anything());
   expect(decideBatch).not.toHaveBeenCalled();
   await vi.waitFor(() => expect(screen.getByText('Re-classified 2 messages')).toBeInTheDocument());
+});
+
+it('pages the batch list ten rows at a time', async () => {
+  const user = userEvent.setup();
+  const items = Array.from({ length: 12 }, (_, index) => item({ id: `p${index}`, description: `Message ${index}` }));
+  renderCard(items);
+
+  expect(screen.getByText('Message 0')).toBeInTheDocument();
+  expect(screen.getByText('Message 9')).toBeInTheDocument();
+  expect(screen.queryByText('Message 10')).not.toBeInTheDocument();
+  expect(screen.getByText('1–10 of 12')).toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: 'Go to page 2' }));
+  expect(screen.getByText('Message 10')).toBeInTheDocument();
+  expect(screen.queryByText('Message 0')).not.toBeInTheDocument();
+  expect(screen.getByText('11–12 of 12')).toBeInTheDocument();
 });

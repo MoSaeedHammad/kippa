@@ -65,7 +65,13 @@ export function MultiAccountPicker({
       </Box>
 
       {accounts.length > 0 ? (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(auto-fill, minmax(160px, 1fr))' },
+            gap: 1.5,
+          }}
+        >
           {accounts.map((account) => {
             const isSelected = selected.has(account.id);
             const share = isSelected && amountFor ? amountFor(account) : null;
@@ -73,10 +79,7 @@ export function MultiAccountPicker({
               <Card
                 key={account.id}
                 variant={isSelected ? 'selectableSelected' : 'selectable'}
-                sx={{
-                  flex: { xs: '1 1 calc(50% - 9px)', sm: '1 1 0' },
-                  minWidth: 0,
-                }}
+                sx={{ minWidth: 0 }}
               >
                 <CardActionArea
                   onClick={() => onToggle(account.id)}

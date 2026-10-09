@@ -40,6 +40,8 @@ import { transactionsLib } from '@/libs/transactions';
 import { categoryRulesLib } from '@/libs/categoryRules';
 import { useQueryClient } from '@tanstack/react-query';
 import type { CurrencyCode } from '@kippa/domain';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/features/shared/components/ListPagination';
 
 const MAX_ASSIGN_UPDATES = 300;
 
@@ -76,6 +78,7 @@ export function MerchantsView() {
     () => (uncategorizedOnly ? merchants.filter((merchant) => merchant.uncategorizedCount > 0 || !merchant.primaryCategoryId) : merchants),
     [merchants, uncategorizedOnly],
   );
+  const merchantsPage = usePagedList(visible, 10);
 
   const categoryName = (id: string | null) =>
     id ? categories.find((category) => category.id === id)?.name ?? null : null;
@@ -114,7 +117,7 @@ export function MerchantsView() {
       ) : (
         <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
           <Divider />
-          {visible.map((merchant, index) => {
+          {merchantsPage.pageItems.map((merchant, index) => {
             const primary = categoryName(merchant.primaryCategoryId);
             const needsAttention = merchant.uncategorizedCount > 0 || !primary;
             return (
@@ -151,10 +154,17 @@ export function MerchantsView() {
                     {t('merchants.assign')}
                   </Button>
                 </Box>
-                {index < visible.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
+                {index < merchantsPage.pageItems.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
               </Box>
             );
           })}
+          <ListPagination
+            page={merchantsPage.page}
+            pageCount={merchantsPage.pageCount}
+            total={merchantsPage.total}
+            pageSize={10}
+            onChange={merchantsPage.setPage}
+          />
         </Card>
       )}
 

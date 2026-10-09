@@ -12,7 +12,6 @@ import {
   InputLabel,
   Card,
   Skeleton,
-  Button,
 } from '@mui/material';
 import { SearchIcon } from '@/components/AppIcon';
 
@@ -34,6 +33,8 @@ import { TransactionDetailDialog } from './components/TransactionDetailDialog';
 import { EmptyLayout } from '@/features/shared/components/EmptyLayout';
 import { PageHeader } from '@/features/shared/components/PageHeader';
 import { useTransactionHistoryUi } from './hooks/useTransactionHistoryUi';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/features/shared/components/ListPagination';
 import { TransactionHistoryRow } from './components/TransactionHistoryRow';
 import { useSharedBalanceMembers } from '@/features/shared-balance/hooks/useSharedBalance';
 import type { FinanceTransaction } from '@kippa/domain';
@@ -47,18 +48,18 @@ export function TransactionHistory() {
   const { maskDigits } = usePrivacyMask();
   
   // Filter States
-  const { editingTx, loadMore, resetPage, searchTerm, selectedAccount, selectedCategory, selectedCycleId, setEditingTx, setSearchTerm, setSelectedAccount, setSelectedCategory, setSelectedCycleId, visibleCount } = useTransactionHistoryUi();
+  const { editingTx, searchTerm, selectedAccount, selectedCategory, selectedCycleId, setEditingTx, setSearchTerm, setSelectedAccount, setSelectedCategory, setSelectedCycleId } = useTransactionHistoryUi();
   const [detailTx, setDetailTx] = useState<FinanceTransaction | null>(null);
   const selectedType = searchParams.get('type') ?? 'all';
 
-  const handleSearch = (value: string) => { setSearchTerm(value); resetPage(); };
-  const handleCategoryChange = (value: string) => { setSelectedCategory(value); resetPage(); };
-  const handleAccountChange = (value: string) => { setSelectedAccount(value); resetPage(); };
+  const handleSearch = (value: string) => { setSearchTerm(value); historyPage.setPage(1); };
+  const handleCategoryChange = (value: string) => { setSelectedCategory(value); historyPage.setPage(1); };
+  const handleAccountChange = (value: string) => { setSelectedAccount(value); historyPage.setPage(1); };
   const handleTypeChange = (value: string) => {
     setSearchParams(value === 'all' ? {} : { type: value });
-    resetPage();
+    historyPage.setPage(1);
   };
-  const handleCycleChange = (value: string) => { setSelectedCycleId(value); resetPage(); };
+  const handleCycleChange = (value: string) => { setSelectedCycleId(value); historyPage.setPage(1); };
 
 
   // Queries & Mutations
@@ -121,6 +122,7 @@ export function TransactionHistory() {
 
     return searchMatch && catMatch && accMatch && typeMatch;
   });
+  const historyPage = usePagedList(filteredTxs, 10);
 
   const isLoading = accountsLoading || categoriesLoading || txsLoading || linesLoading;
 
@@ -223,7 +225,7 @@ export function TransactionHistory() {
               />
             </Box>
           ) : (
-            filteredTxs.slice(0, visibleCount).map((transaction) => (
+            historyPage.pageItems.map((transaction) => (
               <TransactionHistoryRow
                 key={transaction.id}
                 transaction={transaction}
@@ -240,17 +242,13 @@ export function TransactionHistory() {
               />
             ))
           )}
-          {visibleCount < filteredTxs.length && (
-            <Box sx={{ textAlign: 'center', py: 1.5 }}>
-              <Button
-                size="small"
-                onClick={loadMore}
-                sx={{ fontWeight: 600, fontSize: '12px', color: 'primary.main', textTransform: 'none', px: 2 }}
-              >
-                {t('loadMore', { count: filteredTxs.length - visibleCount })}
-              </Button>
-            </Box>
-          )}
+          <ListPagination
+            page={historyPage.page}
+            pageCount={historyPage.pageCount}
+            total={historyPage.total}
+            pageSize={10}
+            onChange={historyPage.setPage}
+          />
         </Card>
       </Stack>
 

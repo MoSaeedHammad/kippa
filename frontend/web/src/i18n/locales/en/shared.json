@@ -41,5 +41,8 @@
     "baseEquivalentUnavailable": "Base equivalent unavailable",
     "currentRate": "Current rate: 1 {{from}} =",
     "rateUnavailable": "No current {{from}}/{{to}} rate"
+  },
+  "pagination": {
+    "range": "{{from}}–{{to}} of {{total}}"
   }
 }

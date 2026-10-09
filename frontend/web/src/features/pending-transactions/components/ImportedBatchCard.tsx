@@ -23,6 +23,8 @@ import { TransactionIcon } from '@/features/transactions/components/TransactionI
 import { Money } from '@/components/Money';
 import { CheckCircleIcon, DeleteIcon, ExpandLessIcon, ExpandMoreIcon, HistoryIcon, RefreshIcon } from '@/components/AppIcon';
 import { useAccounts, useCategories, useDecideImportBatchMutation, useRefineImportBatchMutation, useTransactions } from '@/hooks/useFinance';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListPagination } from '@/features/shared/components/ListPagination';
 import { recordedMerchantNames } from '@/libs/merchantAnalytics';
 import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
 import { BatchItemQuickEditor } from './BatchItemQuickEditor';
@@ -67,6 +69,7 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
     .map((item) => item.date)
     .sort();
   const span = dated.length > 0 ? { from: dated[0], to: dated[dated.length - 1] } : null;
+  const itemsPage = usePagedList(items, 10);
   const decided = async (action: PendingDecision) => {
     setDecision(null);
     setBusy(true);
@@ -222,7 +225,7 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
         )}
       </Box>
       <Divider />
-      {items.map((item, index) => (
+      {itemsPage.pageItems.map((item, index) => (
         <Box key={item.id}>
           <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
             <Box
@@ -273,9 +276,16 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
               }}
             />
           )}
-          {index < items.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
+          {index < itemsPage.pageItems.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
         </Box>
       ))}
+      <ListPagination
+        page={itemsPage.page}
+        pageCount={itemsPage.pageCount}
+        total={itemsPage.total}
+        pageSize={10}
+        onChange={itemsPage.setPage}
+      />
 
       <Dialog open={decision != null} onClose={() => (busy ? undefined : setDecision(null))}>
         <DialogTitle>
