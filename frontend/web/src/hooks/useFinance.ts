@@ -227,6 +227,16 @@ export function useDecideImportBatchMutation() {
   });
 }
 
+export function useRefineImportBatchMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: messageIngestionLib.refineBatch,
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.pendingMessages(variables.householdId) });
+    },
+  });
+}
+
 /**
  * Returns a map of categoryId -> recency+frequency score for the given type,
  * based on transactions in the last 30 days. For sorting category chips

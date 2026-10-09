@@ -21,8 +21,8 @@ import type { PendingFinancialMessage } from '@kippa/domain';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { Money } from '@/components/Money';
-import { CheckCircleIcon, DeleteIcon, ExpandLessIcon, ExpandMoreIcon, HistoryIcon } from '@/components/AppIcon';
-import { useAccounts, useCategories, useDecideImportBatchMutation, useTransactions } from '@/hooks/useFinance';
+import { CheckCircleIcon, DeleteIcon, ExpandLessIcon, ExpandMoreIcon, HistoryIcon, RefreshIcon } from '@/components/AppIcon';
+import { useAccounts, useCategories, useDecideImportBatchMutation, useRefineImportBatchMutation, useTransactions } from '@/hooks/useFinance';
 import { recordedMerchantNames } from '@/libs/merchantAnalytics';
 import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
 import { BatchItemQuickEditor } from './BatchItemQuickEditor';
@@ -52,13 +52,14 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
   const { t } = useTranslation('pendingTransactions');
   const { enqueueSnackbar } = useSnackbar();
   const decideMutation = useDecideImportBatchMutation();
+  const refineMutation = useRefineImportBatchMutation();
   const queryClient = useQueryClient();
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
   const { data: transactions = [] } = useTransactions(householdId);
   const merchantOptions = useMemo(() => recordedMerchantNames(transactions), [transactions]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [decision, setDecision] = useState<PendingDecision | null>(null);
+  const [decision, setDecision] = useState<PendingDecision | 'refine' | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -126,6 +127,45 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
     }
   };
 
+  // Re-runs template classification over the remaining pending messages with
+  // the household's current rules — the fix path after adding a template.
+  const refined = async () => {
+    setDecision(null);
+    setBusy(true);
+    setProgress({ done: 0, total: items.length });
+    let updated = 0;
+    let unchanged = 0;
+    let skippedCount = 0;
+    let cursor: string | null = null;
+    try {
+      for (let call = 0; call < MAX_DECIDE_CALLS; call++) {
+        const result = await refineMutation.mutateAsync({
+          householdId,
+          batchId,
+          maxItems: ITEMS_PER_DECIDE_CALL,
+          ...(cursor ? { cursor } : {}),
+        });
+        updated += result.refined;
+        unchanged += result.unchanged;
+        skippedCount += result.skipped.length;
+        cursor = result.nextCursor ?? null;
+        setProgress((current) => current
+          ? { done: Math.min(current.done + result.refined + result.unchanged + result.skipped.length, current.total), total: current.total }
+          : current);
+        if (!result.hasMore) break;
+      }
+      const parts = [t('imported.doneRefined', { count: updated })];
+      if (unchanged > 0) parts.push(t('imported.doneUnchanged', { count: unchanged }));
+      if (skippedCount > 0) parts.push(t('imported.doneUnparsable', { count: skippedCount }));
+      enqueueSnackbar(parts.join(' · '), { variant: updated > 0 ? 'success' : 'info' });
+    } catch {
+      enqueueSnackbar(t('toasts.refineBatchFailed'), { variant: 'error' });
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
   return (
     <Card sx={{ overflow: 'hidden', '&:hover': { transform: 'none' } }}>
       <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>
@@ -152,6 +192,14 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
               onClick={() => setDecision('approve')}
             >
               {t('imported.approveAll')}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              disabled={busy}
+              onClick={() => setDecision('refine')}
+            >
+              {t('imported.refine')}
             </Button>
             <Button
               variant="outlined"
@@ -230,19 +278,21 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
       ))}
 
       <Dialog open={decision != null} onClose={() => (busy ? undefined : setDecision(null))}>
-        <DialogTitle>{decision === 'approve' ? t('imported.approveTitle') : t('imported.cancelTitle')}</DialogTitle>
+        <DialogTitle>
+          {decision === 'approve' ? t('imported.approveTitle') : decision === 'refine' ? t('imported.refineTitle') : t('imported.cancelTitle')}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {decision === 'approve' ? t('imported.approveBody') : t('imported.cancelBody')}
+            {decision === 'approve' ? t('imported.approveBody') : decision === 'refine' ? t('imported.refineBody') : t('imported.cancelBody')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDecision(null)} disabled={busy}>{t('imported.back')}</Button>
           <Button
             variant="contained"
-            color={decision === 'approve' ? 'success' : 'error'}
+            color={decision === 'discard' ? 'error' : 'success'}
             disabled={busy || decision == null}
-            onClick={() => decision && void decided(decision)}
+            onClick={() => (decision === 'refine' ? void refined() : decision && void decided(decision))}
           >
             {t('imported.confirm')}
           </Button>

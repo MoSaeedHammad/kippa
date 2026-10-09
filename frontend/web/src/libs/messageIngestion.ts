@@ -3,6 +3,7 @@ import { functions } from '@/config/firebase';
 import { dbLib } from '@/libs/db';
 import type {
   DecideImportBatchResult,
+  RefineImportBatchResult,
   HistoryImportMessage,
   ImportMessageHistoryResult,
   MessageIngestionCredential,
@@ -131,6 +132,17 @@ export const messageIngestionLib = {
     cursor?: string;
   }): Promise<DecideImportBatchResult> {
     const callable = httpsCallable<typeof data, DecideImportBatchResult>(requireFunctions(), 'decideImportBatch');
+    return (await callable(data)).data;
+  },
+
+  /** Re-runs template classification over a batch's remaining pending messages (100 items per call). */
+  async refineBatch(data: {
+    householdId: string;
+    batchId: string;
+    maxItems?: number;
+    cursor?: string;
+  }): Promise<RefineImportBatchResult> {
+    const callable = httpsCallable<typeof data, RefineImportBatchResult>(requireFunctions(), 'refineImportBatch');
     return (await callable(data)).data;
   },
 };

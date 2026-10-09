@@ -131,7 +131,8 @@
     "restoreFailed": "تعذر استعادة هذا العنصر",
     "discardFailed": "تعذر إهمال هذا العنصر",
     "decideBatchFailed": "فشل تنفيذ الإجراء الجماعي جزئيًا — راجع الرسائل المتبقية.",
-    "createFailed": "تعذّر الإنشاء — حاول مجددًا"
+    "createFailed": "تعذّر الإنشاء — حاول مجددًا",
+    "refineBatchFailed": "تعذّرت إعادة تصنيف الدفعة."
   },
   "undo": "تراجع",
   "sharedBalance": {
@@ -282,7 +283,28 @@
     "quickEdit": "تحرير سريع",
     "collapseEdit": "إغلاق المحرر",
     "needsConversionBadge": "تحتاج تحويل عملة",
-    "needsAccountBadge": "بدون حساب"
+    "needsAccountBadge": "بدون حساب",
+    "refine": "إعادة استخراج الخصائص",
+    "refineTitle": "إعادة تصنيف الرسائل المتبقية؟",
+    "refineBody": "ستُعاد قراءة الرسائل المعلّقة وفق قوالبك الحالية — يُعاد استخراج المبلغ والحساب والفئة والتاجر. لن يتم اعتماد أو تجاهل أي رسالة.",
+    "doneRefined_zero": "تمت إعادة تصنيف {{count}} رسالة",
+    "doneRefined_one": "تمت إعادة تصنيف رسالة واحدة",
+    "doneRefined_two": "تمت إعادة تصنيف رسالتين",
+    "doneRefined_few": "تمت إعادة تصنيف {{count}} رسائل",
+    "doneRefined_many": "تمت إعادة تصنيف {{count}} رسالة",
+    "doneRefined_other": "تمت إعادة تصنيف {{count}} رسالة",
+    "doneUnchanged_zero": "{{count}} رسالة لم تتغير",
+    "doneUnchanged_one": "رسالة واحدة لم تتغير",
+    "doneUnchanged_two": "رسالتان لم تتغيرا",
+    "doneUnchanged_few": "{{count}} رسائل لم تتغير",
+    "doneUnchanged_many": "{{count}} رسالة لم تتغير",
+    "doneUnchanged_other": "{{count}} رسالة لم تتغير",
+    "doneUnparsable_zero": "{{count}} رسالة تعذّر إعادة قراءتها",
+    "doneUnparsable_one": "رسالة واحدة تعذّر إعادة قراءتها",
+    "doneUnparsable_two": "رسالتان تعذّر إعادة قراءتهما",
+    "doneUnparsable_few": "{{count}} رسائل تعذّر إعادة قراءتها",
+    "doneUnparsable_many": "{{count}} رسالة تعذّر إعادة قراءتها",
+    "doneUnparsable_other": "{{count}} رسالة تعذّر إعادة قراءتها"
   },
   "createCategory": {
     "title": "فئة {{type}} جديدة",

@@ -686,6 +686,16 @@ export type DecideImportBatchResult = {
   hasMore: boolean;
 };
 
+export type RefineImportBatchResult = {
+  /** Messages whose staged attributes were rewritten under the current rules. */
+  refined: number;
+  /** Messages whose re-classification matched what was already stored. */
+  unchanged: number;
+  skipped: DecideImportBatchSkip[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
 export type MessageIngestionCredential = {
   id: string;
   label: string;

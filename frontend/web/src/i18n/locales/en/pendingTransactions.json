@@ -131,7 +131,8 @@
     "restoreFailed": "Could not restore this item",
     "discardFailed": "Could not discard this item",
     "decideBatchFailed": "The bulk decision failed partway — review the remaining messages.",
-    "createFailed": "Could not create it — try again"
+    "createFailed": "Could not create it — try again",
+    "refineBatchFailed": "Could not re-run classification on the batch."
   },
   "undo": "Undo",
   "sharedBalance": {
@@ -282,7 +283,28 @@
     "quickEdit": "Quick edit",
     "collapseEdit": "Collapse editor",
     "needsConversionBadge": "needs conversion",
-    "needsAccountBadge": "no account"
+    "needsAccountBadge": "no account",
+    "refine": "Refine attributes",
+    "refineTitle": "Re-run classification?",
+    "refineBody": "Pending messages will be re-parsed with your current template rules — amounts, accounts, categories and merchants are re-derived. Nothing is approved or discarded.",
+    "doneRefined_zero": "Re-classified {{count}} messages",
+    "doneRefined_one": "Re-classified {{count}} message",
+    "doneRefined_two": "Re-classified {{count}} messages",
+    "doneRefined_few": "Re-classified {{count}} messages",
+    "doneRefined_many": "Re-classified {{count}} messages",
+    "doneRefined_other": "Re-classified {{count}} messages",
+    "doneUnchanged_zero": "{{count}} already matched",
+    "doneUnchanged_one": "{{count}} already matched",
+    "doneUnchanged_two": "{{count}} already matched",
+    "doneUnchanged_few": "{{count}} already matched",
+    "doneUnchanged_many": "{{count}} already matched",
+    "doneUnchanged_other": "{{count}} already matched",
+    "doneUnparsable_zero": "{{count}} could not be re-parsed",
+    "doneUnparsable_one": "{{count}} could not be re-parsed",
+    "doneUnparsable_two": "{{count}} could not be re-parsed",
+    "doneUnparsable_few": "{{count}} could not be re-parsed",
+    "doneUnparsable_many": "{{count}} could not be re-parsed",
+    "doneUnparsable_other": "{{count}} could not be re-parsed"
   },
   "createCategory": {
     "title": "New {{type}} category",

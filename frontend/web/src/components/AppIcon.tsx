@@ -5,7 +5,7 @@ import {
   Bank, Briefcase, Calendar, Card, CardPos, Category, Chart, CloseCircle, CloudRemove,
   Convert, Copy, Discover, DocumentUpload, Edit2, Export, Eye, EyeSlash, Filter, Home2,
   InfoCircle, Key, Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle,
-  People, Play, Profile2User, Receipt, SearchNormal1, Setting2, ShoppingCart, Sun,
+  People, Play, Profile2User, Receipt, Refresh, SearchNormal1, Setting2, ShoppingCart, Sun,
   TickCircle, TickSquare, Timer1, Trash, Wallet,
 } from 'iconsax-react';
 
@@ -109,6 +109,7 @@ export const PieChartIcon = createAppIcon(Chart);
 export const PlayIcon = createAppIcon(Play);
 export const ReceiptLongIcon = createAppIcon(Receipt);
 export const RemoveIcon = createAppIcon(Minus);
+export const RefreshIcon = createAppIcon(Refresh);
 export const SavingsIcon = createAppIcon(Bank);
 export const SearchIcon = createAppIcon(SearchNormal1);
 export const SettingsBrightnessIcon = createAppIcon(Setting2);

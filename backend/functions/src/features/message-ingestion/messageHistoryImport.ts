@@ -10,6 +10,7 @@ import type {
   ImportMessageHistoryResult,
   Loan,
   PendingFinancialMessage,
+  RefineImportBatchResult,
 } from '@kippa/domain';
 import { buildMessagePreview, isIgnoredFinancialMessage, parseFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import {
@@ -20,6 +21,7 @@ import {
   stampToDate,
   withinRange,
 } from '../../domain/message-ingestion/historyImport.js';
+import { refinedPendingFields, refineIsNoOp } from '../../domain/message-ingestion/batchRefine.js';
 import { buildMergedTransferLeg } from '../../domain/message-ingestion/transferLegs.js';
 import { matchLoanSuggestion } from '../../domain/message-ingestion/loanSuggestion.js';
 import { pickSuggestions } from '../../domain/message-ingestion/suggestions.js';
@@ -524,5 +526,142 @@ export const decideImportBatch = onCall(
       nextCursor,
       hasMore,
     } satisfies DecideImportBatchResult;
+  },
+);
+
+/**
+ * Re-runs classification over a staged import batch's remaining pending
+ * messages with the household's CURRENT template rules, category rules,
+ * accounts, cards and loans — the fast path after adding or fixing a message
+ * template: attributes are re-derived from each message's source text and
+ * rewritten in place; nothing is approved or discarded. Already merged
+ * cross-currency transfers and messages that no longer parse are skipped
+ * with a reason. Cursor-paged like decideImportBatch.
+ */
+export const refineImportBatch = onCall(
+  { timeoutSeconds: 540 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Sign in required.');
+    const data = request.data as {
+      householdId?: unknown;
+      batchId?: unknown;
+      maxItems?: unknown;
+      cursor?: unknown;
+    };
+    const householdId = assertString(data.householdId, 'householdId');
+    const batchId = assertString(data.batchId, 'batchId');
+    if (!BATCH_ID_PATTERN.test(batchId)) {
+      throw new HttpsError('invalid-argument', 'batchId is malformed.');
+    }
+    const maxItems = typeof data.maxItems === 'number' && Number.isFinite(data.maxItems)
+      ? Math.min(300, Math.max(1, Math.floor(data.maxItems)))
+      : 100;
+    const cursor = typeof data.cursor === 'string' && data.cursor.length > 0 && data.cursor.length <= 600
+      ? data.cursor
+      : null;
+    const profile = await requireFullHouseholdMember(uid, householdId);
+
+    const db = getFirestore();
+    const [accountsSnapshot, cardsSnapshot, loansSnapshot, transactionsSnapshot, categoryRulesSnapshot, templatesSnapshot] = await Promise.all([
+      db.collection(`households/${householdId}/accounts`).get(),
+      db.collection(`households/${householdId}/cards`).get(),
+      db.collection(`households/${householdId}/loans`).get(),
+      db.collection(`households/${householdId}/transactions`).get(),
+      db.collection(`households/${householdId}/categoryRules`).get(),
+      db.collection(`households/${householdId}/messageTemplates`).where('isActive', '==', true).get(),
+    ]);
+    const accounts = accountsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Account);
+    const cards = cardsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Card);
+    const loans = loansSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Loan);
+    const transactions = transactionsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as FinanceTransaction);
+    const categoryRules = categoryRulesSnapshot.docs.map((doc) => ({ ...doc.data() }) as { pattern: string; categoryId: string });
+    const templates = templatesSnapshot.docs.map((doc) => ({ ...(doc.data() as MessageTemplate), id: doc.id }));
+    const overrideTemplates = templates.filter((template) => template.overrideBuiltIn === true);
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    // Equality-only query — no composite index required.
+    const snapshot = await db.collection(`households/${householdId}/pendingFinancialMessages`)
+      .where('importBatchId', '==', batchId)
+      .get();
+    const docs = snapshot.docs.map((doc) => ({ doc, id: doc.id, createdAt: doc.get('createdAt') as string | undefined }));
+    const { slice, nextCursor, hasMore } = batchDecisionWindow(docs, cursor, maxItems);
+
+    let refined = 0;
+    let unchanged = 0;
+    const skipped: { pendingId: string; reason: string }[] = [];
+    const batch = db.batch();
+    let writes = 0;
+    for (const entry of slice) {
+      const pendingId = entry.id;
+      const pending = entry.doc.data() as PendingFinancialMessage;
+      if (!pending.sourceMessage) {
+        skipped.push({ pendingId, reason: 'no_source_message' });
+        continue;
+      }
+      if (pending.destinationCurrency) {
+        // A merged cross-currency transfer no longer parses from one leg's
+        // text — fixing those requires re-importing both legs.
+        skipped.push({ pendingId, reason: 'merged_transfer' });
+        continue;
+      }
+      let templateMatch: ReturnType<typeof matchMessageTemplates> = null;
+      if (!isIgnoredFinancialMessage(pending.sourceMessage)) {
+        templateMatch = matchMessageTemplates(pending.sourceMessage, overrideTemplates, todayIso);
+      }
+      // The stored provider doubles as the sender hint so provider detection
+      // survives the missing forwarder metadata.
+      let parsedResult = templateMatch
+        ? ({ outcome: 'matched', parsed: templateMatch.parsed } as ReturnType<typeof parseFinancialMessage>)
+        : parseFinancialMessage(pending.sourceMessage, pending.source, pending.provider);
+      if (!templateMatch && parsedResult.outcome === 'unsupported') {
+        templateMatch = matchMessageTemplates(pending.sourceMessage, templates, todayIso);
+        if (templateMatch) parsedResult = { outcome: 'matched', parsed: templateMatch.parsed };
+      }
+      if (parsedResult.outcome !== 'matched') {
+        skipped.push({ pendingId, reason: parsedResult.outcome === 'ignored' ? 'reclassified_ignored' : 'unsupported' });
+        continue;
+      }
+      const parsed = parsedResult.parsed;
+      const suggestions = pickSuggestions(accounts, cards, parsed);
+      const loanSuggestion = matchLoanSuggestion(loans, transactions, parsed, suggestions.accountId);
+      const suggestedCategoryId = parsed.kind === 'transfer'
+        ? null
+        : matchCategoryByPattern(categoryRules, { description: parsed.description, counterparty: parsed.counterparty ?? null });
+      const fields = refinedPendingFields({
+        parsed,
+        suggestions,
+        loanSuggestion,
+        suggestedCategoryId,
+        matchedTemplateId: templateMatch?.templateId ?? null,
+        matchedTemplateName: templateMatch?.templateName ?? null,
+      });
+      if (refineIsNoOp(pending, fields)) {
+        unchanged++;
+        continue;
+      }
+      batch.set(entry.doc.ref, fields, { merge: true });
+      refined++;
+      writes++;
+    }
+    if (writes > 0) await batch.commit();
+
+    if (refined > 0 || unchanged > 0) {
+      const now = new Date().toISOString();
+      const auditId = `import_refined_${batchId}_${Date.now()}`;
+      await db.doc(`households/${householdId}/auditLog/${auditId}`).create({
+        id: auditId,
+        householdId,
+        userId: uid,
+        userDisplayName: profile.displayName || 'User',
+        userPhotoURL: null,
+        action: 'import_batch_refined',
+        summary: `Re-ran template classification over an import batch: ${refined} updated, ${unchanged} unchanged, ${skipped.length} skipped`,
+        details: { batchId, refined, unchanged, skipped: skipped.length },
+        createdAt: now,
+      });
+    }
+
+    return { refined, unchanged, skipped, nextCursor, hasMore } satisfies RefineImportBatchResult;
   },
 );

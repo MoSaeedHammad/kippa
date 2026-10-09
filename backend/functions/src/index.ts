@@ -24,7 +24,7 @@ export {
   revokeMessageIngestionCredential,
   restoreDiscardedPendingFinancialMessage,
 } from './features/message-ingestion/messageIngestion.js';
-export { importMessageHistory, decideImportBatch } from './features/message-ingestion/messageHistoryImport.js';
+export { importMessageHistory, decideImportBatch, refineImportBatch } from './features/message-ingestion/messageHistoryImport.js';
 export { importRecordHistory } from './features/message-ingestion/recordHistoryImport.js';
 export { upsertMessageTemplate, testMessageTemplate } from './features/message-ingestion/messageTemplates.js';
 export { deleteCard, wipeAccount, previewAccountWipe } from './features/accounts/accountLifecycle.js';

@@ -6,11 +6,18 @@ import { PrivacyModeProvider } from '@/hooks/PrivacyModeProvider';
 import { expect, it, vi } from 'vitest';
 import type { PendingFinancialMessage } from '@kippa/domain';
 
-const { decideBatch, approve, discard } = vi.hoisted(() => ({
+const { decideBatch, refineBatch, approve, discard } = vi.hoisted(() => ({
   decideBatch: vi.fn(async () => ({
     action: 'approve' as 'approve' | 'discard',
     approved: 2,
     discarded: 0,
+    skipped: [] as { pendingId: string; reason: string }[],
+    nextCursor: null as string | null,
+    hasMore: false,
+  })),
+  refineBatch: vi.fn(async () => ({
+    refined: 2,
+    unchanged: 0,
     skipped: [] as { pendingId: string; reason: string }[],
     nextCursor: null as string | null,
     hasMore: false,
@@ -22,6 +29,7 @@ const { decideBatch, approve, discard } = vi.hoisted(() => ({
 vi.mock('@/libs/messageIngestion', () => ({
   messageIngestionLib: {
     decideBatch,
+    refineBatch,
     importHistory: vi.fn(),
     getPending: vi.fn(),
     approve,
@@ -174,4 +182,20 @@ it('approves a single message inline with the account, category and merchant pic
     categoryId: 'cat1',
     merchant: 'Fawry',
   }), expect.anything());
+});
+
+it('re-runs classification from the Refine button without approving anything', async () => {
+  refineBatch.mockClear();
+  decideBatch.mockClear();
+  const user = userEvent.setup();
+  renderCard();
+
+  await user.click(screen.getByRole('button', { name: 'Refine attributes' }));
+  expect(screen.getByText('Pending messages will be re-parsed with your current template rules — amounts, accounts, categories and merchants are re-derived. Nothing is approved or discarded.')).toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: 'Confirm' }));
+  await vi.waitFor(() => expect(refineBatch).toHaveBeenCalledOnce());
+  expect(refineBatch).toHaveBeenCalledWith({ householdId: 'h', batchId: 'his_test0001', maxItems: 100 }, expect.anything());
+  expect(decideBatch).not.toHaveBeenCalled();
+  await vi.waitFor(() => expect(screen.getByText('Re-classified 2 messages')).toBeInTheDocument());
 });
