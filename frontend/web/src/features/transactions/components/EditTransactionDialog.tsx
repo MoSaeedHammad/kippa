@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
+  Autocomplete,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,6 +27,7 @@ import {
   useAccounts,
   useCategories,
   useLedgerLines,
+  useTransactions,
   useUpdateTransactionMutation,
   useHouseholdBaseCurrency,
 } from '@/hooks/useFinance';
@@ -33,6 +35,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { FinanceTransaction } from '@kippa/domain';
 import { TransactionTypeChip } from './TransactionTypeChip';
 import { useTransactionEditFields } from '../hooks/useTransactionEditFields';
+import { recordedMerchantNames } from '@/libs/merchantAnalytics';
 import { findPrimaryLedgerLine, resolveEditedCurrency, resolveEditedSignedAmount } from '@/libs/transactionEdit';
 
 interface EditTransactionDialogProps {
@@ -53,9 +56,11 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
   const { data: accounts = [] } = useAccounts(householdId);
   const { data: categories = [] } = useCategories(householdId);
   const { data: ledgerLines = [] } = useLedgerLines(householdId);
+  const { data: transactions = [] } = useTransactions(householdId);
   const updateMutation = useUpdateTransactionMutation();
 
   const { fields, setField } = useTransactionEditFields(transaction, ledgerLines);
+  const merchantOptions = useMemo(() => recordedMerchantNames(transactions), [transactions]);
 
   if (!transaction) return null;
 
@@ -81,6 +86,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
           date: fields.date,
           categoryId: isRegularTx ? (fields.categoryId || null) : null,
           type: isRegularTx ? fields.type : transaction.type,
+          merchant: fields.merchant.trim() || null,
         },
         lineUpdates: {
           accountId: fields.accountId,
@@ -260,6 +266,22 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                   </Select>
                 </FormControl>
               )}
+            </Grid>
+          )}
+
+          {/* Merchant (suggestions from previously recorded merchants) */}
+          {isRegularTx && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Autocomplete
+                freeSolo
+                fullWidth
+                options={merchantOptions}
+                value={fields.merchant}
+                onInputChange={(_, value) => setField('merchant', value ?? '')}
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth label={t('editDialog.merchant')} placeholder={t('editDialog.merchantPlaceholder')} />
+                )}
+              />
             </Grid>
           )}
 

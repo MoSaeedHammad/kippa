@@ -278,7 +278,11 @@
     "skippedDestination_zero": "{{count}} have no destination account",
     "skippedDestination_two": "{{count}} have no destination account",
     "skippedDestination_few": "{{count}} have no destination account",
-    "skippedDestination_many": "{{count}} have no destination account"
+    "skippedDestination_many": "{{count}} have no destination account",
+    "quickEdit": "Quick edit",
+    "collapseEdit": "Collapse editor",
+    "needsConversionBadge": "needs conversion",
+    "needsAccountBadge": "no account"
   },
   "createCategory": {
     "title": "New {{type}} category",

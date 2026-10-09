@@ -70,7 +70,9 @@
     "description": "Description / Notes",
     "descriptionPlaceholder": "Add details or notes about this transaction...",
     "cancel": "Cancel",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "merchant": "Merchant",
+    "merchantPlaceholder": "Pick a recorded merchant or type a new one"
   },
   "entryType": {
     "quick": "Quick",

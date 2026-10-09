@@ -6,7 +6,7 @@ import { PrivacyModeProvider } from '@/hooks/PrivacyModeProvider';
 import { expect, it, vi } from 'vitest';
 import type { PendingFinancialMessage } from '@kippa/domain';
 
-const { decideBatch } = vi.hoisted(() => ({
+const { decideBatch, approve, discard } = vi.hoisted(() => ({
   decideBatch: vi.fn(async () => ({
     action: 'approve' as 'approve' | 'discard',
     approved: 2,
@@ -15,6 +15,8 @@ const { decideBatch } = vi.hoisted(() => ({
     nextCursor: null as string | null,
     hasMore: false,
   })),
+  approve: vi.fn(async () => 'tx_1'),
+  discard: vi.fn(async () => undefined),
 }));
 
 vi.mock('@/libs/messageIngestion', () => ({
@@ -22,14 +24,28 @@ vi.mock('@/libs/messageIngestion', () => ({
     decideBatch,
     importHistory: vi.fn(),
     getPending: vi.fn(),
-    approve: vi.fn(),
-    discard: vi.fn(),
+    approve,
+    discard,
     getResolved: vi.fn(),
     restoreDiscarded: vi.fn(),
     createCredential: vi.fn(),
     listCredentials: vi.fn(),
     revokeCredential: vi.fn(),
   },
+}));
+
+const account = (id: string, name: string, currency = 'EGP') => ({
+  id, name, currency, type: 'running', isActive: true, sortOrder: 100, ownerUid: null,
+});
+const category = (id: string, name: string, type: 'expense' | 'income') => ({
+  id, name, type, isActive: true,
+});
+
+vi.mock('@/hooks/useFinance', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useAccounts: () => ({ data: [account('acc1', 'MISR EGP')] }),
+  useCategories: () => ({ data: [category('cat1', 'Groceries', 'expense')] }),
+  useTransactions: () => ({ data: [{ merchant: 'Carrefour' }, { merchant: 'Fawry' }] }),
 }));
 
 import { ImportedBatchCard } from './ImportedBatchCard';
@@ -133,4 +149,29 @@ it('reports a discarded-only run even when nothing could be discarded', async ()
   await user.click(screen.getByRole('button', { name: 'Confirm' }));
 
   await vi.waitFor(() => expect(screen.getByText('Discarded 0 imported messages')).toBeInTheDocument());
+});
+
+it('approves a single message inline with the account, category and merchant picked in the list', async () => {
+  approve.mockClear();
+  const user = userEvent.setup();
+  renderCard();
+
+  await user.click(screen.getAllByRole('button', { name: 'Quick edit' })[0]);
+  await user.type(screen.getByLabelText('Merchant / person'), 'Fawry');
+  await user.click(screen.getByLabelText('From account'));
+  await user.click(screen.getByRole('option', { name: 'MISR EGP' }));
+  await user.click(screen.getByLabelText('Category (optional)'));
+  await user.click(screen.getByRole('option', { name: 'Groceries' }));
+
+  expect(approve).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Approve' }));
+
+  await vi.waitFor(() => expect(approve).toHaveBeenCalledOnce());
+  expect(approve).toHaveBeenCalledWith(expect.objectContaining({
+    householdId: 'h',
+    pendingId: 'p1',
+    accountId: 'acc1',
+    categoryId: 'cat1',
+    merchant: 'Fawry',
+  }), expect.anything());
 });

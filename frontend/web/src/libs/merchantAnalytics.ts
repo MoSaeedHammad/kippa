@@ -96,3 +96,20 @@ export function transactionsForMerchantAssignment(
     && transaction.categoryId !== categoryId
     && (transaction.merchant ? normalizeMerchantKey(transaction.merchant) : NO_MERCHANT_KEY) === merchantKey);
 }
+
+/**
+ * Distinct merchant names already recorded on posted transactions — the
+ * suggestion pool for merchant autocomplete when editing a transaction or
+ * approving an imported bank message. Trimmed, deduplicated (case-insensitive,
+ * keeping the raw casing of the first sighting) and alphabetically sorted.
+ */
+export function recordedMerchantNames(transactions: FinanceTransaction[]): string[] {
+  const byKey = new Map<string, string>();
+  for (const transaction of transactions) {
+    const name = merchantDisplayName(transaction.merchant);
+    if (!name) continue;
+    const key = normalizeMerchantKey(name);
+    if (!byKey.has(key)) byKey.set(key, name);
+  }
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b));
+}

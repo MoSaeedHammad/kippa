@@ -1,7 +1,7 @@
 import { forwardRef, type ComponentType, type ElementType } from 'react';
 import { Box, type SvgIconProps } from '@mui/material';
 import {
-  Add, AddSquare, ArrowLeft, ArrowRight, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
+  Add, AddSquare, ArrowDown2, ArrowLeft, ArrowRight, ArrowSwapHorizontal, ArrowUp2, BackSquare, Backward,
   Bank, Briefcase, Calendar, Card, CardPos, Category, Chart, CloseCircle, CloudRemove,
   Convert, Copy, Discover, DocumentUpload, Edit2, Export, Eye, EyeSlash, Filter, Home2,
   InfoCircle, Key, Logout, Minus, Moon, Note, Notification, NotificationBing, PauseCircle,
@@ -88,6 +88,7 @@ export const DeleteOutlineIcon = createAppIcon(Trash);
 export const EditIcon = createAppIcon(Edit2);
 export const EventIcon = createAppIcon(Calendar);
 export const ExpandLessIcon = createAppIcon(ArrowUp2);
+export const ExpandMoreIcon = createAppIcon(ArrowDown2);
 export const ExploreIcon = createAppIcon(Discover);
 export const DocumentUploadIcon = createAppIcon(DocumentUpload);
 export const GroupAddIcon = createAppIcon(People);

@@ -70,7 +70,9 @@
     "description": "الوصف / ملاحظات",
     "descriptionPlaceholder": "أضف تفاصيل أو ملاحظات حول هذه المعاملة...",
     "cancel": "إلغاء",
-    "saveChanges": "حفظ التغييرات"
+    "saveChanges": "حفظ التغييرات",
+    "merchant": "التاجر",
+    "merchantPlaceholder": "اختر تاجرًا مسجلًا أو اكتب اسمًا جديدًا"
   },
   "entryType": {
     "quick": "سريع",

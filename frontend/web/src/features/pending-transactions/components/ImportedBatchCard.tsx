@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,15 +12,20 @@ import {
   DialogContentText,
   DialogTitle,
   Divider,
+  IconButton,
   Stack,
   Typography,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import type { PendingFinancialMessage } from '@kippa/domain';
 import { CardHeading } from '@/features/shared/components/CardHeading';
 import { TransactionIcon } from '@/features/transactions/components/TransactionIcon';
 import { Money } from '@/components/Money';
-import { CheckCircleIcon, DeleteIcon, HistoryIcon } from '@/components/AppIcon';
-import { useDecideImportBatchMutation } from '@/hooks/useFinance';
+import { CheckCircleIcon, DeleteIcon, ExpandLessIcon, ExpandMoreIcon, HistoryIcon } from '@/components/AppIcon';
+import { useAccounts, useCategories, useDecideImportBatchMutation, useTransactions } from '@/hooks/useFinance';
+import { recordedMerchantNames } from '@/libs/merchantAnalytics';
+import { financeQueryKeys as keys } from '@/hooks/financeQueryKeys';
+import { BatchItemQuickEditor } from './BatchItemQuickEditor';
 
 const MAX_DECIDE_CALLS = 100;
 const ITEMS_PER_DECIDE_CALL = 100;
@@ -47,6 +52,12 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
   const { t } = useTranslation('pendingTransactions');
   const { enqueueSnackbar } = useSnackbar();
   const decideMutation = useDecideImportBatchMutation();
+  const queryClient = useQueryClient();
+  const { data: accounts = [] } = useAccounts(householdId);
+  const { data: categories = [] } = useCategories(householdId);
+  const { data: transactions = [] } = useTransactions(householdId);
+  const merchantOptions = useMemo(() => recordedMerchantNames(transactions), [transactions]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [decision, setDecision] = useState<PendingDecision | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -165,31 +176,55 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
       <Divider />
       {items.map((item, index) => (
         <Box key={item.id}>
-          <Box
-            component="button"
-            type="button"
-            onClick={() => onOpenItem(item)}
-            disabled={busy}
-            sx={{
-              width: '100%', minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.25,
-              display: 'flex', alignItems: 'center', gap: 1.5, border: 0,
-              bgcolor: 'transparent', color: 'text.primary', textAlign: 'start', cursor: 'pointer',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            <TransactionIcon type={item.kind} size={40} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="sectionLabel" noWrap sx={{ flex: 1 }}>{item.description}</Typography>
-                <Typography variant="sectionLabel" sx={{ whiteSpace: 'nowrap' }}>
-                  <Money amount={item.amount} code={item.currency} />
+          <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+            <Box
+              component="button"
+              type="button"
+              onClick={() => onOpenItem(item)}
+              disabled={busy}
+              sx={{
+                flex: 1, minWidth: 0, minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.25,
+                display: 'flex', alignItems: 'center', gap: 1.5, border: 0,
+                bgcolor: 'transparent', color: 'text.primary', textAlign: 'start', cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <TransactionIcon type={item.kind} size={40} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="sectionLabel" noWrap sx={{ flex: 1 }}>{item.description}</Typography>
+                  <Typography variant="sectionLabel" sx={{ whiteSpace: 'nowrap' }}>
+                    <Money amount={item.amount} code={item.currency} />
+                  </Typography>
+                </Stack>
+                <Typography variant="fieldHint" noWrap sx={{ mt: 0.25 }}>
+                  {item.provider.toUpperCase()} · {item.kind} · {item.date}
+                  {item.conversionRequired ? ` · ${t('imported.needsConversionBadge')}` : ''}
+                  {!item.suggestedAccountId ? ` · ${t('imported.needsAccountBadge')}` : ''}
                 </Typography>
-              </Stack>
-              <Typography variant="fieldHint" noWrap sx={{ mt: 0.25 }}>
-                {item.provider.toUpperCase()} · {item.kind} · {item.date}
-              </Typography>
+              </Box>
             </Box>
+            <IconButton
+              aria-label={expandedId === item.id ? t('imported.collapseEdit') : t('imported.quickEdit')}
+              sx={{ mx: 1, alignSelf: 'center' }}
+              disabled={busy}
+              onClick={() => setExpandedId((current) => (current === item.id ? null : item.id))}
+            >
+              {expandedId === item.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
           </Box>
+          {expandedId === item.id && (
+            <BatchItemQuickEditor
+              item={item}
+              accounts={accounts}
+              categories={categories}
+              merchantOptions={merchantOptions}
+              onDone={() => {
+                setExpandedId(null);
+                void queryClient.invalidateQueries({ queryKey: keys.pendingMessages(householdId) });
+              }}
+            />
+          )}
           {index < items.length - 1 && <Divider sx={{ marginInlineStart: 8.5 }} />}
         </Box>
       ))}

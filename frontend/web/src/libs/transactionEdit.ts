@@ -9,6 +9,7 @@ export interface TransactionEditFields {
   accountId: string;
   amount: string;
   type: EditableTransactionType;
+  merchant: string;
 }
 
 export function findPrimaryLedgerLine(transactionId: string, ledgerLines: LedgerLine[]) {
@@ -25,6 +26,7 @@ export function createTransactionEditFields(transaction: FinanceTransaction, led
     accountId: primaryLine?.accountId ?? '',
     amount: primaryLine ? Number(Math.abs(primaryLine.signedAmount).toFixed(2)).toString() : '0',
     type: transaction.type === 'income' ? 'income' : 'expense',
+    merchant: transaction.merchant ?? '',
   };
 }
 

@@ -278,7 +278,11 @@
     "skippedDestination_many": "{{count}} رسالة بدون حساب وجهة",
     "skippedDestination_other": "{{count}} رسالة بدون حساب وجهة",
     "importButton": "استيراد الرسائل القديمة",
-    "reviewHint": "اضغط على أي رسالة لمراجعتها فرديًا."
+    "reviewHint": "اضغط على أي رسالة لمراجعتها فرديًا.",
+    "quickEdit": "تحرير سريع",
+    "collapseEdit": "إغلاق المحرر",
+    "needsConversionBadge": "تحتاج تحويل عملة",
+    "needsAccountBadge": "بدون حساب"
   },
   "createCategory": {
     "title": "فئة {{type}} جديدة",
