@@ -127,6 +127,8 @@ export const messageIngestionLib = {
     batchId: string;
     action: 'approve' | 'discard';
     maxItems?: number;
+    /** Order key of the previous window's last item — continues the batch where it stopped. */
+    cursor?: string;
   }): Promise<DecideImportBatchResult> {
     const callable = httpsCallable<typeof data, DecideImportBatchResult>(requireFunctions(), 'decideImportBatch');
     return (await callable(data)).data;

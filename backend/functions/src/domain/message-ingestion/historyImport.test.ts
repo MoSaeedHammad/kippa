@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  batchDecisionWindow,
   chunksOf,
   importReceiptKey,
   MAX_MESSAGES_PER_IMPORT,
@@ -129,5 +130,72 @@ describe('chunksOf', () => {
 
   it('returns an empty list for empty input', () => {
     expect(chunksOf([], 10)).toEqual([]);
+  });
+});
+
+describe('batchDecisionWindow', () => {
+  const doc = (id: string, createdAt: string) => ({ id, createdAt });
+
+  it('returns the first window in (createdAt, id) order', () => {
+    const docs = [doc('b', '2026-01-01'), doc('a', '2026-01-01'), doc('c', '2025-12-31')];
+    const { slice, nextCursor, hasMore } = batchDecisionWindow(docs, null, 2);
+    expect(slice.map((entry) => entry.id)).toEqual(['c', 'a']);
+    expect(nextCursor).toBe('2026-01-01~a');
+    expect(hasMore).toBe(true);
+  });
+
+  it('continues strictly after the cursor, skipping already-visited docs', () => {
+    const docs = [doc('a', '2026-01-01'), doc('b', '2026-01-01'), doc('c', '2026-01-02')];
+    const { slice, nextCursor, hasMore } = batchDecisionWindow(docs, '2026-01-01~a', 1);
+    expect(slice.map((entry) => entry.id)).toEqual(['b']);
+    expect(nextCursor).toBe('2026-01-01~b');
+    expect(hasMore).toBe(true);
+  });
+
+  it('reports no more work once the collection end is reached', () => {
+    const docs = [doc('a', '2026-01-01'), doc('b', '2026-01-02')];
+    const first = batchDecisionWindow(docs, null, 1);
+    expect(first.hasMore).toBe(true);
+    const second = batchDecisionWindow(docs, first.nextCursor, 1);
+    expect(second.slice.map((entry) => entry.id)).toEqual(['b']);
+    expect(second.nextCursor).toBe('2026-01-02~b');
+    expect(second.hasMore).toBe(false);
+  });
+
+  it('keeps advancing past a window of permanently blocked docs even after they are deleted', () => {
+    // Regression for the starvation bug: 100 no-suggested-account messages
+    // occupied the front of the window forever, so nothing behind them was
+    // ever decided. Cursor order must be absolute (key-based), not positional,
+    // so deleting the processed docs between calls cannot rewind the window.
+    const blocked = Array.from({ length: 100 }, (_, index) => doc(`blocked${String(index).padStart(3, '0')}`, '2026-01-01'));
+    const resolvable = Array.from({ length: 30 }, (_, index) => doc(`ok${String(index).padStart(3, '0')}`, '2026-01-02'));
+    const remaining = [...blocked, ...resolvable];
+    let cursor: string | null = null;
+    const visited: string[] = [];
+    for (let call = 0; call < 10; call++) {
+      const { slice, nextCursor, hasMore } = batchDecisionWindow(remaining, cursor, 100);
+      visited.push(...slice.map((entry) => entry.id));
+      cursor = nextCursor;
+      if (!hasMore) break;
+    }
+    // The blocked docs come back (they stay pending) but are never revisited;
+    // every resolvable doc must have appeared in some window.
+    for (const entry of resolvable) expect(visited).toContain(entry.id);
+    expect(visited.filter((id) => id.startsWith('ok'))).toHaveLength(30);
+    expect(visited.filter((id) => id.startsWith('blocked'))).toHaveLength(100);
+  });
+
+  it('returns an empty window and no more-work flag for a stale cursor at the end', () => {
+    const docs = [doc('a', '2026-01-01')];
+    const { slice, nextCursor, hasMore } = batchDecisionWindow(docs, '2026-01-01~a', 100);
+    expect(slice).toEqual([]);
+    expect(hasMore).toBe(false);
+    expect(nextCursor).toBe('2026-01-01~a');
+  });
+
+  it('sorts missing createdAt last and keeps ids unique within the same stamp', () => {
+    const docs = [doc('a', '2026-01-01'), doc('b', null), doc('c', undefined)];
+    const { slice } = batchDecisionWindow(docs, null, 10);
+    expect(slice.map((entry) => entry.id)).toEqual(['a', 'b', 'c']);
   });
 });

@@ -681,6 +681,8 @@ export type DecideImportBatchResult = {
   approved: number;
   discarded: number;
   skipped: DecideImportBatchSkip[];
+  /** Order key of the last decided doc — pass back as `cursor` to continue the batch. */
+  nextCursor: string | null;
   hasMore: boolean;
 };
 

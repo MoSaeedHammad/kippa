@@ -13,6 +13,7 @@ import type {
 } from '@kippa/domain';
 import { buildMessagePreview, isIgnoredFinancialMessage, parseFinancialMessage } from '../../domain/message-ingestion/parser.js';
 import {
+  batchDecisionWindow,
   chunksOf,
   importReceiptKey,
   sanitizeHistoryMessages,
@@ -434,6 +435,12 @@ export async function commitChunk(
  * log, loan locks and ledger lines stay consistent with single approvals.
  * Items that cannot be resolved safely are skipped with a reason and remain
  * pending for manual review.
+ *
+ * The caller pages through the batch with `cursor` (the order key of the
+ * previous window's last doc). Positioning is key-based, so blocked items
+ * that stay pending are visited once per run and then left behind — a window
+ * full of permanently blocked messages can never re-serve itself and starve
+ * the resolvable ones behind it. `hasMore` is false at the collection end.
  */
 export const decideImportBatch = onCall(
   { timeoutSeconds: 540 },
@@ -445,6 +452,7 @@ export const decideImportBatch = onCall(
       batchId?: unknown;
       action?: unknown;
       maxItems?: unknown;
+      cursor?: unknown;
     };
     const householdId = assertString(data.householdId, 'householdId');
     const batchId = assertString(data.batchId, 'batchId');
@@ -456,6 +464,9 @@ export const decideImportBatch = onCall(
     const maxItems = typeof data.maxItems === 'number' && Number.isFinite(data.maxItems)
       ? Math.min(300, Math.max(1, Math.floor(data.maxItems)))
       : 100;
+    const cursor = typeof data.cursor === 'string' && data.cursor.length > 0 && data.cursor.length <= 600
+      ? data.cursor
+      : null;
     await requireFullHouseholdMember(uid, householdId);
 
     const db = getFirestore();
@@ -463,22 +474,21 @@ export const decideImportBatch = onCall(
     const snapshot = await db.collection(`households/${householdId}/pendingFinancialMessages`)
       .where('importBatchId', '==', batchId)
       .get();
-    const docs = snapshot.docs.sort((left, right) =>
-      String(left.get('createdAt') ?? '').localeCompare(String(right.get('createdAt') ?? '')));
-    const slice = docs.slice(0, maxItems);
+    const docs = snapshot.docs.map((doc) => ({ doc, id: doc.id, createdAt: doc.get('createdAt') as string | undefined }));
+    const { slice, nextCursor, hasMore } = batchDecisionWindow(docs, cursor, maxItems);
 
     let approved = 0;
     let discarded = 0;
     const skipped: { pendingId: string; reason: string }[] = [];
-    for (const doc of slice) {
-      const pendingId = doc.id;
+    for (const entry of slice) {
+      const pendingId = entry.id;
       try {
         if (action === 'discard') {
           await runCallable(discardPendingFinancialMessage, uid, { householdId, pendingId });
           discarded++;
           continue;
         }
-        const pending = doc.data() as PendingFinancialMessage;
+        const pending = entry.doc.data() as PendingFinancialMessage;
         if (pending.conversionRequired) {
           skipped.push({ pendingId, reason: 'needs_conversion' });
           continue;
@@ -492,8 +502,8 @@ export const decideImportBatch = onCall(
           continue;
         }
         // Category is intentionally omitted: the approve handler falls back
-        // to the stored suggestion, then merchant-pattern rules, and throws
-        // when nothing matches — that item is skipped for manual review.
+        // to the stored suggestion, then merchant-pattern rules, and posts
+        // uncategorized when nothing matches.
         await runCallable(approvePendingFinancialMessage, uid, {
           householdId,
           pendingId,
@@ -511,7 +521,8 @@ export const decideImportBatch = onCall(
       approved,
       discarded,
       skipped,
-      hasMore: docs.length > slice.length,
+      nextCursor,
+      hasMore,
     } satisfies DecideImportBatchResult;
   },
 );

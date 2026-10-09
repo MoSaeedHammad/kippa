@@ -726,29 +726,34 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
       importedFrom: { kind: 'financial-message', pendingId, provider: pending.provider, source: pending.source },
       sourceMessage: pending.sourceMessage ?? null,
     });
+    // Ledger lines, conversion details and the audit entry are derived docs
+    // keyed by the transaction id; the transaction create above is the
+    // idempotency anchor. A prior incarnation of this approval can survive
+    // as an orphan when its transaction is wiped later — those leftovers
+    // must be overwritten, never allowed to block re-approval.
     if (allocations) {
       allocations.forEach((allocation, index) => {
-        transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source_${index}`), {
+        transaction.set(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source_${index}`), {
           id: `${transactionId}_source_${index}`, householdId, transactionId, accountId: allocation.accountId,
           signedAmount: pending.kind === 'income' ? allocation.amount : -allocation.amount,
           currency: settled.currency, createdAt: now,
         });
       });
     } else {
-      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
+      transaction.set(db.doc(`households/${householdId}/ledgerLines/${transactionId}_source`), {
         id: `${transactionId}_source`, householdId, transactionId, accountId,
         signedAmount: pending.kind === 'income' ? settled.amount : -settled.amount,
         currency: settled.currency, createdAt: now,
       });
     }
     if (pending.kind === 'transfer' && destinationAccount) {
-      transaction.create(db.doc(`households/${householdId}/ledgerLines/${transactionId}_destination`), {
+      transaction.set(db.doc(`households/${householdId}/ledgerLines/${transactionId}_destination`), {
         id: `${transactionId}_destination`, householdId, transactionId,
         accountId: destinationAccount.id, signedAmount: destAmount,
         currency: destCurrency, createdAt: now,
       });
       if (isCrossCurrency && pending.destinationAmount) {
-        transaction.create(db.doc(`households/${householdId}/conversionDetails/${transactionId}`), {
+        transaction.set(db.doc(`households/${householdId}/conversionDetails/${transactionId}`), {
           transactionId,
           fromCurrency: pending.currency,
           toCurrency: destCurrency,
@@ -812,7 +817,7 @@ export const approvePendingFinancialMessage = onCall(async (request) => {
         createdAt: now,
       });
     }
-    transaction.create(db.doc(`households/${householdId}/auditLog/${transactionId}`), {
+    transaction.set(db.doc(`households/${householdId}/auditLog/${transactionId}`), {
       id: transactionId,
       householdId,
       userId: uid,
@@ -914,7 +919,9 @@ export const listResolvedPendingFinancialMessages = onCall(async (request) => {
     .where('householdId', '==', householdId)
     .where('state', 'in', ['approved', 'discarded'])
     .orderBy('resolvedAt', 'desc')
-    .limit(100)
+    // Bulk imports resolve thousands of messages in one approve-all run; a
+    // small cap would hide most of them from the History tab.
+    .limit(1000)
     .get();
   const items = snapshot.docs
     .map((doc) => doc.data() as IngestionReceipt)

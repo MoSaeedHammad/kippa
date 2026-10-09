@@ -78,3 +78,42 @@ export function chunksOf<T>(items: T[], size: number): T[][] {
   }
   return result;
 }
+
+/** A batch decision doc: the receipt id and its staging timestamp. */
+export type BatchDecisionDoc = { id: string; createdAt?: string | null };
+
+/** Stable processing-order key: creation time first, then receipt id. */
+export function batchDecisionKey(doc: BatchDecisionDoc): string {
+  return `${doc.createdAt ?? ''}~${doc.id}`;
+}
+
+/**
+ * Window of batch docs to decide in one callable call. Positioning is based
+ * on the order key (never the list index), so already-visited docs — decided
+ * or permanently blocked — are excluded even when they were deleted between
+ * calls: a window of blocked messages can hold its ground only once and can
+ * never starve the queue behind it. `nextCursor` feeds the next call;
+ * `hasMore` is false once the collection end is reached.
+ */
+export function batchDecisionWindow<T extends BatchDecisionDoc>(
+  docs: T[],
+  cursor: string | null,
+  maxItems: number,
+): { slice: T[]; nextCursor: string | null; hasMore: boolean } {
+  const order = (left: T, right: T) => {
+    const leftKey = batchDecisionKey(left);
+    const rightKey = batchDecisionKey(right);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+  };
+  const sorted = [...docs].sort(order);
+  const start = cursor
+    ? sorted.findIndex((doc) => batchDecisionKey(doc) > cursor)
+    : 0;
+  const first = start === -1 ? sorted.length : start;
+  const slice = sorted.slice(first, first + maxItems);
+  const nextCursor = slice.length > 0
+    ? batchDecisionKey(slice[slice.length - 1])
+    : cursor;
+  const visitedEnd = first + slice.length;
+  return { slice, nextCursor: nextCursor ?? null, hasMore: visitedEnd < sorted.length };
+}

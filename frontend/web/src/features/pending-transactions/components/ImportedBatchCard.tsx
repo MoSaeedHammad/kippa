@@ -38,8 +38,10 @@ type ImportedBatchCardProps = {
 /**
  * One staged history import: shows the covered duration with bulk
  * Approve-all / Cancel-all. Bulk decisions loop the server callable (100
- * items per call) through the same per-item approve/discard logic used for
- * single reviews; items that cannot be auto-resolved stay pending.
+ * items per call, cursor-positioned) through the same per-item approve/discard
+ * logic used for single reviews; items that cannot be auto-resolved stay
+ * pending, and the toast says so — a fully blocked run must never fail
+ * silently.
  */
 export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: ImportedBatchCardProps) {
   const { t } = useTranslation('pendingTransactions');
@@ -60,12 +62,20 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
     let approved = 0;
     let discarded = 0;
     const skipped: { pendingId: string; reason: string }[] = [];
+    let cursor: string | null = null;
     try {
       for (let call = 0; call < MAX_DECIDE_CALLS; call++) {
-        const result = await decideMutation.mutateAsync({ householdId, batchId, action, maxItems: ITEMS_PER_DECIDE_CALL });
+        const result = await decideMutation.mutateAsync({
+          householdId,
+          batchId,
+          action,
+          maxItems: ITEMS_PER_DECIDE_CALL,
+          ...(cursor ? { cursor } : {}),
+        });
         approved += result.approved;
         discarded += result.discarded;
         skipped.push(...result.skipped);
+        cursor = result.nextCursor ?? null;
         setProgress((current) => current
           ? { done: Math.min(current.done + result.approved + result.discarded + result.skipped.length, current.total), total: current.total }
           : current);
@@ -77,16 +87,31 @@ export function ImportedBatchCard({ householdId, batchId, items, onOpenItem }: I
       setBusy(false);
       setProgress(null);
     }
-    if (action === 'approve' && approved > 0) {
+    // Report the outcome even when nothing was decided — blocked messages
+    // with their reasons are the only signal the bulk run ever gives.
+    const reasonCounts: Record<string, number> = {};
+    for (const skip of skipped) reasonCounts[skip.reason] = (reasonCounts[skip.reason] ?? 0) + 1;
+    const reasons = [
+      reasonCounts.needs_account ? t('imported.skippedAccount', { count: reasonCounts.needs_account }) : null,
+      reasonCounts.needs_conversion ? t('imported.skippedConversion', { count: reasonCounts.needs_conversion }) : null,
+      reasonCounts.needs_destination ? t('imported.skippedDestination', { count: reasonCounts.needs_destination }) : null,
+    ].filter(Boolean);
+    const reasonDetail = reasons.length > 0 ? ` (${reasons.join(', ')})` : '';
+    if (action === 'approve') {
       enqueueSnackbar(
         skipped.length > 0
-          ? `${t('imported.doneApproved', { count: approved })} · ${t('imported.needsReview', { count: skipped.length })}`
+          ? `${t('imported.doneApproved', { count: approved })} · ${t('imported.needsReview', { count: skipped.length })}${reasonDetail}`
           : t('imported.doneApproved', { count: approved }),
-        { variant: 'success' },
+        { variant: approved > 0 ? 'success' : 'warning' },
       );
     }
-    if (action === 'discard' && discarded > 0) {
-      enqueueSnackbar(t('imported.doneDiscarded', { count: discarded }), { variant: 'success' });
+    if (action === 'discard') {
+      enqueueSnackbar(
+        skipped.length > 0
+          ? `${t('imported.doneDiscarded', { count: discarded })} · ${t('imported.needsReview', { count: skipped.length })}${reasonDetail}`
+          : t('imported.doneDiscarded', { count: discarded }),
+        { variant: discarded > 0 ? 'success' : 'warning' },
+      );
     }
   };
 
